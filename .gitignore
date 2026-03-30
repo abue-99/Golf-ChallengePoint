@@ -5,5 +5,8 @@ dist
 .DS_Store
 coverage
 
+# Turbo cache
+.turbo
+
 # Prisma generated client
 packages/db/generated/
