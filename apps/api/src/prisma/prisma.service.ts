@@ -30,14 +30,6 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.taskTemplate;
   }
 
-  get calendarEvent() {
-    return this.client.calendarEvent;
-  }
-
-  get taskLog() {
-    return this.client.taskLog;
-  }
-
   get passwordResetToken() {
     return this.client.passwordResetToken;
   }
