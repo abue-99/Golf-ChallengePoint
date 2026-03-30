@@ -124,28 +124,30 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
 exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   email: 'email',
-  password: 'password',
   passwordHash: 'passwordHash',
   firstName: 'firstName',
   lastName: 'lastName',
+  profileImage: 'profileImage',
+  name: 'name',
   role: 'role',
   lastLogin: 'lastLogin',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
 
-exports.Prisma.EventScalarFieldEnum = {
+exports.Prisma.PasswordResetTokenScalarFieldEnum = {
   id: 'id',
-  title: 'title',
-  status: 'status',
-  format: 'format',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  email: 'email',
+  token: 'token',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.PlayerProfileScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
+  name: 'name',
+  handicap: 'handicap',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -154,37 +156,22 @@ exports.Prisma.CoachPlayerLinkScalarFieldEnum = {
   id: 'id',
   coachId: 'coachId',
   playerId: 'playerId',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.TaskTemplateScalarFieldEnum = {
   id: 'id',
   title: 'title',
+  content: 'content',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
 
-exports.Prisma.CalendarEventScalarFieldEnum = {
+exports.Prisma.ChallengeScalarFieldEnum = {
   id: 'id',
   title: 'title',
-  date: 'date',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
-};
-
-exports.Prisma.TaskLogScalarFieldEnum = {
-  id: 'id',
-  taskId: 'taskId',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.PasswordResetTokenScalarFieldEnum = {
-  id: 'id',
-  token: 'token',
-  expiresAt: 'expiresAt',
-  createdAt: 'createdAt'
 };
 
 exports.Prisma.SortOrder = {
@@ -202,35 +189,18 @@ exports.Prisma.NullsOrder = {
   last: 'last'
 };
 exports.Role = exports.$Enums.Role = {
-  ADMIN: 'ADMIN',
+  PLAYER: 'PLAYER',
   COACH: 'COACH',
-  PLAYER: 'PLAYER'
-};
-
-exports.EventStatus = exports.$Enums.EventStatus = {
-  DRAFT: 'DRAFT',
-  PUBLISHED: 'PUBLISHED',
-  CLOSED: 'CLOSED',
-  CANCELLED: 'CANCELLED'
-};
-
-exports.EventFormat = exports.$Enums.EventFormat = {
-  MEDAL: 'MEDAL',
-  STABLEFORD: 'STABLEFORD',
-  MATCH_PLAY: 'MATCH_PLAY',
-  SCRAMBLE: 'SCRAMBLE',
-  BEST_BALL: 'BEST_BALL'
+  ADMIN: 'ADMIN'
 };
 
 exports.Prisma.ModelName = {
   User: 'User',
-  Event: 'Event',
+  PasswordResetToken: 'PasswordResetToken',
   PlayerProfile: 'PlayerProfile',
   CoachPlayerLink: 'CoachPlayerLink',
   TaskTemplate: 'TaskTemplate',
-  CalendarEvent: 'CalendarEvent',
-  TaskLog: 'TaskLog',
-  PasswordResetToken: 'PasswordResetToken'
+  Challenge: 'Challenge'
 };
 
 /**

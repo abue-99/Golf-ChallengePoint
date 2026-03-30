@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/client"
@@ -9,59 +12,46 @@ datasource db {
 }
 
 enum Role {
-  ADMIN
-  COACH
   PLAYER
-}
-
-enum EventStatus {
-  DRAFT
-  PUBLISHED
-  CLOSED
-  CANCELLED
-}
-
-enum EventFormat {
-  MEDAL
-  STABLEFORD
-  MATCH_PLAY
-  SCRAMBLE
-  BEST_BALL
+  COACH
+  ADMIN
 }
 
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
-  password     String
-  passwordHash String?
-  firstName    String
-  lastName     String
+  passwordHash String
+  firstName    String?
+  lastName     String?
+  profileImage String?
+  name         String?
   role         Role      @default(PLAYER)
   lastLogin    DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  playerProfile   PlayerProfile?
-  coachPlayerLink CoachPlayerLink[] @relation("CoachToPlayer")
+  playerProfile    PlayerProfile?
+  coachPlayerLinks CoachPlayerLink[] @relation("CoachToPlayer")
 
   @@map("users")
 }
 
-model Event {
-  id        String      @id @default(cuid())
-  title     String
-  status    EventStatus @default(DRAFT)
-  format    EventFormat
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
-  @@map("events")
+  @@map("password_reset_tokens")
 }
 
 model PlayerProfile {
   id        String   @id @default(cuid())
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  handicap  Float?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -74,7 +64,6 @@ model CoachPlayerLink {
   coach     User     @relation("CoachToPlayer", fields: [coachId], references: [id], onDelete: Cascade)
   playerId  String
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@map("coach_player_links")
 }
@@ -82,36 +71,18 @@ model CoachPlayerLink {
 model TaskTemplate {
   id        String   @id @default(cuid())
   title     String
+  content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("task_templates")
 }
 
-model CalendarEvent {
+model Challenge {
   id        String   @id @default(cuid())
   title     String
-  date      DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("calendar_events")
-}
-
-model TaskLog {
-  id        String   @id @default(cuid())
-  taskId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("task_logs")
-}
-
-model PasswordResetToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@map("password_reset_tokens")
+  @@map("challenges")
 }

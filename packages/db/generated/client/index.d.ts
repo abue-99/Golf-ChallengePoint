@@ -19,10 +19,10 @@ export type PrismaPromise<T> = $Public.PrismaPromise<T>
  */
 export type User = $Result.DefaultSelection<Prisma.$UserPayload>
 /**
- * Model Event
+ * Model PasswordResetToken
  * 
  */
-export type Event = $Result.DefaultSelection<Prisma.$EventPayload>
+export type PasswordResetToken = $Result.DefaultSelection<Prisma.$PasswordResetTokenPayload>
 /**
  * Model PlayerProfile
  * 
@@ -39,67 +39,28 @@ export type CoachPlayerLink = $Result.DefaultSelection<Prisma.$CoachPlayerLinkPa
  */
 export type TaskTemplate = $Result.DefaultSelection<Prisma.$TaskTemplatePayload>
 /**
- * Model CalendarEvent
+ * Model Challenge
  * 
  */
-export type CalendarEvent = $Result.DefaultSelection<Prisma.$CalendarEventPayload>
-/**
- * Model TaskLog
- * 
- */
-export type TaskLog = $Result.DefaultSelection<Prisma.$TaskLogPayload>
-/**
- * Model PasswordResetToken
- * 
- */
-export type PasswordResetToken = $Result.DefaultSelection<Prisma.$PasswordResetTokenPayload>
+export type Challenge = $Result.DefaultSelection<Prisma.$ChallengePayload>
 
 /**
  * Enums
  */
 export namespace $Enums {
   export const Role: {
-  ADMIN: 'ADMIN',
+  PLAYER: 'PLAYER',
   COACH: 'COACH',
-  PLAYER: 'PLAYER'
+  ADMIN: 'ADMIN'
 };
 
 export type Role = (typeof Role)[keyof typeof Role]
-
-
-export const EventStatus: {
-  DRAFT: 'DRAFT',
-  PUBLISHED: 'PUBLISHED',
-  CLOSED: 'CLOSED',
-  CANCELLED: 'CANCELLED'
-};
-
-export type EventStatus = (typeof EventStatus)[keyof typeof EventStatus]
-
-
-export const EventFormat: {
-  MEDAL: 'MEDAL',
-  STABLEFORD: 'STABLEFORD',
-  MATCH_PLAY: 'MATCH_PLAY',
-  SCRAMBLE: 'SCRAMBLE',
-  BEST_BALL: 'BEST_BALL'
-};
-
-export type EventFormat = (typeof EventFormat)[keyof typeof EventFormat]
 
 }
 
 export type Role = $Enums.Role
 
 export const Role: typeof $Enums.Role
-
-export type EventStatus = $Enums.EventStatus
-
-export const EventStatus: typeof $Enums.EventStatus
-
-export type EventFormat = $Enums.EventFormat
-
-export const EventFormat: typeof $Enums.EventFormat
 
 /**
  * ##  Prisma Client ʲˢ
@@ -230,14 +191,14 @@ export class PrismaClient<
   get user(): Prisma.UserDelegate<ExtArgs, ClientOptions>;
 
   /**
-   * `prisma.event`: Exposes CRUD operations for the **Event** model.
+   * `prisma.passwordResetToken`: Exposes CRUD operations for the **PasswordResetToken** model.
     * Example usage:
     * ```ts
-    * // Fetch zero or more Events
-    * const events = await prisma.event.findMany()
+    * // Fetch zero or more PasswordResetTokens
+    * const passwordResetTokens = await prisma.passwordResetToken.findMany()
     * ```
     */
-  get event(): Prisma.EventDelegate<ExtArgs, ClientOptions>;
+  get passwordResetToken(): Prisma.PasswordResetTokenDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.playerProfile`: Exposes CRUD operations for the **PlayerProfile** model.
@@ -270,34 +231,14 @@ export class PrismaClient<
   get taskTemplate(): Prisma.TaskTemplateDelegate<ExtArgs, ClientOptions>;
 
   /**
-   * `prisma.calendarEvent`: Exposes CRUD operations for the **CalendarEvent** model.
+   * `prisma.challenge`: Exposes CRUD operations for the **Challenge** model.
     * Example usage:
     * ```ts
-    * // Fetch zero or more CalendarEvents
-    * const calendarEvents = await prisma.calendarEvent.findMany()
+    * // Fetch zero or more Challenges
+    * const challenges = await prisma.challenge.findMany()
     * ```
     */
-  get calendarEvent(): Prisma.CalendarEventDelegate<ExtArgs, ClientOptions>;
-
-  /**
-   * `prisma.taskLog`: Exposes CRUD operations for the **TaskLog** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more TaskLogs
-    * const taskLogs = await prisma.taskLog.findMany()
-    * ```
-    */
-  get taskLog(): Prisma.TaskLogDelegate<ExtArgs, ClientOptions>;
-
-  /**
-   * `prisma.passwordResetToken`: Exposes CRUD operations for the **PasswordResetToken** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more PasswordResetTokens
-    * const passwordResetTokens = await prisma.passwordResetToken.findMany()
-    * ```
-    */
-  get passwordResetToken(): Prisma.PasswordResetTokenDelegate<ExtArgs, ClientOptions>;
+  get challenge(): Prisma.ChallengeDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -740,13 +681,11 @@ export namespace Prisma {
 
   export const ModelName: {
     User: 'User',
-    Event: 'Event',
+    PasswordResetToken: 'PasswordResetToken',
     PlayerProfile: 'PlayerProfile',
     CoachPlayerLink: 'CoachPlayerLink',
     TaskTemplate: 'TaskTemplate',
-    CalendarEvent: 'CalendarEvent',
-    TaskLog: 'TaskLog',
-    PasswordResetToken: 'PasswordResetToken'
+    Challenge: 'Challenge'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -765,7 +704,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "event" | "playerProfile" | "coachPlayerLink" | "taskTemplate" | "calendarEvent" | "taskLog" | "passwordResetToken"
+      modelProps: "user" | "passwordResetToken" | "playerProfile" | "coachPlayerLink" | "taskTemplate" | "challenge"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -843,77 +782,77 @@ export namespace Prisma {
           }
         }
       }
-      Event: {
-        payload: Prisma.$EventPayload<ExtArgs>
-        fields: Prisma.EventFieldRefs
+      PasswordResetToken: {
+        payload: Prisma.$PasswordResetTokenPayload<ExtArgs>
+        fields: Prisma.PasswordResetTokenFieldRefs
         operations: {
           findUnique: {
-            args: Prisma.EventFindUniqueArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$EventPayload> | null
+            args: Prisma.PasswordResetTokenFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload> | null
           }
           findUniqueOrThrow: {
-            args: Prisma.EventFindUniqueOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$EventPayload>
+            args: Prisma.PasswordResetTokenFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
           }
           findFirst: {
-            args: Prisma.EventFindFirstArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$EventPayload> | null
+            args: Prisma.PasswordResetTokenFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload> | null
           }
           findFirstOrThrow: {
-            args: Prisma.EventFindFirstOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$EventPayload>
+            args: Prisma.PasswordResetTokenFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
           }
           findMany: {
-            args: Prisma.EventFindManyArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$EventPayload>[]
+            args: Prisma.PasswordResetTokenFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>[]
           }
           create: {
-            args: Prisma.EventCreateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$EventPayload>
+            args: Prisma.PasswordResetTokenCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
           }
           createMany: {
-            args: Prisma.EventCreateManyArgs<ExtArgs>
+            args: Prisma.PasswordResetTokenCreateManyArgs<ExtArgs>
             result: BatchPayload
           }
           createManyAndReturn: {
-            args: Prisma.EventCreateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$EventPayload>[]
+            args: Prisma.PasswordResetTokenCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>[]
           }
           delete: {
-            args: Prisma.EventDeleteArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$EventPayload>
+            args: Prisma.PasswordResetTokenDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
           }
           update: {
-            args: Prisma.EventUpdateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$EventPayload>
+            args: Prisma.PasswordResetTokenUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
           }
           deleteMany: {
-            args: Prisma.EventDeleteManyArgs<ExtArgs>
+            args: Prisma.PasswordResetTokenDeleteManyArgs<ExtArgs>
             result: BatchPayload
           }
           updateMany: {
-            args: Prisma.EventUpdateManyArgs<ExtArgs>
+            args: Prisma.PasswordResetTokenUpdateManyArgs<ExtArgs>
             result: BatchPayload
           }
           updateManyAndReturn: {
-            args: Prisma.EventUpdateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$EventPayload>[]
+            args: Prisma.PasswordResetTokenUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>[]
           }
           upsert: {
-            args: Prisma.EventUpsertArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$EventPayload>
+            args: Prisma.PasswordResetTokenUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
           }
           aggregate: {
-            args: Prisma.EventAggregateArgs<ExtArgs>
-            result: $Utils.Optional<AggregateEvent>
+            args: Prisma.PasswordResetTokenAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePasswordResetToken>
           }
           groupBy: {
-            args: Prisma.EventGroupByArgs<ExtArgs>
-            result: $Utils.Optional<EventGroupByOutputType>[]
+            args: Prisma.PasswordResetTokenGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PasswordResetTokenGroupByOutputType>[]
           }
           count: {
-            args: Prisma.EventCountArgs<ExtArgs>
-            result: $Utils.Optional<EventCountAggregateOutputType> | number
+            args: Prisma.PasswordResetTokenCountArgs<ExtArgs>
+            result: $Utils.Optional<PasswordResetTokenCountAggregateOutputType> | number
           }
         }
       }
@@ -1139,225 +1078,77 @@ export namespace Prisma {
           }
         }
       }
-      CalendarEvent: {
-        payload: Prisma.$CalendarEventPayload<ExtArgs>
-        fields: Prisma.CalendarEventFieldRefs
+      Challenge: {
+        payload: Prisma.$ChallengePayload<ExtArgs>
+        fields: Prisma.ChallengeFieldRefs
         operations: {
           findUnique: {
-            args: Prisma.CalendarEventFindUniqueArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$CalendarEventPayload> | null
+            args: Prisma.ChallengeFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChallengePayload> | null
           }
           findUniqueOrThrow: {
-            args: Prisma.CalendarEventFindUniqueOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$CalendarEventPayload>
+            args: Prisma.ChallengeFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChallengePayload>
           }
           findFirst: {
-            args: Prisma.CalendarEventFindFirstArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$CalendarEventPayload> | null
+            args: Prisma.ChallengeFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChallengePayload> | null
           }
           findFirstOrThrow: {
-            args: Prisma.CalendarEventFindFirstOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$CalendarEventPayload>
+            args: Prisma.ChallengeFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChallengePayload>
           }
           findMany: {
-            args: Prisma.CalendarEventFindManyArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$CalendarEventPayload>[]
+            args: Prisma.ChallengeFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChallengePayload>[]
           }
           create: {
-            args: Prisma.CalendarEventCreateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$CalendarEventPayload>
+            args: Prisma.ChallengeCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChallengePayload>
           }
           createMany: {
-            args: Prisma.CalendarEventCreateManyArgs<ExtArgs>
+            args: Prisma.ChallengeCreateManyArgs<ExtArgs>
             result: BatchPayload
           }
           createManyAndReturn: {
-            args: Prisma.CalendarEventCreateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$CalendarEventPayload>[]
+            args: Prisma.ChallengeCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChallengePayload>[]
           }
           delete: {
-            args: Prisma.CalendarEventDeleteArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$CalendarEventPayload>
+            args: Prisma.ChallengeDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChallengePayload>
           }
           update: {
-            args: Prisma.CalendarEventUpdateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$CalendarEventPayload>
+            args: Prisma.ChallengeUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChallengePayload>
           }
           deleteMany: {
-            args: Prisma.CalendarEventDeleteManyArgs<ExtArgs>
+            args: Prisma.ChallengeDeleteManyArgs<ExtArgs>
             result: BatchPayload
           }
           updateMany: {
-            args: Prisma.CalendarEventUpdateManyArgs<ExtArgs>
+            args: Prisma.ChallengeUpdateManyArgs<ExtArgs>
             result: BatchPayload
           }
           updateManyAndReturn: {
-            args: Prisma.CalendarEventUpdateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$CalendarEventPayload>[]
+            args: Prisma.ChallengeUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChallengePayload>[]
           }
           upsert: {
-            args: Prisma.CalendarEventUpsertArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$CalendarEventPayload>
+            args: Prisma.ChallengeUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChallengePayload>
           }
           aggregate: {
-            args: Prisma.CalendarEventAggregateArgs<ExtArgs>
-            result: $Utils.Optional<AggregateCalendarEvent>
+            args: Prisma.ChallengeAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateChallenge>
           }
           groupBy: {
-            args: Prisma.CalendarEventGroupByArgs<ExtArgs>
-            result: $Utils.Optional<CalendarEventGroupByOutputType>[]
+            args: Prisma.ChallengeGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ChallengeGroupByOutputType>[]
           }
           count: {
-            args: Prisma.CalendarEventCountArgs<ExtArgs>
-            result: $Utils.Optional<CalendarEventCountAggregateOutputType> | number
-          }
-        }
-      }
-      TaskLog: {
-        payload: Prisma.$TaskLogPayload<ExtArgs>
-        fields: Prisma.TaskLogFieldRefs
-        operations: {
-          findUnique: {
-            args: Prisma.TaskLogFindUniqueArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TaskLogPayload> | null
-          }
-          findUniqueOrThrow: {
-            args: Prisma.TaskLogFindUniqueOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TaskLogPayload>
-          }
-          findFirst: {
-            args: Prisma.TaskLogFindFirstArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TaskLogPayload> | null
-          }
-          findFirstOrThrow: {
-            args: Prisma.TaskLogFindFirstOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TaskLogPayload>
-          }
-          findMany: {
-            args: Prisma.TaskLogFindManyArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TaskLogPayload>[]
-          }
-          create: {
-            args: Prisma.TaskLogCreateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TaskLogPayload>
-          }
-          createMany: {
-            args: Prisma.TaskLogCreateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          createManyAndReturn: {
-            args: Prisma.TaskLogCreateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TaskLogPayload>[]
-          }
-          delete: {
-            args: Prisma.TaskLogDeleteArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TaskLogPayload>
-          }
-          update: {
-            args: Prisma.TaskLogUpdateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TaskLogPayload>
-          }
-          deleteMany: {
-            args: Prisma.TaskLogDeleteManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateMany: {
-            args: Prisma.TaskLogUpdateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateManyAndReturn: {
-            args: Prisma.TaskLogUpdateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TaskLogPayload>[]
-          }
-          upsert: {
-            args: Prisma.TaskLogUpsertArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TaskLogPayload>
-          }
-          aggregate: {
-            args: Prisma.TaskLogAggregateArgs<ExtArgs>
-            result: $Utils.Optional<AggregateTaskLog>
-          }
-          groupBy: {
-            args: Prisma.TaskLogGroupByArgs<ExtArgs>
-            result: $Utils.Optional<TaskLogGroupByOutputType>[]
-          }
-          count: {
-            args: Prisma.TaskLogCountArgs<ExtArgs>
-            result: $Utils.Optional<TaskLogCountAggregateOutputType> | number
-          }
-        }
-      }
-      PasswordResetToken: {
-        payload: Prisma.$PasswordResetTokenPayload<ExtArgs>
-        fields: Prisma.PasswordResetTokenFieldRefs
-        operations: {
-          findUnique: {
-            args: Prisma.PasswordResetTokenFindUniqueArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload> | null
-          }
-          findUniqueOrThrow: {
-            args: Prisma.PasswordResetTokenFindUniqueOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
-          }
-          findFirst: {
-            args: Prisma.PasswordResetTokenFindFirstArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload> | null
-          }
-          findFirstOrThrow: {
-            args: Prisma.PasswordResetTokenFindFirstOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
-          }
-          findMany: {
-            args: Prisma.PasswordResetTokenFindManyArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>[]
-          }
-          create: {
-            args: Prisma.PasswordResetTokenCreateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
-          }
-          createMany: {
-            args: Prisma.PasswordResetTokenCreateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          createManyAndReturn: {
-            args: Prisma.PasswordResetTokenCreateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>[]
-          }
-          delete: {
-            args: Prisma.PasswordResetTokenDeleteArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
-          }
-          update: {
-            args: Prisma.PasswordResetTokenUpdateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
-          }
-          deleteMany: {
-            args: Prisma.PasswordResetTokenDeleteManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateMany: {
-            args: Prisma.PasswordResetTokenUpdateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateManyAndReturn: {
-            args: Prisma.PasswordResetTokenUpdateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>[]
-          }
-          upsert: {
-            args: Prisma.PasswordResetTokenUpsertArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
-          }
-          aggregate: {
-            args: Prisma.PasswordResetTokenAggregateArgs<ExtArgs>
-            result: $Utils.Optional<AggregatePasswordResetToken>
-          }
-          groupBy: {
-            args: Prisma.PasswordResetTokenGroupByArgs<ExtArgs>
-            result: $Utils.Optional<PasswordResetTokenGroupByOutputType>[]
-          }
-          count: {
-            args: Prisma.PasswordResetTokenCountArgs<ExtArgs>
-            result: $Utils.Optional<PasswordResetTokenCountAggregateOutputType> | number
+            args: Prisma.ChallengeCountArgs<ExtArgs>
+            result: $Utils.Optional<ChallengeCountAggregateOutputType> | number
           }
         }
       }
@@ -1458,13 +1249,11 @@ export namespace Prisma {
   }
   export type GlobalOmitConfig = {
     user?: UserOmit
-    event?: EventOmit
+    passwordResetToken?: PasswordResetTokenOmit
     playerProfile?: PlayerProfileOmit
     coachPlayerLink?: CoachPlayerLinkOmit
     taskTemplate?: TaskTemplateOmit
-    calendarEvent?: CalendarEventOmit
-    taskLog?: TaskLogOmit
-    passwordResetToken?: PasswordResetTokenOmit
+    challenge?: ChallengeOmit
   }
 
   /* Types for Logging */
@@ -1545,11 +1334,11 @@ export namespace Prisma {
    */
 
   export type UserCountOutputType = {
-    coachPlayerLink: number
+    coachPlayerLinks: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    coachPlayerLink?: boolean | UserCountOutputTypeCountCoachPlayerLinkArgs
+    coachPlayerLinks?: boolean | UserCountOutputTypeCountCoachPlayerLinksArgs
   }
 
   // Custom InputTypes
@@ -1566,7 +1355,7 @@ export namespace Prisma {
   /**
    * UserCountOutputType without action
    */
-  export type UserCountOutputTypeCountCoachPlayerLinkArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserCountOutputTypeCountCoachPlayerLinksArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: CoachPlayerLinkWhereInput
   }
 
@@ -1588,10 +1377,11 @@ export namespace Prisma {
   export type UserMinAggregateOutputType = {
     id: string | null
     email: string | null
-    password: string | null
     passwordHash: string | null
     firstName: string | null
     lastName: string | null
+    profileImage: string | null
+    name: string | null
     role: $Enums.Role | null
     lastLogin: Date | null
     createdAt: Date | null
@@ -1601,10 +1391,11 @@ export namespace Prisma {
   export type UserMaxAggregateOutputType = {
     id: string | null
     email: string | null
-    password: string | null
     passwordHash: string | null
     firstName: string | null
     lastName: string | null
+    profileImage: string | null
+    name: string | null
     role: $Enums.Role | null
     lastLogin: Date | null
     createdAt: Date | null
@@ -1614,10 +1405,11 @@ export namespace Prisma {
   export type UserCountAggregateOutputType = {
     id: number
     email: number
-    password: number
     passwordHash: number
     firstName: number
     lastName: number
+    profileImage: number
+    name: number
     role: number
     lastLogin: number
     createdAt: number
@@ -1629,10 +1421,11 @@ export namespace Prisma {
   export type UserMinAggregateInputType = {
     id?: true
     email?: true
-    password?: true
     passwordHash?: true
     firstName?: true
     lastName?: true
+    profileImage?: true
+    name?: true
     role?: true
     lastLogin?: true
     createdAt?: true
@@ -1642,10 +1435,11 @@ export namespace Prisma {
   export type UserMaxAggregateInputType = {
     id?: true
     email?: true
-    password?: true
     passwordHash?: true
     firstName?: true
     lastName?: true
+    profileImage?: true
+    name?: true
     role?: true
     lastLogin?: true
     createdAt?: true
@@ -1655,10 +1449,11 @@ export namespace Prisma {
   export type UserCountAggregateInputType = {
     id?: true
     email?: true
-    password?: true
     passwordHash?: true
     firstName?: true
     lastName?: true
+    profileImage?: true
+    name?: true
     role?: true
     lastLogin?: true
     createdAt?: true
@@ -1741,10 +1536,11 @@ export namespace Prisma {
   export type UserGroupByOutputType = {
     id: string
     email: string
-    password: string
-    passwordHash: string | null
-    firstName: string
-    lastName: string
+    passwordHash: string
+    firstName: string | null
+    lastName: string | null
+    profileImage: string | null
+    name: string | null
     role: $Enums.Role
     lastLogin: Date | null
     createdAt: Date
@@ -1771,26 +1567,28 @@ export namespace Prisma {
   export type UserSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     email?: boolean
-    password?: boolean
     passwordHash?: boolean
     firstName?: boolean
     lastName?: boolean
+    profileImage?: boolean
+    name?: boolean
     role?: boolean
     lastLogin?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     playerProfile?: boolean | User$playerProfileArgs<ExtArgs>
-    coachPlayerLink?: boolean | User$coachPlayerLinkArgs<ExtArgs>
+    coachPlayerLinks?: boolean | User$coachPlayerLinksArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     email?: boolean
-    password?: boolean
     passwordHash?: boolean
     firstName?: boolean
     lastName?: boolean
+    profileImage?: boolean
+    name?: boolean
     role?: boolean
     lastLogin?: boolean
     createdAt?: boolean
@@ -1800,10 +1598,11 @@ export namespace Prisma {
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     email?: boolean
-    password?: boolean
     passwordHash?: boolean
     firstName?: boolean
     lastName?: boolean
+    profileImage?: boolean
+    name?: boolean
     role?: boolean
     lastLogin?: boolean
     createdAt?: boolean
@@ -1813,20 +1612,21 @@ export namespace Prisma {
   export type UserSelectScalar = {
     id?: boolean
     email?: boolean
-    password?: boolean
     passwordHash?: boolean
     firstName?: boolean
     lastName?: boolean
+    profileImage?: boolean
+    name?: boolean
     role?: boolean
     lastLogin?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "password" | "passwordHash" | "firstName" | "lastName" | "role" | "lastLogin" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "passwordHash" | "firstName" | "lastName" | "profileImage" | "name" | "role" | "lastLogin" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     playerProfile?: boolean | User$playerProfileArgs<ExtArgs>
-    coachPlayerLink?: boolean | User$coachPlayerLinkArgs<ExtArgs>
+    coachPlayerLinks?: boolean | User$coachPlayerLinksArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -1836,15 +1636,16 @@ export namespace Prisma {
     name: "User"
     objects: {
       playerProfile: Prisma.$PlayerProfilePayload<ExtArgs> | null
-      coachPlayerLink: Prisma.$CoachPlayerLinkPayload<ExtArgs>[]
+      coachPlayerLinks: Prisma.$CoachPlayerLinkPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
       email: string
-      password: string
-      passwordHash: string | null
-      firstName: string
-      lastName: string
+      passwordHash: string
+      firstName: string | null
+      lastName: string | null
+      profileImage: string | null
+      name: string | null
       role: $Enums.Role
       lastLogin: Date | null
       createdAt: Date
@@ -2244,7 +2045,7 @@ export namespace Prisma {
   export interface Prisma__UserClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     playerProfile<T extends User$playerProfileArgs<ExtArgs> = {}>(args?: Subset<T, User$playerProfileArgs<ExtArgs>>): Prisma__PlayerProfileClient<$Result.GetResult<Prisma.$PlayerProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-    coachPlayerLink<T extends User$coachPlayerLinkArgs<ExtArgs> = {}>(args?: Subset<T, User$coachPlayerLinkArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CoachPlayerLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    coachPlayerLinks<T extends User$coachPlayerLinksArgs<ExtArgs> = {}>(args?: Subset<T, User$coachPlayerLinksArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CoachPlayerLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2276,10 +2077,11 @@ export namespace Prisma {
   interface UserFieldRefs {
     readonly id: FieldRef<"User", 'String'>
     readonly email: FieldRef<"User", 'String'>
-    readonly password: FieldRef<"User", 'String'>
     readonly passwordHash: FieldRef<"User", 'String'>
     readonly firstName: FieldRef<"User", 'String'>
     readonly lastName: FieldRef<"User", 'String'>
+    readonly profileImage: FieldRef<"User", 'String'>
+    readonly name: FieldRef<"User", 'String'>
     readonly role: FieldRef<"User", 'Role'>
     readonly lastLogin: FieldRef<"User", 'DateTime'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
@@ -2691,9 +2493,9 @@ export namespace Prisma {
   }
 
   /**
-   * User.coachPlayerLink
+   * User.coachPlayerLinks
    */
-  export type User$coachPlayerLinkArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type User$coachPlayerLinksArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
      * Select specific fields to fetch from the CoachPlayerLink
      */
@@ -2734,348 +2536,336 @@ export namespace Prisma {
 
 
   /**
-   * Model Event
+   * Model PasswordResetToken
    */
 
-  export type AggregateEvent = {
-    _count: EventCountAggregateOutputType | null
-    _min: EventMinAggregateOutputType | null
-    _max: EventMaxAggregateOutputType | null
+  export type AggregatePasswordResetToken = {
+    _count: PasswordResetTokenCountAggregateOutputType | null
+    _min: PasswordResetTokenMinAggregateOutputType | null
+    _max: PasswordResetTokenMaxAggregateOutputType | null
   }
 
-  export type EventMinAggregateOutputType = {
+  export type PasswordResetTokenMinAggregateOutputType = {
     id: string | null
-    title: string | null
-    status: $Enums.EventStatus | null
-    format: $Enums.EventFormat | null
+    email: string | null
+    token: string | null
+    expiresAt: Date | null
     createdAt: Date | null
-    updatedAt: Date | null
   }
 
-  export type EventMaxAggregateOutputType = {
+  export type PasswordResetTokenMaxAggregateOutputType = {
     id: string | null
-    title: string | null
-    status: $Enums.EventStatus | null
-    format: $Enums.EventFormat | null
+    email: string | null
+    token: string | null
+    expiresAt: Date | null
     createdAt: Date | null
-    updatedAt: Date | null
   }
 
-  export type EventCountAggregateOutputType = {
+  export type PasswordResetTokenCountAggregateOutputType = {
     id: number
-    title: number
-    status: number
-    format: number
+    email: number
+    token: number
+    expiresAt: number
     createdAt: number
-    updatedAt: number
     _all: number
   }
 
 
-  export type EventMinAggregateInputType = {
+  export type PasswordResetTokenMinAggregateInputType = {
     id?: true
-    title?: true
-    status?: true
-    format?: true
+    email?: true
+    token?: true
+    expiresAt?: true
     createdAt?: true
-    updatedAt?: true
   }
 
-  export type EventMaxAggregateInputType = {
+  export type PasswordResetTokenMaxAggregateInputType = {
     id?: true
-    title?: true
-    status?: true
-    format?: true
+    email?: true
+    token?: true
+    expiresAt?: true
     createdAt?: true
-    updatedAt?: true
   }
 
-  export type EventCountAggregateInputType = {
+  export type PasswordResetTokenCountAggregateInputType = {
     id?: true
-    title?: true
-    status?: true
-    format?: true
+    email?: true
+    token?: true
+    expiresAt?: true
     createdAt?: true
-    updatedAt?: true
     _all?: true
   }
 
-  export type EventAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PasswordResetTokenAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Filter which Event to aggregate.
+     * Filter which PasswordResetToken to aggregate.
      */
-    where?: EventWhereInput
+    where?: PasswordResetTokenWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of Events to fetch.
+     * Determine the order of PasswordResetTokens to fetch.
      */
-    orderBy?: EventOrderByWithRelationInput | EventOrderByWithRelationInput[]
+    orderBy?: PasswordResetTokenOrderByWithRelationInput | PasswordResetTokenOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
      * Sets the start position
      */
-    cursor?: EventWhereUniqueInput
+    cursor?: PasswordResetTokenWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` Events from the position of the cursor.
+     * Take `±n` PasswordResetTokens from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` Events.
+     * Skip the first `n` PasswordResetTokens.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
-     * Count returned Events
+     * Count returned PasswordResetTokens
     **/
-    _count?: true | EventCountAggregateInputType
+    _count?: true | PasswordResetTokenCountAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
      * Select which fields to find the minimum value
     **/
-    _min?: EventMinAggregateInputType
+    _min?: PasswordResetTokenMinAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
      * Select which fields to find the maximum value
     **/
-    _max?: EventMaxAggregateInputType
+    _max?: PasswordResetTokenMaxAggregateInputType
   }
 
-  export type GetEventAggregateType<T extends EventAggregateArgs> = {
-        [P in keyof T & keyof AggregateEvent]: P extends '_count' | 'count'
+  export type GetPasswordResetTokenAggregateType<T extends PasswordResetTokenAggregateArgs> = {
+        [P in keyof T & keyof AggregatePasswordResetToken]: P extends '_count' | 'count'
       ? T[P] extends true
         ? number
-        : GetScalarType<T[P], AggregateEvent[P]>
-      : GetScalarType<T[P], AggregateEvent[P]>
+        : GetScalarType<T[P], AggregatePasswordResetToken[P]>
+      : GetScalarType<T[P], AggregatePasswordResetToken[P]>
   }
 
 
 
 
-  export type EventGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: EventWhereInput
-    orderBy?: EventOrderByWithAggregationInput | EventOrderByWithAggregationInput[]
-    by: EventScalarFieldEnum[] | EventScalarFieldEnum
-    having?: EventScalarWhereWithAggregatesInput
+  export type PasswordResetTokenGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PasswordResetTokenWhereInput
+    orderBy?: PasswordResetTokenOrderByWithAggregationInput | PasswordResetTokenOrderByWithAggregationInput[]
+    by: PasswordResetTokenScalarFieldEnum[] | PasswordResetTokenScalarFieldEnum
+    having?: PasswordResetTokenScalarWhereWithAggregatesInput
     take?: number
     skip?: number
-    _count?: EventCountAggregateInputType | true
-    _min?: EventMinAggregateInputType
-    _max?: EventMaxAggregateInputType
+    _count?: PasswordResetTokenCountAggregateInputType | true
+    _min?: PasswordResetTokenMinAggregateInputType
+    _max?: PasswordResetTokenMaxAggregateInputType
   }
 
-  export type EventGroupByOutputType = {
+  export type PasswordResetTokenGroupByOutputType = {
     id: string
-    title: string
-    status: $Enums.EventStatus
-    format: $Enums.EventFormat
+    email: string
+    token: string
+    expiresAt: Date
     createdAt: Date
-    updatedAt: Date
-    _count: EventCountAggregateOutputType | null
-    _min: EventMinAggregateOutputType | null
-    _max: EventMaxAggregateOutputType | null
+    _count: PasswordResetTokenCountAggregateOutputType | null
+    _min: PasswordResetTokenMinAggregateOutputType | null
+    _max: PasswordResetTokenMaxAggregateOutputType | null
   }
 
-  type GetEventGroupByPayload<T extends EventGroupByArgs> = Prisma.PrismaPromise<
+  type GetPasswordResetTokenGroupByPayload<T extends PasswordResetTokenGroupByArgs> = Prisma.PrismaPromise<
     Array<
-      PickEnumerable<EventGroupByOutputType, T['by']> &
+      PickEnumerable<PasswordResetTokenGroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof EventGroupByOutputType))]: P extends '_count'
+          [P in ((keyof T) & (keyof PasswordResetTokenGroupByOutputType))]: P extends '_count'
             ? T[P] extends boolean
               ? number
-              : GetScalarType<T[P], EventGroupByOutputType[P]>
-            : GetScalarType<T[P], EventGroupByOutputType[P]>
+              : GetScalarType<T[P], PasswordResetTokenGroupByOutputType[P]>
+            : GetScalarType<T[P], PasswordResetTokenGroupByOutputType[P]>
         }
       >
     >
 
 
-  export type EventSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+  export type PasswordResetTokenSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    title?: boolean
-    status?: boolean
-    format?: boolean
+    email?: boolean
+    token?: boolean
+    expiresAt?: boolean
     createdAt?: boolean
-    updatedAt?: boolean
-  }, ExtArgs["result"]["event"]>
+  }, ExtArgs["result"]["passwordResetToken"]>
 
-  export type EventSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+  export type PasswordResetTokenSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    title?: boolean
-    status?: boolean
-    format?: boolean
+    email?: boolean
+    token?: boolean
+    expiresAt?: boolean
     createdAt?: boolean
-    updatedAt?: boolean
-  }, ExtArgs["result"]["event"]>
+  }, ExtArgs["result"]["passwordResetToken"]>
 
-  export type EventSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+  export type PasswordResetTokenSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    title?: boolean
-    status?: boolean
-    format?: boolean
+    email?: boolean
+    token?: boolean
+    expiresAt?: boolean
     createdAt?: boolean
-    updatedAt?: boolean
-  }, ExtArgs["result"]["event"]>
+  }, ExtArgs["result"]["passwordResetToken"]>
 
-  export type EventSelectScalar = {
+  export type PasswordResetTokenSelectScalar = {
     id?: boolean
-    title?: boolean
-    status?: boolean
-    format?: boolean
+    email?: boolean
+    token?: boolean
+    expiresAt?: boolean
     createdAt?: boolean
-    updatedAt?: boolean
   }
 
-  export type EventOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "status" | "format" | "createdAt" | "updatedAt", ExtArgs["result"]["event"]>
+  export type PasswordResetTokenOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "token" | "expiresAt" | "createdAt", ExtArgs["result"]["passwordResetToken"]>
 
-  export type $EventPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "Event"
+  export type $PasswordResetTokenPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PasswordResetToken"
     objects: {}
     scalars: $Extensions.GetPayloadResult<{
       id: string
-      title: string
-      status: $Enums.EventStatus
-      format: $Enums.EventFormat
+      email: string
+      token: string
+      expiresAt: Date
       createdAt: Date
-      updatedAt: Date
-    }, ExtArgs["result"]["event"]>
+    }, ExtArgs["result"]["passwordResetToken"]>
     composites: {}
   }
 
-  type EventGetPayload<S extends boolean | null | undefined | EventDefaultArgs> = $Result.GetResult<Prisma.$EventPayload, S>
+  type PasswordResetTokenGetPayload<S extends boolean | null | undefined | PasswordResetTokenDefaultArgs> = $Result.GetResult<Prisma.$PasswordResetTokenPayload, S>
 
-  type EventCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<EventFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: EventCountAggregateInputType | true
+  type PasswordResetTokenCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PasswordResetTokenFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PasswordResetTokenCountAggregateInputType | true
     }
 
-  export interface EventDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Event'], meta: { name: 'Event' } }
+  export interface PasswordResetTokenDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PasswordResetToken'], meta: { name: 'PasswordResetToken' } }
     /**
-     * Find zero or one Event that matches the filter.
-     * @param {EventFindUniqueArgs} args - Arguments to find a Event
+     * Find zero or one PasswordResetToken that matches the filter.
+     * @param {PasswordResetTokenFindUniqueArgs} args - Arguments to find a PasswordResetToken
      * @example
-     * // Get one Event
-     * const event = await prisma.event.findUnique({
+     * // Get one PasswordResetToken
+     * const passwordResetToken = await prisma.passwordResetToken.findUnique({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findUnique<T extends EventFindUniqueArgs>(args: SelectSubset<T, EventFindUniqueArgs<ExtArgs>>): Prisma__EventClient<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findUnique<T extends PasswordResetTokenFindUniqueArgs>(args: SelectSubset<T, PasswordResetTokenFindUniqueArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find one Event that matches the filter or throw an error with `error.code='P2025'`
+     * Find one PasswordResetToken that matches the filter or throw an error with `error.code='P2025'`
      * if no matches were found.
-     * @param {EventFindUniqueOrThrowArgs} args - Arguments to find a Event
+     * @param {PasswordResetTokenFindUniqueOrThrowArgs} args - Arguments to find a PasswordResetToken
      * @example
-     * // Get one Event
-     * const event = await prisma.event.findUniqueOrThrow({
+     * // Get one PasswordResetToken
+     * const passwordResetToken = await prisma.passwordResetToken.findUniqueOrThrow({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findUniqueOrThrow<T extends EventFindUniqueOrThrowArgs>(args: SelectSubset<T, EventFindUniqueOrThrowArgs<ExtArgs>>): Prisma__EventClient<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findUniqueOrThrow<T extends PasswordResetTokenFindUniqueOrThrowArgs>(args: SelectSubset<T, PasswordResetTokenFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find the first Event that matches the filter.
+     * Find the first PasswordResetToken that matches the filter.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {EventFindFirstArgs} args - Arguments to find a Event
+     * @param {PasswordResetTokenFindFirstArgs} args - Arguments to find a PasswordResetToken
      * @example
-     * // Get one Event
-     * const event = await prisma.event.findFirst({
+     * // Get one PasswordResetToken
+     * const passwordResetToken = await prisma.passwordResetToken.findFirst({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findFirst<T extends EventFindFirstArgs>(args?: SelectSubset<T, EventFindFirstArgs<ExtArgs>>): Prisma__EventClient<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findFirst<T extends PasswordResetTokenFindFirstArgs>(args?: SelectSubset<T, PasswordResetTokenFindFirstArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find the first Event that matches the filter or
+     * Find the first PasswordResetToken that matches the filter or
      * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {EventFindFirstOrThrowArgs} args - Arguments to find a Event
+     * @param {PasswordResetTokenFindFirstOrThrowArgs} args - Arguments to find a PasswordResetToken
      * @example
-     * // Get one Event
-     * const event = await prisma.event.findFirstOrThrow({
+     * // Get one PasswordResetToken
+     * const passwordResetToken = await prisma.passwordResetToken.findFirstOrThrow({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findFirstOrThrow<T extends EventFindFirstOrThrowArgs>(args?: SelectSubset<T, EventFindFirstOrThrowArgs<ExtArgs>>): Prisma__EventClient<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findFirstOrThrow<T extends PasswordResetTokenFindFirstOrThrowArgs>(args?: SelectSubset<T, PasswordResetTokenFindFirstOrThrowArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find zero or more Events that matches the filter.
+     * Find zero or more PasswordResetTokens that matches the filter.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {EventFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @param {PasswordResetTokenFindManyArgs} args - Arguments to filter and select certain fields only.
      * @example
-     * // Get all Events
-     * const events = await prisma.event.findMany()
+     * // Get all PasswordResetTokens
+     * const passwordResetTokens = await prisma.passwordResetToken.findMany()
      * 
-     * // Get first 10 Events
-     * const events = await prisma.event.findMany({ take: 10 })
+     * // Get first 10 PasswordResetTokens
+     * const passwordResetTokens = await prisma.passwordResetToken.findMany({ take: 10 })
      * 
      * // Only select the `id`
-     * const eventWithIdOnly = await prisma.event.findMany({ select: { id: true } })
+     * const passwordResetTokenWithIdOnly = await prisma.passwordResetToken.findMany({ select: { id: true } })
      * 
      */
-    findMany<T extends EventFindManyArgs>(args?: SelectSubset<T, EventFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+    findMany<T extends PasswordResetTokenFindManyArgs>(args?: SelectSubset<T, PasswordResetTokenFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
 
     /**
-     * Create a Event.
-     * @param {EventCreateArgs} args - Arguments to create a Event.
+     * Create a PasswordResetToken.
+     * @param {PasswordResetTokenCreateArgs} args - Arguments to create a PasswordResetToken.
      * @example
-     * // Create one Event
-     * const Event = await prisma.event.create({
+     * // Create one PasswordResetToken
+     * const PasswordResetToken = await prisma.passwordResetToken.create({
      *   data: {
-     *     // ... data to create a Event
+     *     // ... data to create a PasswordResetToken
      *   }
      * })
      * 
      */
-    create<T extends EventCreateArgs>(args: SelectSubset<T, EventCreateArgs<ExtArgs>>): Prisma__EventClient<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    create<T extends PasswordResetTokenCreateArgs>(args: SelectSubset<T, PasswordResetTokenCreateArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Create many Events.
-     * @param {EventCreateManyArgs} args - Arguments to create many Events.
+     * Create many PasswordResetTokens.
+     * @param {PasswordResetTokenCreateManyArgs} args - Arguments to create many PasswordResetTokens.
      * @example
-     * // Create many Events
-     * const event = await prisma.event.createMany({
+     * // Create many PasswordResetTokens
+     * const passwordResetToken = await prisma.passwordResetToken.createMany({
      *   data: [
      *     // ... provide data here
      *   ]
      * })
      *     
      */
-    createMany<T extends EventCreateManyArgs>(args?: SelectSubset<T, EventCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    createMany<T extends PasswordResetTokenCreateManyArgs>(args?: SelectSubset<T, PasswordResetTokenCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
 
     /**
-     * Create many Events and returns the data saved in the database.
-     * @param {EventCreateManyAndReturnArgs} args - Arguments to create many Events.
+     * Create many PasswordResetTokens and returns the data saved in the database.
+     * @param {PasswordResetTokenCreateManyAndReturnArgs} args - Arguments to create many PasswordResetTokens.
      * @example
-     * // Create many Events
-     * const event = await prisma.event.createManyAndReturn({
+     * // Create many PasswordResetTokens
+     * const passwordResetToken = await prisma.passwordResetToken.createManyAndReturn({
      *   data: [
      *     // ... provide data here
      *   ]
      * })
      * 
-     * // Create many Events and only return the `id`
-     * const eventWithIdOnly = await prisma.event.createManyAndReturn({
+     * // Create many PasswordResetTokens and only return the `id`
+     * const passwordResetTokenWithIdOnly = await prisma.passwordResetToken.createManyAndReturn({
      *   select: { id: true },
      *   data: [
      *     // ... provide data here
@@ -3085,28 +2875,28 @@ export namespace Prisma {
      * Read more here: https://pris.ly/d/null-undefined
      * 
      */
-    createManyAndReturn<T extends EventCreateManyAndReturnArgs>(args?: SelectSubset<T, EventCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+    createManyAndReturn<T extends PasswordResetTokenCreateManyAndReturnArgs>(args?: SelectSubset<T, PasswordResetTokenCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
 
     /**
-     * Delete a Event.
-     * @param {EventDeleteArgs} args - Arguments to delete one Event.
+     * Delete a PasswordResetToken.
+     * @param {PasswordResetTokenDeleteArgs} args - Arguments to delete one PasswordResetToken.
      * @example
-     * // Delete one Event
-     * const Event = await prisma.event.delete({
+     * // Delete one PasswordResetToken
+     * const PasswordResetToken = await prisma.passwordResetToken.delete({
      *   where: {
-     *     // ... filter to delete one Event
+     *     // ... filter to delete one PasswordResetToken
      *   }
      * })
      * 
      */
-    delete<T extends EventDeleteArgs>(args: SelectSubset<T, EventDeleteArgs<ExtArgs>>): Prisma__EventClient<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    delete<T extends PasswordResetTokenDeleteArgs>(args: SelectSubset<T, PasswordResetTokenDeleteArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Update one Event.
-     * @param {EventUpdateArgs} args - Arguments to update one Event.
+     * Update one PasswordResetToken.
+     * @param {PasswordResetTokenUpdateArgs} args - Arguments to update one PasswordResetToken.
      * @example
-     * // Update one Event
-     * const event = await prisma.event.update({
+     * // Update one PasswordResetToken
+     * const passwordResetToken = await prisma.passwordResetToken.update({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -3116,30 +2906,30 @@ export namespace Prisma {
      * })
      * 
      */
-    update<T extends EventUpdateArgs>(args: SelectSubset<T, EventUpdateArgs<ExtArgs>>): Prisma__EventClient<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    update<T extends PasswordResetTokenUpdateArgs>(args: SelectSubset<T, PasswordResetTokenUpdateArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Delete zero or more Events.
-     * @param {EventDeleteManyArgs} args - Arguments to filter Events to delete.
+     * Delete zero or more PasswordResetTokens.
+     * @param {PasswordResetTokenDeleteManyArgs} args - Arguments to filter PasswordResetTokens to delete.
      * @example
-     * // Delete a few Events
-     * const { count } = await prisma.event.deleteMany({
+     * // Delete a few PasswordResetTokens
+     * const { count } = await prisma.passwordResetToken.deleteMany({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      * 
      */
-    deleteMany<T extends EventDeleteManyArgs>(args?: SelectSubset<T, EventDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    deleteMany<T extends PasswordResetTokenDeleteManyArgs>(args?: SelectSubset<T, PasswordResetTokenDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
 
     /**
-     * Update zero or more Events.
+     * Update zero or more PasswordResetTokens.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {EventUpdateManyArgs} args - Arguments to update one or more rows.
+     * @param {PasswordResetTokenUpdateManyArgs} args - Arguments to update one or more rows.
      * @example
-     * // Update many Events
-     * const event = await prisma.event.updateMany({
+     * // Update many PasswordResetTokens
+     * const passwordResetToken = await prisma.passwordResetToken.updateMany({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -3149,14 +2939,14 @@ export namespace Prisma {
      * })
      * 
      */
-    updateMany<T extends EventUpdateManyArgs>(args: SelectSubset<T, EventUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    updateMany<T extends PasswordResetTokenUpdateManyArgs>(args: SelectSubset<T, PasswordResetTokenUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
 
     /**
-     * Update zero or more Events and returns the data updated in the database.
-     * @param {EventUpdateManyAndReturnArgs} args - Arguments to update many Events.
+     * Update zero or more PasswordResetTokens and returns the data updated in the database.
+     * @param {PasswordResetTokenUpdateManyAndReturnArgs} args - Arguments to update many PasswordResetTokens.
      * @example
-     * // Update many Events
-     * const event = await prisma.event.updateManyAndReturn({
+     * // Update many PasswordResetTokens
+     * const passwordResetToken = await prisma.passwordResetToken.updateManyAndReturn({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -3165,8 +2955,8 @@ export namespace Prisma {
      *   ]
      * })
      * 
-     * // Update zero or more Events and only return the `id`
-     * const eventWithIdOnly = await prisma.event.updateManyAndReturn({
+     * // Update zero or more PasswordResetTokens and only return the `id`
+     * const passwordResetTokenWithIdOnly = await prisma.passwordResetToken.updateManyAndReturn({
      *   select: { id: true },
      *   where: {
      *     // ... provide filter here
@@ -3179,56 +2969,56 @@ export namespace Prisma {
      * Read more here: https://pris.ly/d/null-undefined
      * 
      */
-    updateManyAndReturn<T extends EventUpdateManyAndReturnArgs>(args: SelectSubset<T, EventUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+    updateManyAndReturn<T extends PasswordResetTokenUpdateManyAndReturnArgs>(args: SelectSubset<T, PasswordResetTokenUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
 
     /**
-     * Create or update one Event.
-     * @param {EventUpsertArgs} args - Arguments to update or create a Event.
+     * Create or update one PasswordResetToken.
+     * @param {PasswordResetTokenUpsertArgs} args - Arguments to update or create a PasswordResetToken.
      * @example
-     * // Update or create a Event
-     * const event = await prisma.event.upsert({
+     * // Update or create a PasswordResetToken
+     * const passwordResetToken = await prisma.passwordResetToken.upsert({
      *   create: {
-     *     // ... data to create a Event
+     *     // ... data to create a PasswordResetToken
      *   },
      *   update: {
      *     // ... in case it already exists, update
      *   },
      *   where: {
-     *     // ... the filter for the Event we want to update
+     *     // ... the filter for the PasswordResetToken we want to update
      *   }
      * })
      */
-    upsert<T extends EventUpsertArgs>(args: SelectSubset<T, EventUpsertArgs<ExtArgs>>): Prisma__EventClient<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    upsert<T extends PasswordResetTokenUpsertArgs>(args: SelectSubset<T, PasswordResetTokenUpsertArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
 
     /**
-     * Count the number of Events.
+     * Count the number of PasswordResetTokens.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {EventCountArgs} args - Arguments to filter Events to count.
+     * @param {PasswordResetTokenCountArgs} args - Arguments to filter PasswordResetTokens to count.
      * @example
-     * // Count the number of Events
-     * const count = await prisma.event.count({
+     * // Count the number of PasswordResetTokens
+     * const count = await prisma.passwordResetToken.count({
      *   where: {
-     *     // ... the filter for the Events we want to count
+     *     // ... the filter for the PasswordResetTokens we want to count
      *   }
      * })
     **/
-    count<T extends EventCountArgs>(
-      args?: Subset<T, EventCountArgs>,
+    count<T extends PasswordResetTokenCountArgs>(
+      args?: Subset<T, PasswordResetTokenCountArgs>,
     ): Prisma.PrismaPromise<
       T extends $Utils.Record<'select', any>
         ? T['select'] extends true
           ? number
-          : GetScalarType<T['select'], EventCountAggregateOutputType>
+          : GetScalarType<T['select'], PasswordResetTokenCountAggregateOutputType>
         : number
     >
 
     /**
-     * Allows you to perform aggregations operations on a Event.
+     * Allows you to perform aggregations operations on a PasswordResetToken.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {EventAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @param {PasswordResetTokenAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
      * @example
      * // Ordered by age ascending
      * // Where email contains prisma.io
@@ -3248,13 +3038,13 @@ export namespace Prisma {
      *   take: 10,
      * })
     **/
-    aggregate<T extends EventAggregateArgs>(args: Subset<T, EventAggregateArgs>): Prisma.PrismaPromise<GetEventAggregateType<T>>
+    aggregate<T extends PasswordResetTokenAggregateArgs>(args: Subset<T, PasswordResetTokenAggregateArgs>): Prisma.PrismaPromise<GetPasswordResetTokenAggregateType<T>>
 
     /**
-     * Group by Event.
+     * Group by PasswordResetToken.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {EventGroupByArgs} args - Group by arguments.
+     * @param {PasswordResetTokenGroupByArgs} args - Group by arguments.
      * @example
      * // Group by city, order by createdAt, get count
      * const result = await prisma.user.groupBy({
@@ -3269,14 +3059,14 @@ export namespace Prisma {
      * 
     **/
     groupBy<
-      T extends EventGroupByArgs,
+      T extends PasswordResetTokenGroupByArgs,
       HasSelectOrTake extends Or<
         Extends<'skip', Keys<T>>,
         Extends<'take', Keys<T>>
       >,
       OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: EventGroupByArgs['orderBy'] }
-        : { orderBy?: EventGroupByArgs['orderBy'] },
+        ? { orderBy: PasswordResetTokenGroupByArgs['orderBy'] }
+        : { orderBy?: PasswordResetTokenGroupByArgs['orderBy'] },
       OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
       ByFields extends MaybeTupleToUnion<T['by']>,
       ByValid extends Has<ByFields, OrderFields>,
@@ -3325,20 +3115,20 @@ export namespace Prisma {
             ? never
             : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
         }[OrderFields]
-    >(args: SubsetIntersection<T, EventGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetEventGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+    >(args: SubsetIntersection<T, PasswordResetTokenGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPasswordResetTokenGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
   /**
-   * Fields of the Event model
+   * Fields of the PasswordResetToken model
    */
-  readonly fields: EventFieldRefs;
+  readonly fields: PasswordResetTokenFieldRefs;
   }
 
   /**
-   * The delegate class that acts as a "Promise-like" for Event.
+   * The delegate class that acts as a "Promise-like" for PasswordResetToken.
    * Why is this prefixed with `Prisma__`?
    * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
-  export interface Prisma__EventClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+  export interface Prisma__PasswordResetTokenClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -3366,378 +3156,377 @@ export namespace Prisma {
 
 
   /**
-   * Fields of the Event model
+   * Fields of the PasswordResetToken model
    */
-  interface EventFieldRefs {
-    readonly id: FieldRef<"Event", 'String'>
-    readonly title: FieldRef<"Event", 'String'>
-    readonly status: FieldRef<"Event", 'EventStatus'>
-    readonly format: FieldRef<"Event", 'EventFormat'>
-    readonly createdAt: FieldRef<"Event", 'DateTime'>
-    readonly updatedAt: FieldRef<"Event", 'DateTime'>
+  interface PasswordResetTokenFieldRefs {
+    readonly id: FieldRef<"PasswordResetToken", 'String'>
+    readonly email: FieldRef<"PasswordResetToken", 'String'>
+    readonly token: FieldRef<"PasswordResetToken", 'String'>
+    readonly expiresAt: FieldRef<"PasswordResetToken", 'DateTime'>
+    readonly createdAt: FieldRef<"PasswordResetToken", 'DateTime'>
   }
     
 
   // Custom InputTypes
   /**
-   * Event findUnique
+   * PasswordResetToken findUnique
    */
-  export type EventFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PasswordResetTokenFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Event
+     * Select specific fields to fetch from the PasswordResetToken
      */
-    select?: EventSelect<ExtArgs> | null
+    select?: PasswordResetTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Event
+     * Omit specific fields from the PasswordResetToken
      */
-    omit?: EventOmit<ExtArgs> | null
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
     /**
-     * Filter, which Event to fetch.
+     * Filter, which PasswordResetToken to fetch.
      */
-    where: EventWhereUniqueInput
+    where: PasswordResetTokenWhereUniqueInput
   }
 
   /**
-   * Event findUniqueOrThrow
+   * PasswordResetToken findUniqueOrThrow
    */
-  export type EventFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PasswordResetTokenFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Event
+     * Select specific fields to fetch from the PasswordResetToken
      */
-    select?: EventSelect<ExtArgs> | null
+    select?: PasswordResetTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Event
+     * Omit specific fields from the PasswordResetToken
      */
-    omit?: EventOmit<ExtArgs> | null
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
     /**
-     * Filter, which Event to fetch.
+     * Filter, which PasswordResetToken to fetch.
      */
-    where: EventWhereUniqueInput
+    where: PasswordResetTokenWhereUniqueInput
   }
 
   /**
-   * Event findFirst
+   * PasswordResetToken findFirst
    */
-  export type EventFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PasswordResetTokenFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Event
+     * Select specific fields to fetch from the PasswordResetToken
      */
-    select?: EventSelect<ExtArgs> | null
+    select?: PasswordResetTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Event
+     * Omit specific fields from the PasswordResetToken
      */
-    omit?: EventOmit<ExtArgs> | null
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
     /**
-     * Filter, which Event to fetch.
+     * Filter, which PasswordResetToken to fetch.
      */
-    where?: EventWhereInput
+    where?: PasswordResetTokenWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of Events to fetch.
+     * Determine the order of PasswordResetTokens to fetch.
      */
-    orderBy?: EventOrderByWithRelationInput | EventOrderByWithRelationInput[]
+    orderBy?: PasswordResetTokenOrderByWithRelationInput | PasswordResetTokenOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
-     * Sets the position for searching for Events.
+     * Sets the position for searching for PasswordResetTokens.
      */
-    cursor?: EventWhereUniqueInput
+    cursor?: PasswordResetTokenWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` Events from the position of the cursor.
+     * Take `±n` PasswordResetTokens from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` Events.
+     * Skip the first `n` PasswordResetTokens.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
      * 
-     * Filter by unique combinations of Events.
+     * Filter by unique combinations of PasswordResetTokens.
      */
-    distinct?: EventScalarFieldEnum | EventScalarFieldEnum[]
+    distinct?: PasswordResetTokenScalarFieldEnum | PasswordResetTokenScalarFieldEnum[]
   }
 
   /**
-   * Event findFirstOrThrow
+   * PasswordResetToken findFirstOrThrow
    */
-  export type EventFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PasswordResetTokenFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Event
+     * Select specific fields to fetch from the PasswordResetToken
      */
-    select?: EventSelect<ExtArgs> | null
+    select?: PasswordResetTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Event
+     * Omit specific fields from the PasswordResetToken
      */
-    omit?: EventOmit<ExtArgs> | null
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
     /**
-     * Filter, which Event to fetch.
+     * Filter, which PasswordResetToken to fetch.
      */
-    where?: EventWhereInput
+    where?: PasswordResetTokenWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of Events to fetch.
+     * Determine the order of PasswordResetTokens to fetch.
      */
-    orderBy?: EventOrderByWithRelationInput | EventOrderByWithRelationInput[]
+    orderBy?: PasswordResetTokenOrderByWithRelationInput | PasswordResetTokenOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
-     * Sets the position for searching for Events.
+     * Sets the position for searching for PasswordResetTokens.
      */
-    cursor?: EventWhereUniqueInput
+    cursor?: PasswordResetTokenWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` Events from the position of the cursor.
+     * Take `±n` PasswordResetTokens from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` Events.
+     * Skip the first `n` PasswordResetTokens.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
      * 
-     * Filter by unique combinations of Events.
+     * Filter by unique combinations of PasswordResetTokens.
      */
-    distinct?: EventScalarFieldEnum | EventScalarFieldEnum[]
+    distinct?: PasswordResetTokenScalarFieldEnum | PasswordResetTokenScalarFieldEnum[]
   }
 
   /**
-   * Event findMany
+   * PasswordResetToken findMany
    */
-  export type EventFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PasswordResetTokenFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Event
+     * Select specific fields to fetch from the PasswordResetToken
      */
-    select?: EventSelect<ExtArgs> | null
+    select?: PasswordResetTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Event
+     * Omit specific fields from the PasswordResetToken
      */
-    omit?: EventOmit<ExtArgs> | null
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
     /**
-     * Filter, which Events to fetch.
+     * Filter, which PasswordResetTokens to fetch.
      */
-    where?: EventWhereInput
+    where?: PasswordResetTokenWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of Events to fetch.
+     * Determine the order of PasswordResetTokens to fetch.
      */
-    orderBy?: EventOrderByWithRelationInput | EventOrderByWithRelationInput[]
+    orderBy?: PasswordResetTokenOrderByWithRelationInput | PasswordResetTokenOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
-     * Sets the position for listing Events.
+     * Sets the position for listing PasswordResetTokens.
      */
-    cursor?: EventWhereUniqueInput
+    cursor?: PasswordResetTokenWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` Events from the position of the cursor.
+     * Take `±n` PasswordResetTokens from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` Events.
+     * Skip the first `n` PasswordResetTokens.
      */
     skip?: number
-    distinct?: EventScalarFieldEnum | EventScalarFieldEnum[]
+    distinct?: PasswordResetTokenScalarFieldEnum | PasswordResetTokenScalarFieldEnum[]
   }
 
   /**
-   * Event create
+   * PasswordResetToken create
    */
-  export type EventCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PasswordResetTokenCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Event
+     * Select specific fields to fetch from the PasswordResetToken
      */
-    select?: EventSelect<ExtArgs> | null
+    select?: PasswordResetTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Event
+     * Omit specific fields from the PasswordResetToken
      */
-    omit?: EventOmit<ExtArgs> | null
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
     /**
-     * The data needed to create a Event.
+     * The data needed to create a PasswordResetToken.
      */
-    data: XOR<EventCreateInput, EventUncheckedCreateInput>
+    data: XOR<PasswordResetTokenCreateInput, PasswordResetTokenUncheckedCreateInput>
   }
 
   /**
-   * Event createMany
+   * PasswordResetToken createMany
    */
-  export type EventCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PasswordResetTokenCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * The data used to create many Events.
+     * The data used to create many PasswordResetTokens.
      */
-    data: EventCreateManyInput | EventCreateManyInput[]
+    data: PasswordResetTokenCreateManyInput | PasswordResetTokenCreateManyInput[]
     skipDuplicates?: boolean
   }
 
   /**
-   * Event createManyAndReturn
+   * PasswordResetToken createManyAndReturn
    */
-  export type EventCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PasswordResetTokenCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Event
+     * Select specific fields to fetch from the PasswordResetToken
      */
-    select?: EventSelectCreateManyAndReturn<ExtArgs> | null
+    select?: PasswordResetTokenSelectCreateManyAndReturn<ExtArgs> | null
     /**
-     * Omit specific fields from the Event
+     * Omit specific fields from the PasswordResetToken
      */
-    omit?: EventOmit<ExtArgs> | null
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
     /**
-     * The data used to create many Events.
+     * The data used to create many PasswordResetTokens.
      */
-    data: EventCreateManyInput | EventCreateManyInput[]
+    data: PasswordResetTokenCreateManyInput | PasswordResetTokenCreateManyInput[]
     skipDuplicates?: boolean
   }
 
   /**
-   * Event update
+   * PasswordResetToken update
    */
-  export type EventUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PasswordResetTokenUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Event
+     * Select specific fields to fetch from the PasswordResetToken
      */
-    select?: EventSelect<ExtArgs> | null
+    select?: PasswordResetTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Event
+     * Omit specific fields from the PasswordResetToken
      */
-    omit?: EventOmit<ExtArgs> | null
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
     /**
-     * The data needed to update a Event.
+     * The data needed to update a PasswordResetToken.
      */
-    data: XOR<EventUpdateInput, EventUncheckedUpdateInput>
+    data: XOR<PasswordResetTokenUpdateInput, PasswordResetTokenUncheckedUpdateInput>
     /**
-     * Choose, which Event to update.
+     * Choose, which PasswordResetToken to update.
      */
-    where: EventWhereUniqueInput
+    where: PasswordResetTokenWhereUniqueInput
   }
 
   /**
-   * Event updateMany
+   * PasswordResetToken updateMany
    */
-  export type EventUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PasswordResetTokenUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * The data used to update Events.
+     * The data used to update PasswordResetTokens.
      */
-    data: XOR<EventUpdateManyMutationInput, EventUncheckedUpdateManyInput>
+    data: XOR<PasswordResetTokenUpdateManyMutationInput, PasswordResetTokenUncheckedUpdateManyInput>
     /**
-     * Filter which Events to update
+     * Filter which PasswordResetTokens to update
      */
-    where?: EventWhereInput
+    where?: PasswordResetTokenWhereInput
     /**
-     * Limit how many Events to update.
+     * Limit how many PasswordResetTokens to update.
      */
     limit?: number
   }
 
   /**
-   * Event updateManyAndReturn
+   * PasswordResetToken updateManyAndReturn
    */
-  export type EventUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PasswordResetTokenUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Event
+     * Select specific fields to fetch from the PasswordResetToken
      */
-    select?: EventSelectUpdateManyAndReturn<ExtArgs> | null
+    select?: PasswordResetTokenSelectUpdateManyAndReturn<ExtArgs> | null
     /**
-     * Omit specific fields from the Event
+     * Omit specific fields from the PasswordResetToken
      */
-    omit?: EventOmit<ExtArgs> | null
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
     /**
-     * The data used to update Events.
+     * The data used to update PasswordResetTokens.
      */
-    data: XOR<EventUpdateManyMutationInput, EventUncheckedUpdateManyInput>
+    data: XOR<PasswordResetTokenUpdateManyMutationInput, PasswordResetTokenUncheckedUpdateManyInput>
     /**
-     * Filter which Events to update
+     * Filter which PasswordResetTokens to update
      */
-    where?: EventWhereInput
+    where?: PasswordResetTokenWhereInput
     /**
-     * Limit how many Events to update.
+     * Limit how many PasswordResetTokens to update.
      */
     limit?: number
   }
 
   /**
-   * Event upsert
+   * PasswordResetToken upsert
    */
-  export type EventUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PasswordResetTokenUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Event
+     * Select specific fields to fetch from the PasswordResetToken
      */
-    select?: EventSelect<ExtArgs> | null
+    select?: PasswordResetTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Event
+     * Omit specific fields from the PasswordResetToken
      */
-    omit?: EventOmit<ExtArgs> | null
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
     /**
-     * The filter to search for the Event to update in case it exists.
+     * The filter to search for the PasswordResetToken to update in case it exists.
      */
-    where: EventWhereUniqueInput
+    where: PasswordResetTokenWhereUniqueInput
     /**
-     * In case the Event found by the `where` argument doesn't exist, create a new Event with this data.
+     * In case the PasswordResetToken found by the `where` argument doesn't exist, create a new PasswordResetToken with this data.
      */
-    create: XOR<EventCreateInput, EventUncheckedCreateInput>
+    create: XOR<PasswordResetTokenCreateInput, PasswordResetTokenUncheckedCreateInput>
     /**
-     * In case the Event was found with the provided `where` argument, update it with this data.
+     * In case the PasswordResetToken was found with the provided `where` argument, update it with this data.
      */
-    update: XOR<EventUpdateInput, EventUncheckedUpdateInput>
+    update: XOR<PasswordResetTokenUpdateInput, PasswordResetTokenUncheckedUpdateInput>
   }
 
   /**
-   * Event delete
+   * PasswordResetToken delete
    */
-  export type EventDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PasswordResetTokenDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Event
+     * Select specific fields to fetch from the PasswordResetToken
      */
-    select?: EventSelect<ExtArgs> | null
+    select?: PasswordResetTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Event
+     * Omit specific fields from the PasswordResetToken
      */
-    omit?: EventOmit<ExtArgs> | null
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
     /**
-     * Filter which Event to delete.
+     * Filter which PasswordResetToken to delete.
      */
-    where: EventWhereUniqueInput
+    where: PasswordResetTokenWhereUniqueInput
   }
 
   /**
-   * Event deleteMany
+   * PasswordResetToken deleteMany
    */
-  export type EventDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PasswordResetTokenDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Filter which Events to delete
+     * Filter which PasswordResetTokens to delete
      */
-    where?: EventWhereInput
+    where?: PasswordResetTokenWhereInput
     /**
-     * Limit how many Events to delete.
+     * Limit how many PasswordResetTokens to delete.
      */
     limit?: number
   }
 
   /**
-   * Event without action
+   * PasswordResetToken without action
    */
-  export type EventDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PasswordResetTokenDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Event
+     * Select specific fields to fetch from the PasswordResetToken
      */
-    select?: EventSelect<ExtArgs> | null
+    select?: PasswordResetTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Event
+     * Omit specific fields from the PasswordResetToken
      */
-    omit?: EventOmit<ExtArgs> | null
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
   }
 
 
@@ -3747,13 +3536,25 @@ export namespace Prisma {
 
   export type AggregatePlayerProfile = {
     _count: PlayerProfileCountAggregateOutputType | null
+    _avg: PlayerProfileAvgAggregateOutputType | null
+    _sum: PlayerProfileSumAggregateOutputType | null
     _min: PlayerProfileMinAggregateOutputType | null
     _max: PlayerProfileMaxAggregateOutputType | null
+  }
+
+  export type PlayerProfileAvgAggregateOutputType = {
+    handicap: number | null
+  }
+
+  export type PlayerProfileSumAggregateOutputType = {
+    handicap: number | null
   }
 
   export type PlayerProfileMinAggregateOutputType = {
     id: string | null
     userId: string | null
+    name: string | null
+    handicap: number | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -3761,6 +3562,8 @@ export namespace Prisma {
   export type PlayerProfileMaxAggregateOutputType = {
     id: string | null
     userId: string | null
+    name: string | null
+    handicap: number | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -3768,15 +3571,27 @@ export namespace Prisma {
   export type PlayerProfileCountAggregateOutputType = {
     id: number
     userId: number
+    name: number
+    handicap: number
     createdAt: number
     updatedAt: number
     _all: number
   }
 
 
+  export type PlayerProfileAvgAggregateInputType = {
+    handicap?: true
+  }
+
+  export type PlayerProfileSumAggregateInputType = {
+    handicap?: true
+  }
+
   export type PlayerProfileMinAggregateInputType = {
     id?: true
     userId?: true
+    name?: true
+    handicap?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -3784,6 +3599,8 @@ export namespace Prisma {
   export type PlayerProfileMaxAggregateInputType = {
     id?: true
     userId?: true
+    name?: true
+    handicap?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -3791,6 +3608,8 @@ export namespace Prisma {
   export type PlayerProfileCountAggregateInputType = {
     id?: true
     userId?: true
+    name?: true
+    handicap?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -3834,6 +3653,18 @@ export namespace Prisma {
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
+     * Select which fields to average
+    **/
+    _avg?: PlayerProfileAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PlayerProfileSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
      * Select which fields to find the minimum value
     **/
     _min?: PlayerProfileMinAggregateInputType
@@ -3864,6 +3695,8 @@ export namespace Prisma {
     take?: number
     skip?: number
     _count?: PlayerProfileCountAggregateInputType | true
+    _avg?: PlayerProfileAvgAggregateInputType
+    _sum?: PlayerProfileSumAggregateInputType
     _min?: PlayerProfileMinAggregateInputType
     _max?: PlayerProfileMaxAggregateInputType
   }
@@ -3871,9 +3704,13 @@ export namespace Prisma {
   export type PlayerProfileGroupByOutputType = {
     id: string
     userId: string
+    name: string
+    handicap: number | null
     createdAt: Date
     updatedAt: Date
     _count: PlayerProfileCountAggregateOutputType | null
+    _avg: PlayerProfileAvgAggregateOutputType | null
+    _sum: PlayerProfileSumAggregateOutputType | null
     _min: PlayerProfileMinAggregateOutputType | null
     _max: PlayerProfileMaxAggregateOutputType | null
   }
@@ -3895,6 +3732,8 @@ export namespace Prisma {
   export type PlayerProfileSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     userId?: boolean
+    name?: boolean
+    handicap?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -3903,6 +3742,8 @@ export namespace Prisma {
   export type PlayerProfileSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     userId?: boolean
+    name?: boolean
+    handicap?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -3911,6 +3752,8 @@ export namespace Prisma {
   export type PlayerProfileSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     userId?: boolean
+    name?: boolean
+    handicap?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -3919,11 +3762,13 @@ export namespace Prisma {
   export type PlayerProfileSelectScalar = {
     id?: boolean
     userId?: boolean
+    name?: boolean
+    handicap?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type PlayerProfileOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "createdAt" | "updatedAt", ExtArgs["result"]["playerProfile"]>
+  export type PlayerProfileOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "name" | "handicap" | "createdAt" | "updatedAt", ExtArgs["result"]["playerProfile"]>
   export type PlayerProfileInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
   }
@@ -3942,6 +3787,8 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: string
       userId: string
+      name: string
+      handicap: number | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["playerProfile"]>
@@ -4370,6 +4217,8 @@ export namespace Prisma {
   interface PlayerProfileFieldRefs {
     readonly id: FieldRef<"PlayerProfile", 'String'>
     readonly userId: FieldRef<"PlayerProfile", 'String'>
+    readonly name: FieldRef<"PlayerProfile", 'String'>
+    readonly handicap: FieldRef<"PlayerProfile", 'Float'>
     readonly createdAt: FieldRef<"PlayerProfile", 'DateTime'>
     readonly updatedAt: FieldRef<"PlayerProfile", 'DateTime'>
   }
@@ -4801,7 +4650,6 @@ export namespace Prisma {
     coachId: string | null
     playerId: string | null
     createdAt: Date | null
-    updatedAt: Date | null
   }
 
   export type CoachPlayerLinkMaxAggregateOutputType = {
@@ -4809,7 +4657,6 @@ export namespace Prisma {
     coachId: string | null
     playerId: string | null
     createdAt: Date | null
-    updatedAt: Date | null
   }
 
   export type CoachPlayerLinkCountAggregateOutputType = {
@@ -4817,7 +4664,6 @@ export namespace Prisma {
     coachId: number
     playerId: number
     createdAt: number
-    updatedAt: number
     _all: number
   }
 
@@ -4827,7 +4673,6 @@ export namespace Prisma {
     coachId?: true
     playerId?: true
     createdAt?: true
-    updatedAt?: true
   }
 
   export type CoachPlayerLinkMaxAggregateInputType = {
@@ -4835,7 +4680,6 @@ export namespace Prisma {
     coachId?: true
     playerId?: true
     createdAt?: true
-    updatedAt?: true
   }
 
   export type CoachPlayerLinkCountAggregateInputType = {
@@ -4843,7 +4687,6 @@ export namespace Prisma {
     coachId?: true
     playerId?: true
     createdAt?: true
-    updatedAt?: true
     _all?: true
   }
 
@@ -4924,7 +4767,6 @@ export namespace Prisma {
     coachId: string
     playerId: string
     createdAt: Date
-    updatedAt: Date
     _count: CoachPlayerLinkCountAggregateOutputType | null
     _min: CoachPlayerLinkMinAggregateOutputType | null
     _max: CoachPlayerLinkMaxAggregateOutputType | null
@@ -4949,7 +4791,6 @@ export namespace Prisma {
     coachId?: boolean
     playerId?: boolean
     createdAt?: boolean
-    updatedAt?: boolean
     coach?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["coachPlayerLink"]>
 
@@ -4958,7 +4799,6 @@ export namespace Prisma {
     coachId?: boolean
     playerId?: boolean
     createdAt?: boolean
-    updatedAt?: boolean
     coach?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["coachPlayerLink"]>
 
@@ -4967,7 +4807,6 @@ export namespace Prisma {
     coachId?: boolean
     playerId?: boolean
     createdAt?: boolean
-    updatedAt?: boolean
     coach?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["coachPlayerLink"]>
 
@@ -4976,10 +4815,9 @@ export namespace Prisma {
     coachId?: boolean
     playerId?: boolean
     createdAt?: boolean
-    updatedAt?: boolean
   }
 
-  export type CoachPlayerLinkOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "coachId" | "playerId" | "createdAt" | "updatedAt", ExtArgs["result"]["coachPlayerLink"]>
+  export type CoachPlayerLinkOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "coachId" | "playerId" | "createdAt", ExtArgs["result"]["coachPlayerLink"]>
   export type CoachPlayerLinkInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     coach?: boolean | UserDefaultArgs<ExtArgs>
   }
@@ -5000,7 +4838,6 @@ export namespace Prisma {
       coachId: string
       playerId: string
       createdAt: Date
-      updatedAt: Date
     }, ExtArgs["result"]["coachPlayerLink"]>
     composites: {}
   }
@@ -5429,7 +5266,6 @@ export namespace Prisma {
     readonly coachId: FieldRef<"CoachPlayerLink", 'String'>
     readonly playerId: FieldRef<"CoachPlayerLink", 'String'>
     readonly createdAt: FieldRef<"CoachPlayerLink", 'DateTime'>
-    readonly updatedAt: FieldRef<"CoachPlayerLink", 'DateTime'>
   }
     
 
@@ -5857,6 +5693,7 @@ export namespace Prisma {
   export type TaskTemplateMinAggregateOutputType = {
     id: string | null
     title: string | null
+    content: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -5864,6 +5701,7 @@ export namespace Prisma {
   export type TaskTemplateMaxAggregateOutputType = {
     id: string | null
     title: string | null
+    content: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -5871,6 +5709,7 @@ export namespace Prisma {
   export type TaskTemplateCountAggregateOutputType = {
     id: number
     title: number
+    content: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -5880,6 +5719,7 @@ export namespace Prisma {
   export type TaskTemplateMinAggregateInputType = {
     id?: true
     title?: true
+    content?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -5887,6 +5727,7 @@ export namespace Prisma {
   export type TaskTemplateMaxAggregateInputType = {
     id?: true
     title?: true
+    content?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -5894,6 +5735,7 @@ export namespace Prisma {
   export type TaskTemplateCountAggregateInputType = {
     id?: true
     title?: true
+    content?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -5974,6 +5816,7 @@ export namespace Prisma {
   export type TaskTemplateGroupByOutputType = {
     id: string
     title: string
+    content: string
     createdAt: Date
     updatedAt: Date
     _count: TaskTemplateCountAggregateOutputType | null
@@ -5998,6 +5841,7 @@ export namespace Prisma {
   export type TaskTemplateSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     title?: boolean
+    content?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["taskTemplate"]>
@@ -6005,6 +5849,7 @@ export namespace Prisma {
   export type TaskTemplateSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     title?: boolean
+    content?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["taskTemplate"]>
@@ -6012,6 +5857,7 @@ export namespace Prisma {
   export type TaskTemplateSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     title?: boolean
+    content?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["taskTemplate"]>
@@ -6019,11 +5865,12 @@ export namespace Prisma {
   export type TaskTemplateSelectScalar = {
     id?: boolean
     title?: boolean
+    content?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type TaskTemplateOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "createdAt" | "updatedAt", ExtArgs["result"]["taskTemplate"]>
+  export type TaskTemplateOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "content" | "createdAt" | "updatedAt", ExtArgs["result"]["taskTemplate"]>
 
   export type $TaskTemplatePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "TaskTemplate"
@@ -6031,6 +5878,7 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: string
       title: string
+      content: string
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["taskTemplate"]>
@@ -6458,6 +6306,7 @@ export namespace Prisma {
   interface TaskTemplateFieldRefs {
     readonly id: FieldRef<"TaskTemplate", 'String'>
     readonly title: FieldRef<"TaskTemplate", 'String'>
+    readonly content: FieldRef<"TaskTemplate", 'String'>
     readonly createdAt: FieldRef<"TaskTemplate", 'DateTime'>
     readonly updatedAt: FieldRef<"TaskTemplate", 'DateTime'>
   }
@@ -6827,336 +6676,324 @@ export namespace Prisma {
 
 
   /**
-   * Model CalendarEvent
+   * Model Challenge
    */
 
-  export type AggregateCalendarEvent = {
-    _count: CalendarEventCountAggregateOutputType | null
-    _min: CalendarEventMinAggregateOutputType | null
-    _max: CalendarEventMaxAggregateOutputType | null
+  export type AggregateChallenge = {
+    _count: ChallengeCountAggregateOutputType | null
+    _min: ChallengeMinAggregateOutputType | null
+    _max: ChallengeMaxAggregateOutputType | null
   }
 
-  export type CalendarEventMinAggregateOutputType = {
+  export type ChallengeMinAggregateOutputType = {
     id: string | null
     title: string | null
-    date: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
 
-  export type CalendarEventMaxAggregateOutputType = {
+  export type ChallengeMaxAggregateOutputType = {
     id: string | null
     title: string | null
-    date: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
 
-  export type CalendarEventCountAggregateOutputType = {
+  export type ChallengeCountAggregateOutputType = {
     id: number
     title: number
-    date: number
     createdAt: number
     updatedAt: number
     _all: number
   }
 
 
-  export type CalendarEventMinAggregateInputType = {
+  export type ChallengeMinAggregateInputType = {
     id?: true
     title?: true
-    date?: true
     createdAt?: true
     updatedAt?: true
   }
 
-  export type CalendarEventMaxAggregateInputType = {
+  export type ChallengeMaxAggregateInputType = {
     id?: true
     title?: true
-    date?: true
     createdAt?: true
     updatedAt?: true
   }
 
-  export type CalendarEventCountAggregateInputType = {
+  export type ChallengeCountAggregateInputType = {
     id?: true
     title?: true
-    date?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
   }
 
-  export type CalendarEventAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ChallengeAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Filter which CalendarEvent to aggregate.
+     * Filter which Challenge to aggregate.
      */
-    where?: CalendarEventWhereInput
+    where?: ChallengeWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of CalendarEvents to fetch.
+     * Determine the order of Challenges to fetch.
      */
-    orderBy?: CalendarEventOrderByWithRelationInput | CalendarEventOrderByWithRelationInput[]
+    orderBy?: ChallengeOrderByWithRelationInput | ChallengeOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
      * Sets the start position
      */
-    cursor?: CalendarEventWhereUniqueInput
+    cursor?: ChallengeWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` CalendarEvents from the position of the cursor.
+     * Take `±n` Challenges from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` CalendarEvents.
+     * Skip the first `n` Challenges.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
-     * Count returned CalendarEvents
+     * Count returned Challenges
     **/
-    _count?: true | CalendarEventCountAggregateInputType
+    _count?: true | ChallengeCountAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
      * Select which fields to find the minimum value
     **/
-    _min?: CalendarEventMinAggregateInputType
+    _min?: ChallengeMinAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
      * Select which fields to find the maximum value
     **/
-    _max?: CalendarEventMaxAggregateInputType
+    _max?: ChallengeMaxAggregateInputType
   }
 
-  export type GetCalendarEventAggregateType<T extends CalendarEventAggregateArgs> = {
-        [P in keyof T & keyof AggregateCalendarEvent]: P extends '_count' | 'count'
+  export type GetChallengeAggregateType<T extends ChallengeAggregateArgs> = {
+        [P in keyof T & keyof AggregateChallenge]: P extends '_count' | 'count'
       ? T[P] extends true
         ? number
-        : GetScalarType<T[P], AggregateCalendarEvent[P]>
-      : GetScalarType<T[P], AggregateCalendarEvent[P]>
+        : GetScalarType<T[P], AggregateChallenge[P]>
+      : GetScalarType<T[P], AggregateChallenge[P]>
   }
 
 
 
 
-  export type CalendarEventGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: CalendarEventWhereInput
-    orderBy?: CalendarEventOrderByWithAggregationInput | CalendarEventOrderByWithAggregationInput[]
-    by: CalendarEventScalarFieldEnum[] | CalendarEventScalarFieldEnum
-    having?: CalendarEventScalarWhereWithAggregatesInput
+  export type ChallengeGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ChallengeWhereInput
+    orderBy?: ChallengeOrderByWithAggregationInput | ChallengeOrderByWithAggregationInput[]
+    by: ChallengeScalarFieldEnum[] | ChallengeScalarFieldEnum
+    having?: ChallengeScalarWhereWithAggregatesInput
     take?: number
     skip?: number
-    _count?: CalendarEventCountAggregateInputType | true
-    _min?: CalendarEventMinAggregateInputType
-    _max?: CalendarEventMaxAggregateInputType
+    _count?: ChallengeCountAggregateInputType | true
+    _min?: ChallengeMinAggregateInputType
+    _max?: ChallengeMaxAggregateInputType
   }
 
-  export type CalendarEventGroupByOutputType = {
+  export type ChallengeGroupByOutputType = {
     id: string
     title: string
-    date: Date
     createdAt: Date
     updatedAt: Date
-    _count: CalendarEventCountAggregateOutputType | null
-    _min: CalendarEventMinAggregateOutputType | null
-    _max: CalendarEventMaxAggregateOutputType | null
+    _count: ChallengeCountAggregateOutputType | null
+    _min: ChallengeMinAggregateOutputType | null
+    _max: ChallengeMaxAggregateOutputType | null
   }
 
-  type GetCalendarEventGroupByPayload<T extends CalendarEventGroupByArgs> = Prisma.PrismaPromise<
+  type GetChallengeGroupByPayload<T extends ChallengeGroupByArgs> = Prisma.PrismaPromise<
     Array<
-      PickEnumerable<CalendarEventGroupByOutputType, T['by']> &
+      PickEnumerable<ChallengeGroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof CalendarEventGroupByOutputType))]: P extends '_count'
+          [P in ((keyof T) & (keyof ChallengeGroupByOutputType))]: P extends '_count'
             ? T[P] extends boolean
               ? number
-              : GetScalarType<T[P], CalendarEventGroupByOutputType[P]>
-            : GetScalarType<T[P], CalendarEventGroupByOutputType[P]>
+              : GetScalarType<T[P], ChallengeGroupByOutputType[P]>
+            : GetScalarType<T[P], ChallengeGroupByOutputType[P]>
         }
       >
     >
 
 
-  export type CalendarEventSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+  export type ChallengeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     title?: boolean
-    date?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-  }, ExtArgs["result"]["calendarEvent"]>
+  }, ExtArgs["result"]["challenge"]>
 
-  export type CalendarEventSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+  export type ChallengeSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     title?: boolean
-    date?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-  }, ExtArgs["result"]["calendarEvent"]>
+  }, ExtArgs["result"]["challenge"]>
 
-  export type CalendarEventSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+  export type ChallengeSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     title?: boolean
-    date?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-  }, ExtArgs["result"]["calendarEvent"]>
+  }, ExtArgs["result"]["challenge"]>
 
-  export type CalendarEventSelectScalar = {
+  export type ChallengeSelectScalar = {
     id?: boolean
     title?: boolean
-    date?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type CalendarEventOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "date" | "createdAt" | "updatedAt", ExtArgs["result"]["calendarEvent"]>
+  export type ChallengeOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "createdAt" | "updatedAt", ExtArgs["result"]["challenge"]>
 
-  export type $CalendarEventPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "CalendarEvent"
+  export type $ChallengePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Challenge"
     objects: {}
     scalars: $Extensions.GetPayloadResult<{
       id: string
       title: string
-      date: Date
       createdAt: Date
       updatedAt: Date
-    }, ExtArgs["result"]["calendarEvent"]>
+    }, ExtArgs["result"]["challenge"]>
     composites: {}
   }
 
-  type CalendarEventGetPayload<S extends boolean | null | undefined | CalendarEventDefaultArgs> = $Result.GetResult<Prisma.$CalendarEventPayload, S>
+  type ChallengeGetPayload<S extends boolean | null | undefined | ChallengeDefaultArgs> = $Result.GetResult<Prisma.$ChallengePayload, S>
 
-  type CalendarEventCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<CalendarEventFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: CalendarEventCountAggregateInputType | true
+  type ChallengeCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ChallengeFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ChallengeCountAggregateInputType | true
     }
 
-  export interface CalendarEventDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['CalendarEvent'], meta: { name: 'CalendarEvent' } }
+  export interface ChallengeDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Challenge'], meta: { name: 'Challenge' } }
     /**
-     * Find zero or one CalendarEvent that matches the filter.
-     * @param {CalendarEventFindUniqueArgs} args - Arguments to find a CalendarEvent
+     * Find zero or one Challenge that matches the filter.
+     * @param {ChallengeFindUniqueArgs} args - Arguments to find a Challenge
      * @example
-     * // Get one CalendarEvent
-     * const calendarEvent = await prisma.calendarEvent.findUnique({
+     * // Get one Challenge
+     * const challenge = await prisma.challenge.findUnique({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findUnique<T extends CalendarEventFindUniqueArgs>(args: SelectSubset<T, CalendarEventFindUniqueArgs<ExtArgs>>): Prisma__CalendarEventClient<$Result.GetResult<Prisma.$CalendarEventPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findUnique<T extends ChallengeFindUniqueArgs>(args: SelectSubset<T, ChallengeFindUniqueArgs<ExtArgs>>): Prisma__ChallengeClient<$Result.GetResult<Prisma.$ChallengePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find one CalendarEvent that matches the filter or throw an error with `error.code='P2025'`
+     * Find one Challenge that matches the filter or throw an error with `error.code='P2025'`
      * if no matches were found.
-     * @param {CalendarEventFindUniqueOrThrowArgs} args - Arguments to find a CalendarEvent
+     * @param {ChallengeFindUniqueOrThrowArgs} args - Arguments to find a Challenge
      * @example
-     * // Get one CalendarEvent
-     * const calendarEvent = await prisma.calendarEvent.findUniqueOrThrow({
+     * // Get one Challenge
+     * const challenge = await prisma.challenge.findUniqueOrThrow({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findUniqueOrThrow<T extends CalendarEventFindUniqueOrThrowArgs>(args: SelectSubset<T, CalendarEventFindUniqueOrThrowArgs<ExtArgs>>): Prisma__CalendarEventClient<$Result.GetResult<Prisma.$CalendarEventPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findUniqueOrThrow<T extends ChallengeFindUniqueOrThrowArgs>(args: SelectSubset<T, ChallengeFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ChallengeClient<$Result.GetResult<Prisma.$ChallengePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find the first CalendarEvent that matches the filter.
+     * Find the first Challenge that matches the filter.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {CalendarEventFindFirstArgs} args - Arguments to find a CalendarEvent
+     * @param {ChallengeFindFirstArgs} args - Arguments to find a Challenge
      * @example
-     * // Get one CalendarEvent
-     * const calendarEvent = await prisma.calendarEvent.findFirst({
+     * // Get one Challenge
+     * const challenge = await prisma.challenge.findFirst({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findFirst<T extends CalendarEventFindFirstArgs>(args?: SelectSubset<T, CalendarEventFindFirstArgs<ExtArgs>>): Prisma__CalendarEventClient<$Result.GetResult<Prisma.$CalendarEventPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findFirst<T extends ChallengeFindFirstArgs>(args?: SelectSubset<T, ChallengeFindFirstArgs<ExtArgs>>): Prisma__ChallengeClient<$Result.GetResult<Prisma.$ChallengePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find the first CalendarEvent that matches the filter or
+     * Find the first Challenge that matches the filter or
      * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {CalendarEventFindFirstOrThrowArgs} args - Arguments to find a CalendarEvent
+     * @param {ChallengeFindFirstOrThrowArgs} args - Arguments to find a Challenge
      * @example
-     * // Get one CalendarEvent
-     * const calendarEvent = await prisma.calendarEvent.findFirstOrThrow({
+     * // Get one Challenge
+     * const challenge = await prisma.challenge.findFirstOrThrow({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findFirstOrThrow<T extends CalendarEventFindFirstOrThrowArgs>(args?: SelectSubset<T, CalendarEventFindFirstOrThrowArgs<ExtArgs>>): Prisma__CalendarEventClient<$Result.GetResult<Prisma.$CalendarEventPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findFirstOrThrow<T extends ChallengeFindFirstOrThrowArgs>(args?: SelectSubset<T, ChallengeFindFirstOrThrowArgs<ExtArgs>>): Prisma__ChallengeClient<$Result.GetResult<Prisma.$ChallengePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find zero or more CalendarEvents that matches the filter.
+     * Find zero or more Challenges that matches the filter.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {CalendarEventFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @param {ChallengeFindManyArgs} args - Arguments to filter and select certain fields only.
      * @example
-     * // Get all CalendarEvents
-     * const calendarEvents = await prisma.calendarEvent.findMany()
+     * // Get all Challenges
+     * const challenges = await prisma.challenge.findMany()
      * 
-     * // Get first 10 CalendarEvents
-     * const calendarEvents = await prisma.calendarEvent.findMany({ take: 10 })
+     * // Get first 10 Challenges
+     * const challenges = await prisma.challenge.findMany({ take: 10 })
      * 
      * // Only select the `id`
-     * const calendarEventWithIdOnly = await prisma.calendarEvent.findMany({ select: { id: true } })
+     * const challengeWithIdOnly = await prisma.challenge.findMany({ select: { id: true } })
      * 
      */
-    findMany<T extends CalendarEventFindManyArgs>(args?: SelectSubset<T, CalendarEventFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CalendarEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+    findMany<T extends ChallengeFindManyArgs>(args?: SelectSubset<T, ChallengeFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChallengePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
 
     /**
-     * Create a CalendarEvent.
-     * @param {CalendarEventCreateArgs} args - Arguments to create a CalendarEvent.
+     * Create a Challenge.
+     * @param {ChallengeCreateArgs} args - Arguments to create a Challenge.
      * @example
-     * // Create one CalendarEvent
-     * const CalendarEvent = await prisma.calendarEvent.create({
+     * // Create one Challenge
+     * const Challenge = await prisma.challenge.create({
      *   data: {
-     *     // ... data to create a CalendarEvent
+     *     // ... data to create a Challenge
      *   }
      * })
      * 
      */
-    create<T extends CalendarEventCreateArgs>(args: SelectSubset<T, CalendarEventCreateArgs<ExtArgs>>): Prisma__CalendarEventClient<$Result.GetResult<Prisma.$CalendarEventPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    create<T extends ChallengeCreateArgs>(args: SelectSubset<T, ChallengeCreateArgs<ExtArgs>>): Prisma__ChallengeClient<$Result.GetResult<Prisma.$ChallengePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Create many CalendarEvents.
-     * @param {CalendarEventCreateManyArgs} args - Arguments to create many CalendarEvents.
+     * Create many Challenges.
+     * @param {ChallengeCreateManyArgs} args - Arguments to create many Challenges.
      * @example
-     * // Create many CalendarEvents
-     * const calendarEvent = await prisma.calendarEvent.createMany({
+     * // Create many Challenges
+     * const challenge = await prisma.challenge.createMany({
      *   data: [
      *     // ... provide data here
      *   ]
      * })
      *     
      */
-    createMany<T extends CalendarEventCreateManyArgs>(args?: SelectSubset<T, CalendarEventCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    createMany<T extends ChallengeCreateManyArgs>(args?: SelectSubset<T, ChallengeCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
 
     /**
-     * Create many CalendarEvents and returns the data saved in the database.
-     * @param {CalendarEventCreateManyAndReturnArgs} args - Arguments to create many CalendarEvents.
+     * Create many Challenges and returns the data saved in the database.
+     * @param {ChallengeCreateManyAndReturnArgs} args - Arguments to create many Challenges.
      * @example
-     * // Create many CalendarEvents
-     * const calendarEvent = await prisma.calendarEvent.createManyAndReturn({
+     * // Create many Challenges
+     * const challenge = await prisma.challenge.createManyAndReturn({
      *   data: [
      *     // ... provide data here
      *   ]
      * })
      * 
-     * // Create many CalendarEvents and only return the `id`
-     * const calendarEventWithIdOnly = await prisma.calendarEvent.createManyAndReturn({
+     * // Create many Challenges and only return the `id`
+     * const challengeWithIdOnly = await prisma.challenge.createManyAndReturn({
      *   select: { id: true },
      *   data: [
      *     // ... provide data here
@@ -7166,28 +7003,28 @@ export namespace Prisma {
      * Read more here: https://pris.ly/d/null-undefined
      * 
      */
-    createManyAndReturn<T extends CalendarEventCreateManyAndReturnArgs>(args?: SelectSubset<T, CalendarEventCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CalendarEventPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+    createManyAndReturn<T extends ChallengeCreateManyAndReturnArgs>(args?: SelectSubset<T, ChallengeCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChallengePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
 
     /**
-     * Delete a CalendarEvent.
-     * @param {CalendarEventDeleteArgs} args - Arguments to delete one CalendarEvent.
+     * Delete a Challenge.
+     * @param {ChallengeDeleteArgs} args - Arguments to delete one Challenge.
      * @example
-     * // Delete one CalendarEvent
-     * const CalendarEvent = await prisma.calendarEvent.delete({
+     * // Delete one Challenge
+     * const Challenge = await prisma.challenge.delete({
      *   where: {
-     *     // ... filter to delete one CalendarEvent
+     *     // ... filter to delete one Challenge
      *   }
      * })
      * 
      */
-    delete<T extends CalendarEventDeleteArgs>(args: SelectSubset<T, CalendarEventDeleteArgs<ExtArgs>>): Prisma__CalendarEventClient<$Result.GetResult<Prisma.$CalendarEventPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    delete<T extends ChallengeDeleteArgs>(args: SelectSubset<T, ChallengeDeleteArgs<ExtArgs>>): Prisma__ChallengeClient<$Result.GetResult<Prisma.$ChallengePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Update one CalendarEvent.
-     * @param {CalendarEventUpdateArgs} args - Arguments to update one CalendarEvent.
+     * Update one Challenge.
+     * @param {ChallengeUpdateArgs} args - Arguments to update one Challenge.
      * @example
-     * // Update one CalendarEvent
-     * const calendarEvent = await prisma.calendarEvent.update({
+     * // Update one Challenge
+     * const challenge = await prisma.challenge.update({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -7197,30 +7034,30 @@ export namespace Prisma {
      * })
      * 
      */
-    update<T extends CalendarEventUpdateArgs>(args: SelectSubset<T, CalendarEventUpdateArgs<ExtArgs>>): Prisma__CalendarEventClient<$Result.GetResult<Prisma.$CalendarEventPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    update<T extends ChallengeUpdateArgs>(args: SelectSubset<T, ChallengeUpdateArgs<ExtArgs>>): Prisma__ChallengeClient<$Result.GetResult<Prisma.$ChallengePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Delete zero or more CalendarEvents.
-     * @param {CalendarEventDeleteManyArgs} args - Arguments to filter CalendarEvents to delete.
+     * Delete zero or more Challenges.
+     * @param {ChallengeDeleteManyArgs} args - Arguments to filter Challenges to delete.
      * @example
-     * // Delete a few CalendarEvents
-     * const { count } = await prisma.calendarEvent.deleteMany({
+     * // Delete a few Challenges
+     * const { count } = await prisma.challenge.deleteMany({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      * 
      */
-    deleteMany<T extends CalendarEventDeleteManyArgs>(args?: SelectSubset<T, CalendarEventDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    deleteMany<T extends ChallengeDeleteManyArgs>(args?: SelectSubset<T, ChallengeDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
 
     /**
-     * Update zero or more CalendarEvents.
+     * Update zero or more Challenges.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {CalendarEventUpdateManyArgs} args - Arguments to update one or more rows.
+     * @param {ChallengeUpdateManyArgs} args - Arguments to update one or more rows.
      * @example
-     * // Update many CalendarEvents
-     * const calendarEvent = await prisma.calendarEvent.updateMany({
+     * // Update many Challenges
+     * const challenge = await prisma.challenge.updateMany({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -7230,14 +7067,14 @@ export namespace Prisma {
      * })
      * 
      */
-    updateMany<T extends CalendarEventUpdateManyArgs>(args: SelectSubset<T, CalendarEventUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    updateMany<T extends ChallengeUpdateManyArgs>(args: SelectSubset<T, ChallengeUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
 
     /**
-     * Update zero or more CalendarEvents and returns the data updated in the database.
-     * @param {CalendarEventUpdateManyAndReturnArgs} args - Arguments to update many CalendarEvents.
+     * Update zero or more Challenges and returns the data updated in the database.
+     * @param {ChallengeUpdateManyAndReturnArgs} args - Arguments to update many Challenges.
      * @example
-     * // Update many CalendarEvents
-     * const calendarEvent = await prisma.calendarEvent.updateManyAndReturn({
+     * // Update many Challenges
+     * const challenge = await prisma.challenge.updateManyAndReturn({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -7246,8 +7083,8 @@ export namespace Prisma {
      *   ]
      * })
      * 
-     * // Update zero or more CalendarEvents and only return the `id`
-     * const calendarEventWithIdOnly = await prisma.calendarEvent.updateManyAndReturn({
+     * // Update zero or more Challenges and only return the `id`
+     * const challengeWithIdOnly = await prisma.challenge.updateManyAndReturn({
      *   select: { id: true },
      *   where: {
      *     // ... provide filter here
@@ -7260,56 +7097,56 @@ export namespace Prisma {
      * Read more here: https://pris.ly/d/null-undefined
      * 
      */
-    updateManyAndReturn<T extends CalendarEventUpdateManyAndReturnArgs>(args: SelectSubset<T, CalendarEventUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CalendarEventPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+    updateManyAndReturn<T extends ChallengeUpdateManyAndReturnArgs>(args: SelectSubset<T, ChallengeUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChallengePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
 
     /**
-     * Create or update one CalendarEvent.
-     * @param {CalendarEventUpsertArgs} args - Arguments to update or create a CalendarEvent.
+     * Create or update one Challenge.
+     * @param {ChallengeUpsertArgs} args - Arguments to update or create a Challenge.
      * @example
-     * // Update or create a CalendarEvent
-     * const calendarEvent = await prisma.calendarEvent.upsert({
+     * // Update or create a Challenge
+     * const challenge = await prisma.challenge.upsert({
      *   create: {
-     *     // ... data to create a CalendarEvent
+     *     // ... data to create a Challenge
      *   },
      *   update: {
      *     // ... in case it already exists, update
      *   },
      *   where: {
-     *     // ... the filter for the CalendarEvent we want to update
+     *     // ... the filter for the Challenge we want to update
      *   }
      * })
      */
-    upsert<T extends CalendarEventUpsertArgs>(args: SelectSubset<T, CalendarEventUpsertArgs<ExtArgs>>): Prisma__CalendarEventClient<$Result.GetResult<Prisma.$CalendarEventPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    upsert<T extends ChallengeUpsertArgs>(args: SelectSubset<T, ChallengeUpsertArgs<ExtArgs>>): Prisma__ChallengeClient<$Result.GetResult<Prisma.$ChallengePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
 
     /**
-     * Count the number of CalendarEvents.
+     * Count the number of Challenges.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {CalendarEventCountArgs} args - Arguments to filter CalendarEvents to count.
+     * @param {ChallengeCountArgs} args - Arguments to filter Challenges to count.
      * @example
-     * // Count the number of CalendarEvents
-     * const count = await prisma.calendarEvent.count({
+     * // Count the number of Challenges
+     * const count = await prisma.challenge.count({
      *   where: {
-     *     // ... the filter for the CalendarEvents we want to count
+     *     // ... the filter for the Challenges we want to count
      *   }
      * })
     **/
-    count<T extends CalendarEventCountArgs>(
-      args?: Subset<T, CalendarEventCountArgs>,
+    count<T extends ChallengeCountArgs>(
+      args?: Subset<T, ChallengeCountArgs>,
     ): Prisma.PrismaPromise<
       T extends $Utils.Record<'select', any>
         ? T['select'] extends true
           ? number
-          : GetScalarType<T['select'], CalendarEventCountAggregateOutputType>
+          : GetScalarType<T['select'], ChallengeCountAggregateOutputType>
         : number
     >
 
     /**
-     * Allows you to perform aggregations operations on a CalendarEvent.
+     * Allows you to perform aggregations operations on a Challenge.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {CalendarEventAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @param {ChallengeAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
      * @example
      * // Ordered by age ascending
      * // Where email contains prisma.io
@@ -7329,13 +7166,13 @@ export namespace Prisma {
      *   take: 10,
      * })
     **/
-    aggregate<T extends CalendarEventAggregateArgs>(args: Subset<T, CalendarEventAggregateArgs>): Prisma.PrismaPromise<GetCalendarEventAggregateType<T>>
+    aggregate<T extends ChallengeAggregateArgs>(args: Subset<T, ChallengeAggregateArgs>): Prisma.PrismaPromise<GetChallengeAggregateType<T>>
 
     /**
-     * Group by CalendarEvent.
+     * Group by Challenge.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {CalendarEventGroupByArgs} args - Group by arguments.
+     * @param {ChallengeGroupByArgs} args - Group by arguments.
      * @example
      * // Group by city, order by createdAt, get count
      * const result = await prisma.user.groupBy({
@@ -7350,14 +7187,14 @@ export namespace Prisma {
      * 
     **/
     groupBy<
-      T extends CalendarEventGroupByArgs,
+      T extends ChallengeGroupByArgs,
       HasSelectOrTake extends Or<
         Extends<'skip', Keys<T>>,
         Extends<'take', Keys<T>>
       >,
       OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: CalendarEventGroupByArgs['orderBy'] }
-        : { orderBy?: CalendarEventGroupByArgs['orderBy'] },
+        ? { orderBy: ChallengeGroupByArgs['orderBy'] }
+        : { orderBy?: ChallengeGroupByArgs['orderBy'] },
       OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
       ByFields extends MaybeTupleToUnion<T['by']>,
       ByValid extends Has<ByFields, OrderFields>,
@@ -7406,20 +7243,20 @@ export namespace Prisma {
             ? never
             : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
         }[OrderFields]
-    >(args: SubsetIntersection<T, CalendarEventGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCalendarEventGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+    >(args: SubsetIntersection<T, ChallengeGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetChallengeGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
   /**
-   * Fields of the CalendarEvent model
+   * Fields of the Challenge model
    */
-  readonly fields: CalendarEventFieldRefs;
+  readonly fields: ChallengeFieldRefs;
   }
 
   /**
-   * The delegate class that acts as a "Promise-like" for CalendarEvent.
+   * The delegate class that acts as a "Promise-like" for Challenge.
    * Why is this prefixed with `Prisma__`?
    * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
-  export interface Prisma__CalendarEventClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+  export interface Prisma__ChallengeClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -7447,2341 +7284,376 @@ export namespace Prisma {
 
 
   /**
-   * Fields of the CalendarEvent model
+   * Fields of the Challenge model
    */
-  interface CalendarEventFieldRefs {
-    readonly id: FieldRef<"CalendarEvent", 'String'>
-    readonly title: FieldRef<"CalendarEvent", 'String'>
-    readonly date: FieldRef<"CalendarEvent", 'DateTime'>
-    readonly createdAt: FieldRef<"CalendarEvent", 'DateTime'>
-    readonly updatedAt: FieldRef<"CalendarEvent", 'DateTime'>
+  interface ChallengeFieldRefs {
+    readonly id: FieldRef<"Challenge", 'String'>
+    readonly title: FieldRef<"Challenge", 'String'>
+    readonly createdAt: FieldRef<"Challenge", 'DateTime'>
+    readonly updatedAt: FieldRef<"Challenge", 'DateTime'>
   }
     
 
   // Custom InputTypes
   /**
-   * CalendarEvent findUnique
+   * Challenge findUnique
    */
-  export type CalendarEventFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ChallengeFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the CalendarEvent
+     * Select specific fields to fetch from the Challenge
      */
-    select?: CalendarEventSelect<ExtArgs> | null
+    select?: ChallengeSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the CalendarEvent
+     * Omit specific fields from the Challenge
      */
-    omit?: CalendarEventOmit<ExtArgs> | null
+    omit?: ChallengeOmit<ExtArgs> | null
     /**
-     * Filter, which CalendarEvent to fetch.
+     * Filter, which Challenge to fetch.
      */
-    where: CalendarEventWhereUniqueInput
+    where: ChallengeWhereUniqueInput
   }
 
   /**
-   * CalendarEvent findUniqueOrThrow
+   * Challenge findUniqueOrThrow
    */
-  export type CalendarEventFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ChallengeFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the CalendarEvent
+     * Select specific fields to fetch from the Challenge
      */
-    select?: CalendarEventSelect<ExtArgs> | null
+    select?: ChallengeSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the CalendarEvent
+     * Omit specific fields from the Challenge
      */
-    omit?: CalendarEventOmit<ExtArgs> | null
+    omit?: ChallengeOmit<ExtArgs> | null
     /**
-     * Filter, which CalendarEvent to fetch.
+     * Filter, which Challenge to fetch.
      */
-    where: CalendarEventWhereUniqueInput
+    where: ChallengeWhereUniqueInput
   }
 
   /**
-   * CalendarEvent findFirst
+   * Challenge findFirst
    */
-  export type CalendarEventFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ChallengeFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the CalendarEvent
+     * Select specific fields to fetch from the Challenge
      */
-    select?: CalendarEventSelect<ExtArgs> | null
+    select?: ChallengeSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the CalendarEvent
+     * Omit specific fields from the Challenge
      */
-    omit?: CalendarEventOmit<ExtArgs> | null
+    omit?: ChallengeOmit<ExtArgs> | null
     /**
-     * Filter, which CalendarEvent to fetch.
+     * Filter, which Challenge to fetch.
      */
-    where?: CalendarEventWhereInput
+    where?: ChallengeWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of CalendarEvents to fetch.
+     * Determine the order of Challenges to fetch.
      */
-    orderBy?: CalendarEventOrderByWithRelationInput | CalendarEventOrderByWithRelationInput[]
+    orderBy?: ChallengeOrderByWithRelationInput | ChallengeOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
-     * Sets the position for searching for CalendarEvents.
+     * Sets the position for searching for Challenges.
      */
-    cursor?: CalendarEventWhereUniqueInput
+    cursor?: ChallengeWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` CalendarEvents from the position of the cursor.
+     * Take `±n` Challenges from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` CalendarEvents.
+     * Skip the first `n` Challenges.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
      * 
-     * Filter by unique combinations of CalendarEvents.
+     * Filter by unique combinations of Challenges.
      */
-    distinct?: CalendarEventScalarFieldEnum | CalendarEventScalarFieldEnum[]
+    distinct?: ChallengeScalarFieldEnum | ChallengeScalarFieldEnum[]
   }
 
   /**
-   * CalendarEvent findFirstOrThrow
+   * Challenge findFirstOrThrow
    */
-  export type CalendarEventFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ChallengeFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the CalendarEvent
+     * Select specific fields to fetch from the Challenge
      */
-    select?: CalendarEventSelect<ExtArgs> | null
+    select?: ChallengeSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the CalendarEvent
+     * Omit specific fields from the Challenge
      */
-    omit?: CalendarEventOmit<ExtArgs> | null
+    omit?: ChallengeOmit<ExtArgs> | null
     /**
-     * Filter, which CalendarEvent to fetch.
+     * Filter, which Challenge to fetch.
      */
-    where?: CalendarEventWhereInput
+    where?: ChallengeWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of CalendarEvents to fetch.
+     * Determine the order of Challenges to fetch.
      */
-    orderBy?: CalendarEventOrderByWithRelationInput | CalendarEventOrderByWithRelationInput[]
+    orderBy?: ChallengeOrderByWithRelationInput | ChallengeOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
-     * Sets the position for searching for CalendarEvents.
+     * Sets the position for searching for Challenges.
      */
-    cursor?: CalendarEventWhereUniqueInput
+    cursor?: ChallengeWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` CalendarEvents from the position of the cursor.
+     * Take `±n` Challenges from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` CalendarEvents.
+     * Skip the first `n` Challenges.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
      * 
-     * Filter by unique combinations of CalendarEvents.
+     * Filter by unique combinations of Challenges.
      */
-    distinct?: CalendarEventScalarFieldEnum | CalendarEventScalarFieldEnum[]
+    distinct?: ChallengeScalarFieldEnum | ChallengeScalarFieldEnum[]
   }
 
   /**
-   * CalendarEvent findMany
+   * Challenge findMany
    */
-  export type CalendarEventFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ChallengeFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the CalendarEvent
+     * Select specific fields to fetch from the Challenge
      */
-    select?: CalendarEventSelect<ExtArgs> | null
+    select?: ChallengeSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the CalendarEvent
+     * Omit specific fields from the Challenge
      */
-    omit?: CalendarEventOmit<ExtArgs> | null
+    omit?: ChallengeOmit<ExtArgs> | null
     /**
-     * Filter, which CalendarEvents to fetch.
+     * Filter, which Challenges to fetch.
      */
-    where?: CalendarEventWhereInput
+    where?: ChallengeWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of CalendarEvents to fetch.
+     * Determine the order of Challenges to fetch.
      */
-    orderBy?: CalendarEventOrderByWithRelationInput | CalendarEventOrderByWithRelationInput[]
+    orderBy?: ChallengeOrderByWithRelationInput | ChallengeOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
-     * Sets the position for listing CalendarEvents.
+     * Sets the position for listing Challenges.
      */
-    cursor?: CalendarEventWhereUniqueInput
+    cursor?: ChallengeWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` CalendarEvents from the position of the cursor.
+     * Take `±n` Challenges from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` CalendarEvents.
+     * Skip the first `n` Challenges.
      */
     skip?: number
-    distinct?: CalendarEventScalarFieldEnum | CalendarEventScalarFieldEnum[]
+    distinct?: ChallengeScalarFieldEnum | ChallengeScalarFieldEnum[]
   }
 
   /**
-   * CalendarEvent create
+   * Challenge create
    */
-  export type CalendarEventCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ChallengeCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the CalendarEvent
+     * Select specific fields to fetch from the Challenge
      */
-    select?: CalendarEventSelect<ExtArgs> | null
+    select?: ChallengeSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the CalendarEvent
+     * Omit specific fields from the Challenge
      */
-    omit?: CalendarEventOmit<ExtArgs> | null
+    omit?: ChallengeOmit<ExtArgs> | null
     /**
-     * The data needed to create a CalendarEvent.
+     * The data needed to create a Challenge.
      */
-    data: XOR<CalendarEventCreateInput, CalendarEventUncheckedCreateInput>
+    data: XOR<ChallengeCreateInput, ChallengeUncheckedCreateInput>
   }
 
   /**
-   * CalendarEvent createMany
+   * Challenge createMany
    */
-  export type CalendarEventCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ChallengeCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * The data used to create many CalendarEvents.
+     * The data used to create many Challenges.
      */
-    data: CalendarEventCreateManyInput | CalendarEventCreateManyInput[]
+    data: ChallengeCreateManyInput | ChallengeCreateManyInput[]
     skipDuplicates?: boolean
   }
 
   /**
-   * CalendarEvent createManyAndReturn
+   * Challenge createManyAndReturn
    */
-  export type CalendarEventCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ChallengeCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the CalendarEvent
+     * Select specific fields to fetch from the Challenge
      */
-    select?: CalendarEventSelectCreateManyAndReturn<ExtArgs> | null
+    select?: ChallengeSelectCreateManyAndReturn<ExtArgs> | null
     /**
-     * Omit specific fields from the CalendarEvent
+     * Omit specific fields from the Challenge
      */
-    omit?: CalendarEventOmit<ExtArgs> | null
+    omit?: ChallengeOmit<ExtArgs> | null
     /**
-     * The data used to create many CalendarEvents.
+     * The data used to create many Challenges.
      */
-    data: CalendarEventCreateManyInput | CalendarEventCreateManyInput[]
+    data: ChallengeCreateManyInput | ChallengeCreateManyInput[]
     skipDuplicates?: boolean
   }
 
   /**
-   * CalendarEvent update
+   * Challenge update
    */
-  export type CalendarEventUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ChallengeUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the CalendarEvent
+     * Select specific fields to fetch from the Challenge
      */
-    select?: CalendarEventSelect<ExtArgs> | null
+    select?: ChallengeSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the CalendarEvent
+     * Omit specific fields from the Challenge
      */
-    omit?: CalendarEventOmit<ExtArgs> | null
+    omit?: ChallengeOmit<ExtArgs> | null
     /**
-     * The data needed to update a CalendarEvent.
+     * The data needed to update a Challenge.
      */
-    data: XOR<CalendarEventUpdateInput, CalendarEventUncheckedUpdateInput>
+    data: XOR<ChallengeUpdateInput, ChallengeUncheckedUpdateInput>
     /**
-     * Choose, which CalendarEvent to update.
+     * Choose, which Challenge to update.
      */
-    where: CalendarEventWhereUniqueInput
+    where: ChallengeWhereUniqueInput
   }
 
   /**
-   * CalendarEvent updateMany
+   * Challenge updateMany
    */
-  export type CalendarEventUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ChallengeUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * The data used to update CalendarEvents.
+     * The data used to update Challenges.
      */
-    data: XOR<CalendarEventUpdateManyMutationInput, CalendarEventUncheckedUpdateManyInput>
+    data: XOR<ChallengeUpdateManyMutationInput, ChallengeUncheckedUpdateManyInput>
     /**
-     * Filter which CalendarEvents to update
+     * Filter which Challenges to update
      */
-    where?: CalendarEventWhereInput
+    where?: ChallengeWhereInput
     /**
-     * Limit how many CalendarEvents to update.
+     * Limit how many Challenges to update.
      */
     limit?: number
   }
 
   /**
-   * CalendarEvent updateManyAndReturn
+   * Challenge updateManyAndReturn
    */
-  export type CalendarEventUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ChallengeUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the CalendarEvent
+     * Select specific fields to fetch from the Challenge
      */
-    select?: CalendarEventSelectUpdateManyAndReturn<ExtArgs> | null
+    select?: ChallengeSelectUpdateManyAndReturn<ExtArgs> | null
     /**
-     * Omit specific fields from the CalendarEvent
+     * Omit specific fields from the Challenge
      */
-    omit?: CalendarEventOmit<ExtArgs> | null
+    omit?: ChallengeOmit<ExtArgs> | null
     /**
-     * The data used to update CalendarEvents.
+     * The data used to update Challenges.
      */
-    data: XOR<CalendarEventUpdateManyMutationInput, CalendarEventUncheckedUpdateManyInput>
+    data: XOR<ChallengeUpdateManyMutationInput, ChallengeUncheckedUpdateManyInput>
     /**
-     * Filter which CalendarEvents to update
+     * Filter which Challenges to update
      */
-    where?: CalendarEventWhereInput
+    where?: ChallengeWhereInput
     /**
-     * Limit how many CalendarEvents to update.
+     * Limit how many Challenges to update.
      */
     limit?: number
   }
 
   /**
-   * CalendarEvent upsert
+   * Challenge upsert
    */
-  export type CalendarEventUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ChallengeUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the CalendarEvent
+     * Select specific fields to fetch from the Challenge
      */
-    select?: CalendarEventSelect<ExtArgs> | null
+    select?: ChallengeSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the CalendarEvent
+     * Omit specific fields from the Challenge
      */
-    omit?: CalendarEventOmit<ExtArgs> | null
+    omit?: ChallengeOmit<ExtArgs> | null
     /**
-     * The filter to search for the CalendarEvent to update in case it exists.
+     * The filter to search for the Challenge to update in case it exists.
      */
-    where: CalendarEventWhereUniqueInput
+    where: ChallengeWhereUniqueInput
     /**
-     * In case the CalendarEvent found by the `where` argument doesn't exist, create a new CalendarEvent with this data.
+     * In case the Challenge found by the `where` argument doesn't exist, create a new Challenge with this data.
      */
-    create: XOR<CalendarEventCreateInput, CalendarEventUncheckedCreateInput>
+    create: XOR<ChallengeCreateInput, ChallengeUncheckedCreateInput>
     /**
-     * In case the CalendarEvent was found with the provided `where` argument, update it with this data.
+     * In case the Challenge was found with the provided `where` argument, update it with this data.
      */
-    update: XOR<CalendarEventUpdateInput, CalendarEventUncheckedUpdateInput>
+    update: XOR<ChallengeUpdateInput, ChallengeUncheckedUpdateInput>
   }
 
   /**
-   * CalendarEvent delete
+   * Challenge delete
    */
-  export type CalendarEventDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ChallengeDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the CalendarEvent
+     * Select specific fields to fetch from the Challenge
      */
-    select?: CalendarEventSelect<ExtArgs> | null
+    select?: ChallengeSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the CalendarEvent
+     * Omit specific fields from the Challenge
      */
-    omit?: CalendarEventOmit<ExtArgs> | null
+    omit?: ChallengeOmit<ExtArgs> | null
     /**
-     * Filter which CalendarEvent to delete.
+     * Filter which Challenge to delete.
      */
-    where: CalendarEventWhereUniqueInput
+    where: ChallengeWhereUniqueInput
   }
 
   /**
-   * CalendarEvent deleteMany
+   * Challenge deleteMany
    */
-  export type CalendarEventDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ChallengeDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Filter which CalendarEvents to delete
+     * Filter which Challenges to delete
      */
-    where?: CalendarEventWhereInput
+    where?: ChallengeWhereInput
     /**
-     * Limit how many CalendarEvents to delete.
+     * Limit how many Challenges to delete.
      */
     limit?: number
   }
 
   /**
-   * CalendarEvent without action
+   * Challenge without action
    */
-  export type CalendarEventDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ChallengeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the CalendarEvent
+     * Select specific fields to fetch from the Challenge
      */
-    select?: CalendarEventSelect<ExtArgs> | null
+    select?: ChallengeSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the CalendarEvent
+     * Omit specific fields from the Challenge
      */
-    omit?: CalendarEventOmit<ExtArgs> | null
-  }
-
-
-  /**
-   * Model TaskLog
-   */
-
-  export type AggregateTaskLog = {
-    _count: TaskLogCountAggregateOutputType | null
-    _min: TaskLogMinAggregateOutputType | null
-    _max: TaskLogMaxAggregateOutputType | null
-  }
-
-  export type TaskLogMinAggregateOutputType = {
-    id: string | null
-    taskId: string | null
-    createdAt: Date | null
-    updatedAt: Date | null
-  }
-
-  export type TaskLogMaxAggregateOutputType = {
-    id: string | null
-    taskId: string | null
-    createdAt: Date | null
-    updatedAt: Date | null
-  }
-
-  export type TaskLogCountAggregateOutputType = {
-    id: number
-    taskId: number
-    createdAt: number
-    updatedAt: number
-    _all: number
-  }
-
-
-  export type TaskLogMinAggregateInputType = {
-    id?: true
-    taskId?: true
-    createdAt?: true
-    updatedAt?: true
-  }
-
-  export type TaskLogMaxAggregateInputType = {
-    id?: true
-    taskId?: true
-    createdAt?: true
-    updatedAt?: true
-  }
-
-  export type TaskLogCountAggregateInputType = {
-    id?: true
-    taskId?: true
-    createdAt?: true
-    updatedAt?: true
-    _all?: true
-  }
-
-  export type TaskLogAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which TaskLog to aggregate.
-     */
-    where?: TaskLogWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of TaskLogs to fetch.
-     */
-    orderBy?: TaskLogOrderByWithRelationInput | TaskLogOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the start position
-     */
-    cursor?: TaskLogWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` TaskLogs from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` TaskLogs.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Count returned TaskLogs
-    **/
-    _count?: true | TaskLogCountAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the minimum value
-    **/
-    _min?: TaskLogMinAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the maximum value
-    **/
-    _max?: TaskLogMaxAggregateInputType
-  }
-
-  export type GetTaskLogAggregateType<T extends TaskLogAggregateArgs> = {
-        [P in keyof T & keyof AggregateTaskLog]: P extends '_count' | 'count'
-      ? T[P] extends true
-        ? number
-        : GetScalarType<T[P], AggregateTaskLog[P]>
-      : GetScalarType<T[P], AggregateTaskLog[P]>
-  }
-
-
-
-
-  export type TaskLogGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: TaskLogWhereInput
-    orderBy?: TaskLogOrderByWithAggregationInput | TaskLogOrderByWithAggregationInput[]
-    by: TaskLogScalarFieldEnum[] | TaskLogScalarFieldEnum
-    having?: TaskLogScalarWhereWithAggregatesInput
-    take?: number
-    skip?: number
-    _count?: TaskLogCountAggregateInputType | true
-    _min?: TaskLogMinAggregateInputType
-    _max?: TaskLogMaxAggregateInputType
-  }
-
-  export type TaskLogGroupByOutputType = {
-    id: string
-    taskId: string
-    createdAt: Date
-    updatedAt: Date
-    _count: TaskLogCountAggregateOutputType | null
-    _min: TaskLogMinAggregateOutputType | null
-    _max: TaskLogMaxAggregateOutputType | null
-  }
-
-  type GetTaskLogGroupByPayload<T extends TaskLogGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-      PickEnumerable<TaskLogGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof TaskLogGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], TaskLogGroupByOutputType[P]>
-            : GetScalarType<T[P], TaskLogGroupByOutputType[P]>
-        }
-      >
-    >
-
-
-  export type TaskLogSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    taskId?: boolean
-    createdAt?: boolean
-    updatedAt?: boolean
-  }, ExtArgs["result"]["taskLog"]>
-
-  export type TaskLogSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    taskId?: boolean
-    createdAt?: boolean
-    updatedAt?: boolean
-  }, ExtArgs["result"]["taskLog"]>
-
-  export type TaskLogSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    taskId?: boolean
-    createdAt?: boolean
-    updatedAt?: boolean
-  }, ExtArgs["result"]["taskLog"]>
-
-  export type TaskLogSelectScalar = {
-    id?: boolean
-    taskId?: boolean
-    createdAt?: boolean
-    updatedAt?: boolean
-  }
-
-  export type TaskLogOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "taskId" | "createdAt" | "updatedAt", ExtArgs["result"]["taskLog"]>
-
-  export type $TaskLogPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "TaskLog"
-    objects: {}
-    scalars: $Extensions.GetPayloadResult<{
-      id: string
-      taskId: string
-      createdAt: Date
-      updatedAt: Date
-    }, ExtArgs["result"]["taskLog"]>
-    composites: {}
-  }
-
-  type TaskLogGetPayload<S extends boolean | null | undefined | TaskLogDefaultArgs> = $Result.GetResult<Prisma.$TaskLogPayload, S>
-
-  type TaskLogCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<TaskLogFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: TaskLogCountAggregateInputType | true
-    }
-
-  export interface TaskLogDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['TaskLog'], meta: { name: 'TaskLog' } }
-    /**
-     * Find zero or one TaskLog that matches the filter.
-     * @param {TaskLogFindUniqueArgs} args - Arguments to find a TaskLog
-     * @example
-     * // Get one TaskLog
-     * const taskLog = await prisma.taskLog.findUnique({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUnique<T extends TaskLogFindUniqueArgs>(args: SelectSubset<T, TaskLogFindUniqueArgs<ExtArgs>>): Prisma__TaskLogClient<$Result.GetResult<Prisma.$TaskLogPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find one TaskLog that matches the filter or throw an error with `error.code='P2025'`
-     * if no matches were found.
-     * @param {TaskLogFindUniqueOrThrowArgs} args - Arguments to find a TaskLog
-     * @example
-     * // Get one TaskLog
-     * const taskLog = await prisma.taskLog.findUniqueOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUniqueOrThrow<T extends TaskLogFindUniqueOrThrowArgs>(args: SelectSubset<T, TaskLogFindUniqueOrThrowArgs<ExtArgs>>): Prisma__TaskLogClient<$Result.GetResult<Prisma.$TaskLogPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first TaskLog that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {TaskLogFindFirstArgs} args - Arguments to find a TaskLog
-     * @example
-     * // Get one TaskLog
-     * const taskLog = await prisma.taskLog.findFirst({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirst<T extends TaskLogFindFirstArgs>(args?: SelectSubset<T, TaskLogFindFirstArgs<ExtArgs>>): Prisma__TaskLogClient<$Result.GetResult<Prisma.$TaskLogPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first TaskLog that matches the filter or
-     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {TaskLogFindFirstOrThrowArgs} args - Arguments to find a TaskLog
-     * @example
-     * // Get one TaskLog
-     * const taskLog = await prisma.taskLog.findFirstOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirstOrThrow<T extends TaskLogFindFirstOrThrowArgs>(args?: SelectSubset<T, TaskLogFindFirstOrThrowArgs<ExtArgs>>): Prisma__TaskLogClient<$Result.GetResult<Prisma.$TaskLogPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find zero or more TaskLogs that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {TaskLogFindManyArgs} args - Arguments to filter and select certain fields only.
-     * @example
-     * // Get all TaskLogs
-     * const taskLogs = await prisma.taskLog.findMany()
-     * 
-     * // Get first 10 TaskLogs
-     * const taskLogs = await prisma.taskLog.findMany({ take: 10 })
-     * 
-     * // Only select the `id`
-     * const taskLogWithIdOnly = await prisma.taskLog.findMany({ select: { id: true } })
-     * 
-     */
-    findMany<T extends TaskLogFindManyArgs>(args?: SelectSubset<T, TaskLogFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TaskLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
-
-    /**
-     * Create a TaskLog.
-     * @param {TaskLogCreateArgs} args - Arguments to create a TaskLog.
-     * @example
-     * // Create one TaskLog
-     * const TaskLog = await prisma.taskLog.create({
-     *   data: {
-     *     // ... data to create a TaskLog
-     *   }
-     * })
-     * 
-     */
-    create<T extends TaskLogCreateArgs>(args: SelectSubset<T, TaskLogCreateArgs<ExtArgs>>): Prisma__TaskLogClient<$Result.GetResult<Prisma.$TaskLogPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Create many TaskLogs.
-     * @param {TaskLogCreateManyArgs} args - Arguments to create many TaskLogs.
-     * @example
-     * // Create many TaskLogs
-     * const taskLog = await prisma.taskLog.createMany({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     *     
-     */
-    createMany<T extends TaskLogCreateManyArgs>(args?: SelectSubset<T, TaskLogCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Create many TaskLogs and returns the data saved in the database.
-     * @param {TaskLogCreateManyAndReturnArgs} args - Arguments to create many TaskLogs.
-     * @example
-     * // Create many TaskLogs
-     * const taskLog = await prisma.taskLog.createManyAndReturn({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Create many TaskLogs and only return the `id`
-     * const taskLogWithIdOnly = await prisma.taskLog.createManyAndReturn({
-     *   select: { id: true },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    createManyAndReturn<T extends TaskLogCreateManyAndReturnArgs>(args?: SelectSubset<T, TaskLogCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TaskLogPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
-
-    /**
-     * Delete a TaskLog.
-     * @param {TaskLogDeleteArgs} args - Arguments to delete one TaskLog.
-     * @example
-     * // Delete one TaskLog
-     * const TaskLog = await prisma.taskLog.delete({
-     *   where: {
-     *     // ... filter to delete one TaskLog
-     *   }
-     * })
-     * 
-     */
-    delete<T extends TaskLogDeleteArgs>(args: SelectSubset<T, TaskLogDeleteArgs<ExtArgs>>): Prisma__TaskLogClient<$Result.GetResult<Prisma.$TaskLogPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Update one TaskLog.
-     * @param {TaskLogUpdateArgs} args - Arguments to update one TaskLog.
-     * @example
-     * // Update one TaskLog
-     * const taskLog = await prisma.taskLog.update({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    update<T extends TaskLogUpdateArgs>(args: SelectSubset<T, TaskLogUpdateArgs<ExtArgs>>): Prisma__TaskLogClient<$Result.GetResult<Prisma.$TaskLogPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Delete zero or more TaskLogs.
-     * @param {TaskLogDeleteManyArgs} args - Arguments to filter TaskLogs to delete.
-     * @example
-     * // Delete a few TaskLogs
-     * const { count } = await prisma.taskLog.deleteMany({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     * 
-     */
-    deleteMany<T extends TaskLogDeleteManyArgs>(args?: SelectSubset<T, TaskLogDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more TaskLogs.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {TaskLogUpdateManyArgs} args - Arguments to update one or more rows.
-     * @example
-     * // Update many TaskLogs
-     * const taskLog = await prisma.taskLog.updateMany({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    updateMany<T extends TaskLogUpdateManyArgs>(args: SelectSubset<T, TaskLogUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more TaskLogs and returns the data updated in the database.
-     * @param {TaskLogUpdateManyAndReturnArgs} args - Arguments to update many TaskLogs.
-     * @example
-     * // Update many TaskLogs
-     * const taskLog = await prisma.taskLog.updateManyAndReturn({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Update zero or more TaskLogs and only return the `id`
-     * const taskLogWithIdOnly = await prisma.taskLog.updateManyAndReturn({
-     *   select: { id: true },
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    updateManyAndReturn<T extends TaskLogUpdateManyAndReturnArgs>(args: SelectSubset<T, TaskLogUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TaskLogPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
-
-    /**
-     * Create or update one TaskLog.
-     * @param {TaskLogUpsertArgs} args - Arguments to update or create a TaskLog.
-     * @example
-     * // Update or create a TaskLog
-     * const taskLog = await prisma.taskLog.upsert({
-     *   create: {
-     *     // ... data to create a TaskLog
-     *   },
-     *   update: {
-     *     // ... in case it already exists, update
-     *   },
-     *   where: {
-     *     // ... the filter for the TaskLog we want to update
-     *   }
-     * })
-     */
-    upsert<T extends TaskLogUpsertArgs>(args: SelectSubset<T, TaskLogUpsertArgs<ExtArgs>>): Prisma__TaskLogClient<$Result.GetResult<Prisma.$TaskLogPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-
-    /**
-     * Count the number of TaskLogs.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {TaskLogCountArgs} args - Arguments to filter TaskLogs to count.
-     * @example
-     * // Count the number of TaskLogs
-     * const count = await prisma.taskLog.count({
-     *   where: {
-     *     // ... the filter for the TaskLogs we want to count
-     *   }
-     * })
-    **/
-    count<T extends TaskLogCountArgs>(
-      args?: Subset<T, TaskLogCountArgs>,
-    ): Prisma.PrismaPromise<
-      T extends $Utils.Record<'select', any>
-        ? T['select'] extends true
-          ? number
-          : GetScalarType<T['select'], TaskLogCountAggregateOutputType>
-        : number
-    >
-
-    /**
-     * Allows you to perform aggregations operations on a TaskLog.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {TaskLogAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
-     * @example
-     * // Ordered by age ascending
-     * // Where email contains prisma.io
-     * // Limited to the 10 users
-     * const aggregations = await prisma.user.aggregate({
-     *   _avg: {
-     *     age: true,
-     *   },
-     *   where: {
-     *     email: {
-     *       contains: "prisma.io",
-     *     },
-     *   },
-     *   orderBy: {
-     *     age: "asc",
-     *   },
-     *   take: 10,
-     * })
-    **/
-    aggregate<T extends TaskLogAggregateArgs>(args: Subset<T, TaskLogAggregateArgs>): Prisma.PrismaPromise<GetTaskLogAggregateType<T>>
-
-    /**
-     * Group by TaskLog.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {TaskLogGroupByArgs} args - Group by arguments.
-     * @example
-     * // Group by city, order by createdAt, get count
-     * const result = await prisma.user.groupBy({
-     *   by: ['city', 'createdAt'],
-     *   orderBy: {
-     *     createdAt: true
-     *   },
-     *   _count: {
-     *     _all: true
-     *   },
-     * })
-     * 
-    **/
-    groupBy<
-      T extends TaskLogGroupByArgs,
-      HasSelectOrTake extends Or<
-        Extends<'skip', Keys<T>>,
-        Extends<'take', Keys<T>>
-      >,
-      OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: TaskLogGroupByArgs['orderBy'] }
-        : { orderBy?: TaskLogGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
-      ByFields extends MaybeTupleToUnion<T['by']>,
-      ByValid extends Has<ByFields, OrderFields>,
-      HavingFields extends GetHavingFields<T['having']>,
-      HavingValid extends Has<ByFields, HavingFields>,
-      ByEmpty extends T['by'] extends never[] ? True : False,
-      InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, TaskLogGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetTaskLogGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the TaskLog model
-   */
-  readonly fields: TaskLogFieldRefs;
-  }
-
-  /**
-   * The delegate class that acts as a "Promise-like" for TaskLog.
-   * Why is this prefixed with `Prisma__`?
-   * Because we want to prevent naming conflicts as mentioned in
-   * https://github.com/prisma/prisma-client-js/issues/707
-   */
-  export interface Prisma__TaskLogClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    /**
-     * Attaches callbacks for the resolution and/or rejection of the Promise.
-     * @param onfulfilled The callback to execute when the Promise is resolved.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of which ever callback is executed.
-     */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
-    /**
-     * Attaches a callback for only the rejection of the Promise.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of the callback.
-     */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
-    /**
-     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
-     * resolved value cannot be modified from the callback.
-     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
-     * @returns A Promise for the completion of the callback.
-     */
-    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
-  }
-
-
-
-
-  /**
-   * Fields of the TaskLog model
-   */
-  interface TaskLogFieldRefs {
-    readonly id: FieldRef<"TaskLog", 'String'>
-    readonly taskId: FieldRef<"TaskLog", 'String'>
-    readonly createdAt: FieldRef<"TaskLog", 'DateTime'>
-    readonly updatedAt: FieldRef<"TaskLog", 'DateTime'>
-  }
-    
-
-  // Custom InputTypes
-  /**
-   * TaskLog findUnique
-   */
-  export type TaskLogFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the TaskLog
-     */
-    select?: TaskLogSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the TaskLog
-     */
-    omit?: TaskLogOmit<ExtArgs> | null
-    /**
-     * Filter, which TaskLog to fetch.
-     */
-    where: TaskLogWhereUniqueInput
-  }
-
-  /**
-   * TaskLog findUniqueOrThrow
-   */
-  export type TaskLogFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the TaskLog
-     */
-    select?: TaskLogSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the TaskLog
-     */
-    omit?: TaskLogOmit<ExtArgs> | null
-    /**
-     * Filter, which TaskLog to fetch.
-     */
-    where: TaskLogWhereUniqueInput
-  }
-
-  /**
-   * TaskLog findFirst
-   */
-  export type TaskLogFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the TaskLog
-     */
-    select?: TaskLogSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the TaskLog
-     */
-    omit?: TaskLogOmit<ExtArgs> | null
-    /**
-     * Filter, which TaskLog to fetch.
-     */
-    where?: TaskLogWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of TaskLogs to fetch.
-     */
-    orderBy?: TaskLogOrderByWithRelationInput | TaskLogOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for TaskLogs.
-     */
-    cursor?: TaskLogWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` TaskLogs from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` TaskLogs.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of TaskLogs.
-     */
-    distinct?: TaskLogScalarFieldEnum | TaskLogScalarFieldEnum[]
-  }
-
-  /**
-   * TaskLog findFirstOrThrow
-   */
-  export type TaskLogFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the TaskLog
-     */
-    select?: TaskLogSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the TaskLog
-     */
-    omit?: TaskLogOmit<ExtArgs> | null
-    /**
-     * Filter, which TaskLog to fetch.
-     */
-    where?: TaskLogWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of TaskLogs to fetch.
-     */
-    orderBy?: TaskLogOrderByWithRelationInput | TaskLogOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for TaskLogs.
-     */
-    cursor?: TaskLogWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` TaskLogs from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` TaskLogs.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of TaskLogs.
-     */
-    distinct?: TaskLogScalarFieldEnum | TaskLogScalarFieldEnum[]
-  }
-
-  /**
-   * TaskLog findMany
-   */
-  export type TaskLogFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the TaskLog
-     */
-    select?: TaskLogSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the TaskLog
-     */
-    omit?: TaskLogOmit<ExtArgs> | null
-    /**
-     * Filter, which TaskLogs to fetch.
-     */
-    where?: TaskLogWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of TaskLogs to fetch.
-     */
-    orderBy?: TaskLogOrderByWithRelationInput | TaskLogOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for listing TaskLogs.
-     */
-    cursor?: TaskLogWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` TaskLogs from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` TaskLogs.
-     */
-    skip?: number
-    distinct?: TaskLogScalarFieldEnum | TaskLogScalarFieldEnum[]
-  }
-
-  /**
-   * TaskLog create
-   */
-  export type TaskLogCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the TaskLog
-     */
-    select?: TaskLogSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the TaskLog
-     */
-    omit?: TaskLogOmit<ExtArgs> | null
-    /**
-     * The data needed to create a TaskLog.
-     */
-    data: XOR<TaskLogCreateInput, TaskLogUncheckedCreateInput>
-  }
-
-  /**
-   * TaskLog createMany
-   */
-  export type TaskLogCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to create many TaskLogs.
-     */
-    data: TaskLogCreateManyInput | TaskLogCreateManyInput[]
-    skipDuplicates?: boolean
-  }
-
-  /**
-   * TaskLog createManyAndReturn
-   */
-  export type TaskLogCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the TaskLog
-     */
-    select?: TaskLogSelectCreateManyAndReturn<ExtArgs> | null
-    /**
-     * Omit specific fields from the TaskLog
-     */
-    omit?: TaskLogOmit<ExtArgs> | null
-    /**
-     * The data used to create many TaskLogs.
-     */
-    data: TaskLogCreateManyInput | TaskLogCreateManyInput[]
-    skipDuplicates?: boolean
-  }
-
-  /**
-   * TaskLog update
-   */
-  export type TaskLogUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the TaskLog
-     */
-    select?: TaskLogSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the TaskLog
-     */
-    omit?: TaskLogOmit<ExtArgs> | null
-    /**
-     * The data needed to update a TaskLog.
-     */
-    data: XOR<TaskLogUpdateInput, TaskLogUncheckedUpdateInput>
-    /**
-     * Choose, which TaskLog to update.
-     */
-    where: TaskLogWhereUniqueInput
-  }
-
-  /**
-   * TaskLog updateMany
-   */
-  export type TaskLogUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to update TaskLogs.
-     */
-    data: XOR<TaskLogUpdateManyMutationInput, TaskLogUncheckedUpdateManyInput>
-    /**
-     * Filter which TaskLogs to update
-     */
-    where?: TaskLogWhereInput
-    /**
-     * Limit how many TaskLogs to update.
-     */
-    limit?: number
-  }
-
-  /**
-   * TaskLog updateManyAndReturn
-   */
-  export type TaskLogUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the TaskLog
-     */
-    select?: TaskLogSelectUpdateManyAndReturn<ExtArgs> | null
-    /**
-     * Omit specific fields from the TaskLog
-     */
-    omit?: TaskLogOmit<ExtArgs> | null
-    /**
-     * The data used to update TaskLogs.
-     */
-    data: XOR<TaskLogUpdateManyMutationInput, TaskLogUncheckedUpdateManyInput>
-    /**
-     * Filter which TaskLogs to update
-     */
-    where?: TaskLogWhereInput
-    /**
-     * Limit how many TaskLogs to update.
-     */
-    limit?: number
-  }
-
-  /**
-   * TaskLog upsert
-   */
-  export type TaskLogUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the TaskLog
-     */
-    select?: TaskLogSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the TaskLog
-     */
-    omit?: TaskLogOmit<ExtArgs> | null
-    /**
-     * The filter to search for the TaskLog to update in case it exists.
-     */
-    where: TaskLogWhereUniqueInput
-    /**
-     * In case the TaskLog found by the `where` argument doesn't exist, create a new TaskLog with this data.
-     */
-    create: XOR<TaskLogCreateInput, TaskLogUncheckedCreateInput>
-    /**
-     * In case the TaskLog was found with the provided `where` argument, update it with this data.
-     */
-    update: XOR<TaskLogUpdateInput, TaskLogUncheckedUpdateInput>
-  }
-
-  /**
-   * TaskLog delete
-   */
-  export type TaskLogDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the TaskLog
-     */
-    select?: TaskLogSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the TaskLog
-     */
-    omit?: TaskLogOmit<ExtArgs> | null
-    /**
-     * Filter which TaskLog to delete.
-     */
-    where: TaskLogWhereUniqueInput
-  }
-
-  /**
-   * TaskLog deleteMany
-   */
-  export type TaskLogDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which TaskLogs to delete
-     */
-    where?: TaskLogWhereInput
-    /**
-     * Limit how many TaskLogs to delete.
-     */
-    limit?: number
-  }
-
-  /**
-   * TaskLog without action
-   */
-  export type TaskLogDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the TaskLog
-     */
-    select?: TaskLogSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the TaskLog
-     */
-    omit?: TaskLogOmit<ExtArgs> | null
-  }
-
-
-  /**
-   * Model PasswordResetToken
-   */
-
-  export type AggregatePasswordResetToken = {
-    _count: PasswordResetTokenCountAggregateOutputType | null
-    _min: PasswordResetTokenMinAggregateOutputType | null
-    _max: PasswordResetTokenMaxAggregateOutputType | null
-  }
-
-  export type PasswordResetTokenMinAggregateOutputType = {
-    id: string | null
-    token: string | null
-    expiresAt: Date | null
-    createdAt: Date | null
-  }
-
-  export type PasswordResetTokenMaxAggregateOutputType = {
-    id: string | null
-    token: string | null
-    expiresAt: Date | null
-    createdAt: Date | null
-  }
-
-  export type PasswordResetTokenCountAggregateOutputType = {
-    id: number
-    token: number
-    expiresAt: number
-    createdAt: number
-    _all: number
-  }
-
-
-  export type PasswordResetTokenMinAggregateInputType = {
-    id?: true
-    token?: true
-    expiresAt?: true
-    createdAt?: true
-  }
-
-  export type PasswordResetTokenMaxAggregateInputType = {
-    id?: true
-    token?: true
-    expiresAt?: true
-    createdAt?: true
-  }
-
-  export type PasswordResetTokenCountAggregateInputType = {
-    id?: true
-    token?: true
-    expiresAt?: true
-    createdAt?: true
-    _all?: true
-  }
-
-  export type PasswordResetTokenAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which PasswordResetToken to aggregate.
-     */
-    where?: PasswordResetTokenWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of PasswordResetTokens to fetch.
-     */
-    orderBy?: PasswordResetTokenOrderByWithRelationInput | PasswordResetTokenOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the start position
-     */
-    cursor?: PasswordResetTokenWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` PasswordResetTokens from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` PasswordResetTokens.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Count returned PasswordResetTokens
-    **/
-    _count?: true | PasswordResetTokenCountAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the minimum value
-    **/
-    _min?: PasswordResetTokenMinAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the maximum value
-    **/
-    _max?: PasswordResetTokenMaxAggregateInputType
-  }
-
-  export type GetPasswordResetTokenAggregateType<T extends PasswordResetTokenAggregateArgs> = {
-        [P in keyof T & keyof AggregatePasswordResetToken]: P extends '_count' | 'count'
-      ? T[P] extends true
-        ? number
-        : GetScalarType<T[P], AggregatePasswordResetToken[P]>
-      : GetScalarType<T[P], AggregatePasswordResetToken[P]>
-  }
-
-
-
-
-  export type PasswordResetTokenGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: PasswordResetTokenWhereInput
-    orderBy?: PasswordResetTokenOrderByWithAggregationInput | PasswordResetTokenOrderByWithAggregationInput[]
-    by: PasswordResetTokenScalarFieldEnum[] | PasswordResetTokenScalarFieldEnum
-    having?: PasswordResetTokenScalarWhereWithAggregatesInput
-    take?: number
-    skip?: number
-    _count?: PasswordResetTokenCountAggregateInputType | true
-    _min?: PasswordResetTokenMinAggregateInputType
-    _max?: PasswordResetTokenMaxAggregateInputType
-  }
-
-  export type PasswordResetTokenGroupByOutputType = {
-    id: string
-    token: string
-    expiresAt: Date
-    createdAt: Date
-    _count: PasswordResetTokenCountAggregateOutputType | null
-    _min: PasswordResetTokenMinAggregateOutputType | null
-    _max: PasswordResetTokenMaxAggregateOutputType | null
-  }
-
-  type GetPasswordResetTokenGroupByPayload<T extends PasswordResetTokenGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-      PickEnumerable<PasswordResetTokenGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof PasswordResetTokenGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], PasswordResetTokenGroupByOutputType[P]>
-            : GetScalarType<T[P], PasswordResetTokenGroupByOutputType[P]>
-        }
-      >
-    >
-
-
-  export type PasswordResetTokenSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    token?: boolean
-    expiresAt?: boolean
-    createdAt?: boolean
-  }, ExtArgs["result"]["passwordResetToken"]>
-
-  export type PasswordResetTokenSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    token?: boolean
-    expiresAt?: boolean
-    createdAt?: boolean
-  }, ExtArgs["result"]["passwordResetToken"]>
-
-  export type PasswordResetTokenSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    token?: boolean
-    expiresAt?: boolean
-    createdAt?: boolean
-  }, ExtArgs["result"]["passwordResetToken"]>
-
-  export type PasswordResetTokenSelectScalar = {
-    id?: boolean
-    token?: boolean
-    expiresAt?: boolean
-    createdAt?: boolean
-  }
-
-  export type PasswordResetTokenOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "token" | "expiresAt" | "createdAt", ExtArgs["result"]["passwordResetToken"]>
-
-  export type $PasswordResetTokenPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "PasswordResetToken"
-    objects: {}
-    scalars: $Extensions.GetPayloadResult<{
-      id: string
-      token: string
-      expiresAt: Date
-      createdAt: Date
-    }, ExtArgs["result"]["passwordResetToken"]>
-    composites: {}
-  }
-
-  type PasswordResetTokenGetPayload<S extends boolean | null | undefined | PasswordResetTokenDefaultArgs> = $Result.GetResult<Prisma.$PasswordResetTokenPayload, S>
-
-  type PasswordResetTokenCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<PasswordResetTokenFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: PasswordResetTokenCountAggregateInputType | true
-    }
-
-  export interface PasswordResetTokenDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PasswordResetToken'], meta: { name: 'PasswordResetToken' } }
-    /**
-     * Find zero or one PasswordResetToken that matches the filter.
-     * @param {PasswordResetTokenFindUniqueArgs} args - Arguments to find a PasswordResetToken
-     * @example
-     * // Get one PasswordResetToken
-     * const passwordResetToken = await prisma.passwordResetToken.findUnique({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUnique<T extends PasswordResetTokenFindUniqueArgs>(args: SelectSubset<T, PasswordResetTokenFindUniqueArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find one PasswordResetToken that matches the filter or throw an error with `error.code='P2025'`
-     * if no matches were found.
-     * @param {PasswordResetTokenFindUniqueOrThrowArgs} args - Arguments to find a PasswordResetToken
-     * @example
-     * // Get one PasswordResetToken
-     * const passwordResetToken = await prisma.passwordResetToken.findUniqueOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUniqueOrThrow<T extends PasswordResetTokenFindUniqueOrThrowArgs>(args: SelectSubset<T, PasswordResetTokenFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first PasswordResetToken that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {PasswordResetTokenFindFirstArgs} args - Arguments to find a PasswordResetToken
-     * @example
-     * // Get one PasswordResetToken
-     * const passwordResetToken = await prisma.passwordResetToken.findFirst({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirst<T extends PasswordResetTokenFindFirstArgs>(args?: SelectSubset<T, PasswordResetTokenFindFirstArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first PasswordResetToken that matches the filter or
-     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {PasswordResetTokenFindFirstOrThrowArgs} args - Arguments to find a PasswordResetToken
-     * @example
-     * // Get one PasswordResetToken
-     * const passwordResetToken = await prisma.passwordResetToken.findFirstOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirstOrThrow<T extends PasswordResetTokenFindFirstOrThrowArgs>(args?: SelectSubset<T, PasswordResetTokenFindFirstOrThrowArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find zero or more PasswordResetTokens that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {PasswordResetTokenFindManyArgs} args - Arguments to filter and select certain fields only.
-     * @example
-     * // Get all PasswordResetTokens
-     * const passwordResetTokens = await prisma.passwordResetToken.findMany()
-     * 
-     * // Get first 10 PasswordResetTokens
-     * const passwordResetTokens = await prisma.passwordResetToken.findMany({ take: 10 })
-     * 
-     * // Only select the `id`
-     * const passwordResetTokenWithIdOnly = await prisma.passwordResetToken.findMany({ select: { id: true } })
-     * 
-     */
-    findMany<T extends PasswordResetTokenFindManyArgs>(args?: SelectSubset<T, PasswordResetTokenFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
-
-    /**
-     * Create a PasswordResetToken.
-     * @param {PasswordResetTokenCreateArgs} args - Arguments to create a PasswordResetToken.
-     * @example
-     * // Create one PasswordResetToken
-     * const PasswordResetToken = await prisma.passwordResetToken.create({
-     *   data: {
-     *     // ... data to create a PasswordResetToken
-     *   }
-     * })
-     * 
-     */
-    create<T extends PasswordResetTokenCreateArgs>(args: SelectSubset<T, PasswordResetTokenCreateArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Create many PasswordResetTokens.
-     * @param {PasswordResetTokenCreateManyArgs} args - Arguments to create many PasswordResetTokens.
-     * @example
-     * // Create many PasswordResetTokens
-     * const passwordResetToken = await prisma.passwordResetToken.createMany({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     *     
-     */
-    createMany<T extends PasswordResetTokenCreateManyArgs>(args?: SelectSubset<T, PasswordResetTokenCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Create many PasswordResetTokens and returns the data saved in the database.
-     * @param {PasswordResetTokenCreateManyAndReturnArgs} args - Arguments to create many PasswordResetTokens.
-     * @example
-     * // Create many PasswordResetTokens
-     * const passwordResetToken = await prisma.passwordResetToken.createManyAndReturn({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Create many PasswordResetTokens and only return the `id`
-     * const passwordResetTokenWithIdOnly = await prisma.passwordResetToken.createManyAndReturn({
-     *   select: { id: true },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    createManyAndReturn<T extends PasswordResetTokenCreateManyAndReturnArgs>(args?: SelectSubset<T, PasswordResetTokenCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
-
-    /**
-     * Delete a PasswordResetToken.
-     * @param {PasswordResetTokenDeleteArgs} args - Arguments to delete one PasswordResetToken.
-     * @example
-     * // Delete one PasswordResetToken
-     * const PasswordResetToken = await prisma.passwordResetToken.delete({
-     *   where: {
-     *     // ... filter to delete one PasswordResetToken
-     *   }
-     * })
-     * 
-     */
-    delete<T extends PasswordResetTokenDeleteArgs>(args: SelectSubset<T, PasswordResetTokenDeleteArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Update one PasswordResetToken.
-     * @param {PasswordResetTokenUpdateArgs} args - Arguments to update one PasswordResetToken.
-     * @example
-     * // Update one PasswordResetToken
-     * const passwordResetToken = await prisma.passwordResetToken.update({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    update<T extends PasswordResetTokenUpdateArgs>(args: SelectSubset<T, PasswordResetTokenUpdateArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Delete zero or more PasswordResetTokens.
-     * @param {PasswordResetTokenDeleteManyArgs} args - Arguments to filter PasswordResetTokens to delete.
-     * @example
-     * // Delete a few PasswordResetTokens
-     * const { count } = await prisma.passwordResetToken.deleteMany({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     * 
-     */
-    deleteMany<T extends PasswordResetTokenDeleteManyArgs>(args?: SelectSubset<T, PasswordResetTokenDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more PasswordResetTokens.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {PasswordResetTokenUpdateManyArgs} args - Arguments to update one or more rows.
-     * @example
-     * // Update many PasswordResetTokens
-     * const passwordResetToken = await prisma.passwordResetToken.updateMany({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    updateMany<T extends PasswordResetTokenUpdateManyArgs>(args: SelectSubset<T, PasswordResetTokenUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more PasswordResetTokens and returns the data updated in the database.
-     * @param {PasswordResetTokenUpdateManyAndReturnArgs} args - Arguments to update many PasswordResetTokens.
-     * @example
-     * // Update many PasswordResetTokens
-     * const passwordResetToken = await prisma.passwordResetToken.updateManyAndReturn({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Update zero or more PasswordResetTokens and only return the `id`
-     * const passwordResetTokenWithIdOnly = await prisma.passwordResetToken.updateManyAndReturn({
-     *   select: { id: true },
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    updateManyAndReturn<T extends PasswordResetTokenUpdateManyAndReturnArgs>(args: SelectSubset<T, PasswordResetTokenUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
-
-    /**
-     * Create or update one PasswordResetToken.
-     * @param {PasswordResetTokenUpsertArgs} args - Arguments to update or create a PasswordResetToken.
-     * @example
-     * // Update or create a PasswordResetToken
-     * const passwordResetToken = await prisma.passwordResetToken.upsert({
-     *   create: {
-     *     // ... data to create a PasswordResetToken
-     *   },
-     *   update: {
-     *     // ... in case it already exists, update
-     *   },
-     *   where: {
-     *     // ... the filter for the PasswordResetToken we want to update
-     *   }
-     * })
-     */
-    upsert<T extends PasswordResetTokenUpsertArgs>(args: SelectSubset<T, PasswordResetTokenUpsertArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-
-    /**
-     * Count the number of PasswordResetTokens.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {PasswordResetTokenCountArgs} args - Arguments to filter PasswordResetTokens to count.
-     * @example
-     * // Count the number of PasswordResetTokens
-     * const count = await prisma.passwordResetToken.count({
-     *   where: {
-     *     // ... the filter for the PasswordResetTokens we want to count
-     *   }
-     * })
-    **/
-    count<T extends PasswordResetTokenCountArgs>(
-      args?: Subset<T, PasswordResetTokenCountArgs>,
-    ): Prisma.PrismaPromise<
-      T extends $Utils.Record<'select', any>
-        ? T['select'] extends true
-          ? number
-          : GetScalarType<T['select'], PasswordResetTokenCountAggregateOutputType>
-        : number
-    >
-
-    /**
-     * Allows you to perform aggregations operations on a PasswordResetToken.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {PasswordResetTokenAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
-     * @example
-     * // Ordered by age ascending
-     * // Where email contains prisma.io
-     * // Limited to the 10 users
-     * const aggregations = await prisma.user.aggregate({
-     *   _avg: {
-     *     age: true,
-     *   },
-     *   where: {
-     *     email: {
-     *       contains: "prisma.io",
-     *     },
-     *   },
-     *   orderBy: {
-     *     age: "asc",
-     *   },
-     *   take: 10,
-     * })
-    **/
-    aggregate<T extends PasswordResetTokenAggregateArgs>(args: Subset<T, PasswordResetTokenAggregateArgs>): Prisma.PrismaPromise<GetPasswordResetTokenAggregateType<T>>
-
-    /**
-     * Group by PasswordResetToken.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {PasswordResetTokenGroupByArgs} args - Group by arguments.
-     * @example
-     * // Group by city, order by createdAt, get count
-     * const result = await prisma.user.groupBy({
-     *   by: ['city', 'createdAt'],
-     *   orderBy: {
-     *     createdAt: true
-     *   },
-     *   _count: {
-     *     _all: true
-     *   },
-     * })
-     * 
-    **/
-    groupBy<
-      T extends PasswordResetTokenGroupByArgs,
-      HasSelectOrTake extends Or<
-        Extends<'skip', Keys<T>>,
-        Extends<'take', Keys<T>>
-      >,
-      OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: PasswordResetTokenGroupByArgs['orderBy'] }
-        : { orderBy?: PasswordResetTokenGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
-      ByFields extends MaybeTupleToUnion<T['by']>,
-      ByValid extends Has<ByFields, OrderFields>,
-      HavingFields extends GetHavingFields<T['having']>,
-      HavingValid extends Has<ByFields, HavingFields>,
-      ByEmpty extends T['by'] extends never[] ? True : False,
-      InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, PasswordResetTokenGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPasswordResetTokenGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the PasswordResetToken model
-   */
-  readonly fields: PasswordResetTokenFieldRefs;
-  }
-
-  /**
-   * The delegate class that acts as a "Promise-like" for PasswordResetToken.
-   * Why is this prefixed with `Prisma__`?
-   * Because we want to prevent naming conflicts as mentioned in
-   * https://github.com/prisma/prisma-client-js/issues/707
-   */
-  export interface Prisma__PasswordResetTokenClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    /**
-     * Attaches callbacks for the resolution and/or rejection of the Promise.
-     * @param onfulfilled The callback to execute when the Promise is resolved.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of which ever callback is executed.
-     */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
-    /**
-     * Attaches a callback for only the rejection of the Promise.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of the callback.
-     */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
-    /**
-     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
-     * resolved value cannot be modified from the callback.
-     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
-     * @returns A Promise for the completion of the callback.
-     */
-    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
-  }
-
-
-
-
-  /**
-   * Fields of the PasswordResetToken model
-   */
-  interface PasswordResetTokenFieldRefs {
-    readonly id: FieldRef<"PasswordResetToken", 'String'>
-    readonly token: FieldRef<"PasswordResetToken", 'String'>
-    readonly expiresAt: FieldRef<"PasswordResetToken", 'DateTime'>
-    readonly createdAt: FieldRef<"PasswordResetToken", 'DateTime'>
-  }
-    
-
-  // Custom InputTypes
-  /**
-   * PasswordResetToken findUnique
-   */
-  export type PasswordResetTokenFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetToken
-     */
-    select?: PasswordResetTokenSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetToken
-     */
-    omit?: PasswordResetTokenOmit<ExtArgs> | null
-    /**
-     * Filter, which PasswordResetToken to fetch.
-     */
-    where: PasswordResetTokenWhereUniqueInput
-  }
-
-  /**
-   * PasswordResetToken findUniqueOrThrow
-   */
-  export type PasswordResetTokenFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetToken
-     */
-    select?: PasswordResetTokenSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetToken
-     */
-    omit?: PasswordResetTokenOmit<ExtArgs> | null
-    /**
-     * Filter, which PasswordResetToken to fetch.
-     */
-    where: PasswordResetTokenWhereUniqueInput
-  }
-
-  /**
-   * PasswordResetToken findFirst
-   */
-  export type PasswordResetTokenFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetToken
-     */
-    select?: PasswordResetTokenSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetToken
-     */
-    omit?: PasswordResetTokenOmit<ExtArgs> | null
-    /**
-     * Filter, which PasswordResetToken to fetch.
-     */
-    where?: PasswordResetTokenWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of PasswordResetTokens to fetch.
-     */
-    orderBy?: PasswordResetTokenOrderByWithRelationInput | PasswordResetTokenOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for PasswordResetTokens.
-     */
-    cursor?: PasswordResetTokenWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` PasswordResetTokens from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` PasswordResetTokens.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of PasswordResetTokens.
-     */
-    distinct?: PasswordResetTokenScalarFieldEnum | PasswordResetTokenScalarFieldEnum[]
-  }
-
-  /**
-   * PasswordResetToken findFirstOrThrow
-   */
-  export type PasswordResetTokenFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetToken
-     */
-    select?: PasswordResetTokenSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetToken
-     */
-    omit?: PasswordResetTokenOmit<ExtArgs> | null
-    /**
-     * Filter, which PasswordResetToken to fetch.
-     */
-    where?: PasswordResetTokenWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of PasswordResetTokens to fetch.
-     */
-    orderBy?: PasswordResetTokenOrderByWithRelationInput | PasswordResetTokenOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for PasswordResetTokens.
-     */
-    cursor?: PasswordResetTokenWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` PasswordResetTokens from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` PasswordResetTokens.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of PasswordResetTokens.
-     */
-    distinct?: PasswordResetTokenScalarFieldEnum | PasswordResetTokenScalarFieldEnum[]
-  }
-
-  /**
-   * PasswordResetToken findMany
-   */
-  export type PasswordResetTokenFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetToken
-     */
-    select?: PasswordResetTokenSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetToken
-     */
-    omit?: PasswordResetTokenOmit<ExtArgs> | null
-    /**
-     * Filter, which PasswordResetTokens to fetch.
-     */
-    where?: PasswordResetTokenWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of PasswordResetTokens to fetch.
-     */
-    orderBy?: PasswordResetTokenOrderByWithRelationInput | PasswordResetTokenOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for listing PasswordResetTokens.
-     */
-    cursor?: PasswordResetTokenWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` PasswordResetTokens from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` PasswordResetTokens.
-     */
-    skip?: number
-    distinct?: PasswordResetTokenScalarFieldEnum | PasswordResetTokenScalarFieldEnum[]
-  }
-
-  /**
-   * PasswordResetToken create
-   */
-  export type PasswordResetTokenCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetToken
-     */
-    select?: PasswordResetTokenSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetToken
-     */
-    omit?: PasswordResetTokenOmit<ExtArgs> | null
-    /**
-     * The data needed to create a PasswordResetToken.
-     */
-    data: XOR<PasswordResetTokenCreateInput, PasswordResetTokenUncheckedCreateInput>
-  }
-
-  /**
-   * PasswordResetToken createMany
-   */
-  export type PasswordResetTokenCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to create many PasswordResetTokens.
-     */
-    data: PasswordResetTokenCreateManyInput | PasswordResetTokenCreateManyInput[]
-    skipDuplicates?: boolean
-  }
-
-  /**
-   * PasswordResetToken createManyAndReturn
-   */
-  export type PasswordResetTokenCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetToken
-     */
-    select?: PasswordResetTokenSelectCreateManyAndReturn<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetToken
-     */
-    omit?: PasswordResetTokenOmit<ExtArgs> | null
-    /**
-     * The data used to create many PasswordResetTokens.
-     */
-    data: PasswordResetTokenCreateManyInput | PasswordResetTokenCreateManyInput[]
-    skipDuplicates?: boolean
-  }
-
-  /**
-   * PasswordResetToken update
-   */
-  export type PasswordResetTokenUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetToken
-     */
-    select?: PasswordResetTokenSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetToken
-     */
-    omit?: PasswordResetTokenOmit<ExtArgs> | null
-    /**
-     * The data needed to update a PasswordResetToken.
-     */
-    data: XOR<PasswordResetTokenUpdateInput, PasswordResetTokenUncheckedUpdateInput>
-    /**
-     * Choose, which PasswordResetToken to update.
-     */
-    where: PasswordResetTokenWhereUniqueInput
-  }
-
-  /**
-   * PasswordResetToken updateMany
-   */
-  export type PasswordResetTokenUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to update PasswordResetTokens.
-     */
-    data: XOR<PasswordResetTokenUpdateManyMutationInput, PasswordResetTokenUncheckedUpdateManyInput>
-    /**
-     * Filter which PasswordResetTokens to update
-     */
-    where?: PasswordResetTokenWhereInput
-    /**
-     * Limit how many PasswordResetTokens to update.
-     */
-    limit?: number
-  }
-
-  /**
-   * PasswordResetToken updateManyAndReturn
-   */
-  export type PasswordResetTokenUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetToken
-     */
-    select?: PasswordResetTokenSelectUpdateManyAndReturn<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetToken
-     */
-    omit?: PasswordResetTokenOmit<ExtArgs> | null
-    /**
-     * The data used to update PasswordResetTokens.
-     */
-    data: XOR<PasswordResetTokenUpdateManyMutationInput, PasswordResetTokenUncheckedUpdateManyInput>
-    /**
-     * Filter which PasswordResetTokens to update
-     */
-    where?: PasswordResetTokenWhereInput
-    /**
-     * Limit how many PasswordResetTokens to update.
-     */
-    limit?: number
-  }
-
-  /**
-   * PasswordResetToken upsert
-   */
-  export type PasswordResetTokenUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetToken
-     */
-    select?: PasswordResetTokenSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetToken
-     */
-    omit?: PasswordResetTokenOmit<ExtArgs> | null
-    /**
-     * The filter to search for the PasswordResetToken to update in case it exists.
-     */
-    where: PasswordResetTokenWhereUniqueInput
-    /**
-     * In case the PasswordResetToken found by the `where` argument doesn't exist, create a new PasswordResetToken with this data.
-     */
-    create: XOR<PasswordResetTokenCreateInput, PasswordResetTokenUncheckedCreateInput>
-    /**
-     * In case the PasswordResetToken was found with the provided `where` argument, update it with this data.
-     */
-    update: XOR<PasswordResetTokenUpdateInput, PasswordResetTokenUncheckedUpdateInput>
-  }
-
-  /**
-   * PasswordResetToken delete
-   */
-  export type PasswordResetTokenDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetToken
-     */
-    select?: PasswordResetTokenSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetToken
-     */
-    omit?: PasswordResetTokenOmit<ExtArgs> | null
-    /**
-     * Filter which PasswordResetToken to delete.
-     */
-    where: PasswordResetTokenWhereUniqueInput
-  }
-
-  /**
-   * PasswordResetToken deleteMany
-   */
-  export type PasswordResetTokenDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which PasswordResetTokens to delete
-     */
-    where?: PasswordResetTokenWhereInput
-    /**
-     * Limit how many PasswordResetTokens to delete.
-     */
-    limit?: number
-  }
-
-  /**
-   * PasswordResetToken without action
-   */
-  export type PasswordResetTokenDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetToken
-     */
-    select?: PasswordResetTokenSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetToken
-     */
-    omit?: PasswordResetTokenOmit<ExtArgs> | null
+    omit?: ChallengeOmit<ExtArgs> | null
   }
 
 
@@ -9802,10 +7674,11 @@ export namespace Prisma {
   export const UserScalarFieldEnum: {
     id: 'id',
     email: 'email',
-    password: 'password',
     passwordHash: 'passwordHash',
     firstName: 'firstName',
     lastName: 'lastName',
+    profileImage: 'profileImage',
+    name: 'name',
     role: 'role',
     lastLogin: 'lastLogin',
     createdAt: 'createdAt',
@@ -9815,21 +7688,22 @@ export namespace Prisma {
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
-  export const EventScalarFieldEnum: {
+  export const PasswordResetTokenScalarFieldEnum: {
     id: 'id',
-    title: 'title',
-    status: 'status',
-    format: 'format',
-    createdAt: 'createdAt',
-    updatedAt: 'updatedAt'
+    email: 'email',
+    token: 'token',
+    expiresAt: 'expiresAt',
+    createdAt: 'createdAt'
   };
 
-  export type EventScalarFieldEnum = (typeof EventScalarFieldEnum)[keyof typeof EventScalarFieldEnum]
+  export type PasswordResetTokenScalarFieldEnum = (typeof PasswordResetTokenScalarFieldEnum)[keyof typeof PasswordResetTokenScalarFieldEnum]
 
 
   export const PlayerProfileScalarFieldEnum: {
     id: 'id',
     userId: 'userId',
+    name: 'name',
+    handicap: 'handicap',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -9841,8 +7715,7 @@ export namespace Prisma {
     id: 'id',
     coachId: 'coachId',
     playerId: 'playerId',
-    createdAt: 'createdAt',
-    updatedAt: 'updatedAt'
+    createdAt: 'createdAt'
   };
 
   export type CoachPlayerLinkScalarFieldEnum = (typeof CoachPlayerLinkScalarFieldEnum)[keyof typeof CoachPlayerLinkScalarFieldEnum]
@@ -9851,6 +7724,7 @@ export namespace Prisma {
   export const TaskTemplateScalarFieldEnum: {
     id: 'id',
     title: 'title',
+    content: 'content',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -9858,35 +7732,14 @@ export namespace Prisma {
   export type TaskTemplateScalarFieldEnum = (typeof TaskTemplateScalarFieldEnum)[keyof typeof TaskTemplateScalarFieldEnum]
 
 
-  export const CalendarEventScalarFieldEnum: {
+  export const ChallengeScalarFieldEnum: {
     id: 'id',
     title: 'title',
-    date: 'date',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
 
-  export type CalendarEventScalarFieldEnum = (typeof CalendarEventScalarFieldEnum)[keyof typeof CalendarEventScalarFieldEnum]
-
-
-  export const TaskLogScalarFieldEnum: {
-    id: 'id',
-    taskId: 'taskId',
-    createdAt: 'createdAt',
-    updatedAt: 'updatedAt'
-  };
-
-  export type TaskLogScalarFieldEnum = (typeof TaskLogScalarFieldEnum)[keyof typeof TaskLogScalarFieldEnum]
-
-
-  export const PasswordResetTokenScalarFieldEnum: {
-    id: 'id',
-    token: 'token',
-    expiresAt: 'expiresAt',
-    createdAt: 'createdAt'
-  };
-
-  export type PasswordResetTokenScalarFieldEnum = (typeof PasswordResetTokenScalarFieldEnum)[keyof typeof PasswordResetTokenScalarFieldEnum]
+  export type ChallengeScalarFieldEnum = (typeof ChallengeScalarFieldEnum)[keyof typeof ChallengeScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -9961,30 +7814,16 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'EventStatus'
+   * Reference to a field of type 'Float'
    */
-  export type EnumEventStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EventStatus'>
+  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
     
 
 
   /**
-   * Reference to a field of type 'EventStatus[]'
+   * Reference to a field of type 'Float[]'
    */
-  export type ListEnumEventStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EventStatus[]'>
-    
-
-
-  /**
-   * Reference to a field of type 'EventFormat'
-   */
-  export type EnumEventFormatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EventFormat'>
-    
-
-
-  /**
-   * Reference to a field of type 'EventFormat[]'
-   */
-  export type ListEnumEventFormatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EventFormat[]'>
+  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
 
 
@@ -10011,31 +7850,33 @@ export namespace Prisma {
     NOT?: UserWhereInput | UserWhereInput[]
     id?: StringFilter<"User"> | string
     email?: StringFilter<"User"> | string
-    password?: StringFilter<"User"> | string
-    passwordHash?: StringNullableFilter<"User"> | string | null
-    firstName?: StringFilter<"User"> | string
-    lastName?: StringFilter<"User"> | string
+    passwordHash?: StringFilter<"User"> | string
+    firstName?: StringNullableFilter<"User"> | string | null
+    lastName?: StringNullableFilter<"User"> | string | null
+    profileImage?: StringNullableFilter<"User"> | string | null
+    name?: StringNullableFilter<"User"> | string | null
     role?: EnumRoleFilter<"User"> | $Enums.Role
     lastLogin?: DateTimeNullableFilter<"User"> | Date | string | null
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
     playerProfile?: XOR<PlayerProfileNullableScalarRelationFilter, PlayerProfileWhereInput> | null
-    coachPlayerLink?: CoachPlayerLinkListRelationFilter
+    coachPlayerLinks?: CoachPlayerLinkListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
     id?: SortOrder
     email?: SortOrder
-    password?: SortOrder
-    passwordHash?: SortOrderInput | SortOrder
-    firstName?: SortOrder
-    lastName?: SortOrder
+    passwordHash?: SortOrder
+    firstName?: SortOrderInput | SortOrder
+    lastName?: SortOrderInput | SortOrder
+    profileImage?: SortOrderInput | SortOrder
+    name?: SortOrderInput | SortOrder
     role?: SortOrder
     lastLogin?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     playerProfile?: PlayerProfileOrderByWithRelationInput
-    coachPlayerLink?: CoachPlayerLinkOrderByRelationAggregateInput
+    coachPlayerLinks?: CoachPlayerLinkOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -10044,25 +7885,27 @@ export namespace Prisma {
     AND?: UserWhereInput | UserWhereInput[]
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
-    password?: StringFilter<"User"> | string
-    passwordHash?: StringNullableFilter<"User"> | string | null
-    firstName?: StringFilter<"User"> | string
-    lastName?: StringFilter<"User"> | string
+    passwordHash?: StringFilter<"User"> | string
+    firstName?: StringNullableFilter<"User"> | string | null
+    lastName?: StringNullableFilter<"User"> | string | null
+    profileImage?: StringNullableFilter<"User"> | string | null
+    name?: StringNullableFilter<"User"> | string | null
     role?: EnumRoleFilter<"User"> | $Enums.Role
     lastLogin?: DateTimeNullableFilter<"User"> | Date | string | null
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
     playerProfile?: XOR<PlayerProfileNullableScalarRelationFilter, PlayerProfileWhereInput> | null
-    coachPlayerLink?: CoachPlayerLinkListRelationFilter
+    coachPlayerLinks?: CoachPlayerLinkListRelationFilter
   }, "id" | "email">
 
   export type UserOrderByWithAggregationInput = {
     id?: SortOrder
     email?: SortOrder
-    password?: SortOrder
-    passwordHash?: SortOrderInput | SortOrder
-    firstName?: SortOrder
-    lastName?: SortOrder
+    passwordHash?: SortOrder
+    firstName?: SortOrderInput | SortOrder
+    lastName?: SortOrderInput | SortOrder
+    profileImage?: SortOrderInput | SortOrder
+    name?: SortOrderInput | SortOrder
     role?: SortOrder
     lastLogin?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -10078,322 +7921,15 @@ export namespace Prisma {
     NOT?: UserScalarWhereWithAggregatesInput | UserScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"User"> | string
     email?: StringWithAggregatesFilter<"User"> | string
-    password?: StringWithAggregatesFilter<"User"> | string
-    passwordHash?: StringNullableWithAggregatesFilter<"User"> | string | null
-    firstName?: StringWithAggregatesFilter<"User"> | string
-    lastName?: StringWithAggregatesFilter<"User"> | string
+    passwordHash?: StringWithAggregatesFilter<"User"> | string
+    firstName?: StringNullableWithAggregatesFilter<"User"> | string | null
+    lastName?: StringNullableWithAggregatesFilter<"User"> | string | null
+    profileImage?: StringNullableWithAggregatesFilter<"User"> | string | null
+    name?: StringNullableWithAggregatesFilter<"User"> | string | null
     role?: EnumRoleWithAggregatesFilter<"User"> | $Enums.Role
     lastLogin?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
-  }
-
-  export type EventWhereInput = {
-    AND?: EventWhereInput | EventWhereInput[]
-    OR?: EventWhereInput[]
-    NOT?: EventWhereInput | EventWhereInput[]
-    id?: StringFilter<"Event"> | string
-    title?: StringFilter<"Event"> | string
-    status?: EnumEventStatusFilter<"Event"> | $Enums.EventStatus
-    format?: EnumEventFormatFilter<"Event"> | $Enums.EventFormat
-    createdAt?: DateTimeFilter<"Event"> | Date | string
-    updatedAt?: DateTimeFilter<"Event"> | Date | string
-  }
-
-  export type EventOrderByWithRelationInput = {
-    id?: SortOrder
-    title?: SortOrder
-    status?: SortOrder
-    format?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-  }
-
-  export type EventWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    AND?: EventWhereInput | EventWhereInput[]
-    OR?: EventWhereInput[]
-    NOT?: EventWhereInput | EventWhereInput[]
-    title?: StringFilter<"Event"> | string
-    status?: EnumEventStatusFilter<"Event"> | $Enums.EventStatus
-    format?: EnumEventFormatFilter<"Event"> | $Enums.EventFormat
-    createdAt?: DateTimeFilter<"Event"> | Date | string
-    updatedAt?: DateTimeFilter<"Event"> | Date | string
-  }, "id">
-
-  export type EventOrderByWithAggregationInput = {
-    id?: SortOrder
-    title?: SortOrder
-    status?: SortOrder
-    format?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-    _count?: EventCountOrderByAggregateInput
-    _max?: EventMaxOrderByAggregateInput
-    _min?: EventMinOrderByAggregateInput
-  }
-
-  export type EventScalarWhereWithAggregatesInput = {
-    AND?: EventScalarWhereWithAggregatesInput | EventScalarWhereWithAggregatesInput[]
-    OR?: EventScalarWhereWithAggregatesInput[]
-    NOT?: EventScalarWhereWithAggregatesInput | EventScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"Event"> | string
-    title?: StringWithAggregatesFilter<"Event"> | string
-    status?: EnumEventStatusWithAggregatesFilter<"Event"> | $Enums.EventStatus
-    format?: EnumEventFormatWithAggregatesFilter<"Event"> | $Enums.EventFormat
-    createdAt?: DateTimeWithAggregatesFilter<"Event"> | Date | string
-    updatedAt?: DateTimeWithAggregatesFilter<"Event"> | Date | string
-  }
-
-  export type PlayerProfileWhereInput = {
-    AND?: PlayerProfileWhereInput | PlayerProfileWhereInput[]
-    OR?: PlayerProfileWhereInput[]
-    NOT?: PlayerProfileWhereInput | PlayerProfileWhereInput[]
-    id?: StringFilter<"PlayerProfile"> | string
-    userId?: StringFilter<"PlayerProfile"> | string
-    createdAt?: DateTimeFilter<"PlayerProfile"> | Date | string
-    updatedAt?: DateTimeFilter<"PlayerProfile"> | Date | string
-    user?: XOR<UserScalarRelationFilter, UserWhereInput>
-  }
-
-  export type PlayerProfileOrderByWithRelationInput = {
-    id?: SortOrder
-    userId?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-    user?: UserOrderByWithRelationInput
-  }
-
-  export type PlayerProfileWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    userId?: string
-    AND?: PlayerProfileWhereInput | PlayerProfileWhereInput[]
-    OR?: PlayerProfileWhereInput[]
-    NOT?: PlayerProfileWhereInput | PlayerProfileWhereInput[]
-    createdAt?: DateTimeFilter<"PlayerProfile"> | Date | string
-    updatedAt?: DateTimeFilter<"PlayerProfile"> | Date | string
-    user?: XOR<UserScalarRelationFilter, UserWhereInput>
-  }, "id" | "userId">
-
-  export type PlayerProfileOrderByWithAggregationInput = {
-    id?: SortOrder
-    userId?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-    _count?: PlayerProfileCountOrderByAggregateInput
-    _max?: PlayerProfileMaxOrderByAggregateInput
-    _min?: PlayerProfileMinOrderByAggregateInput
-  }
-
-  export type PlayerProfileScalarWhereWithAggregatesInput = {
-    AND?: PlayerProfileScalarWhereWithAggregatesInput | PlayerProfileScalarWhereWithAggregatesInput[]
-    OR?: PlayerProfileScalarWhereWithAggregatesInput[]
-    NOT?: PlayerProfileScalarWhereWithAggregatesInput | PlayerProfileScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"PlayerProfile"> | string
-    userId?: StringWithAggregatesFilter<"PlayerProfile"> | string
-    createdAt?: DateTimeWithAggregatesFilter<"PlayerProfile"> | Date | string
-    updatedAt?: DateTimeWithAggregatesFilter<"PlayerProfile"> | Date | string
-  }
-
-  export type CoachPlayerLinkWhereInput = {
-    AND?: CoachPlayerLinkWhereInput | CoachPlayerLinkWhereInput[]
-    OR?: CoachPlayerLinkWhereInput[]
-    NOT?: CoachPlayerLinkWhereInput | CoachPlayerLinkWhereInput[]
-    id?: StringFilter<"CoachPlayerLink"> | string
-    coachId?: StringFilter<"CoachPlayerLink"> | string
-    playerId?: StringFilter<"CoachPlayerLink"> | string
-    createdAt?: DateTimeFilter<"CoachPlayerLink"> | Date | string
-    updatedAt?: DateTimeFilter<"CoachPlayerLink"> | Date | string
-    coach?: XOR<UserScalarRelationFilter, UserWhereInput>
-  }
-
-  export type CoachPlayerLinkOrderByWithRelationInput = {
-    id?: SortOrder
-    coachId?: SortOrder
-    playerId?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-    coach?: UserOrderByWithRelationInput
-  }
-
-  export type CoachPlayerLinkWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    AND?: CoachPlayerLinkWhereInput | CoachPlayerLinkWhereInput[]
-    OR?: CoachPlayerLinkWhereInput[]
-    NOT?: CoachPlayerLinkWhereInput | CoachPlayerLinkWhereInput[]
-    coachId?: StringFilter<"CoachPlayerLink"> | string
-    playerId?: StringFilter<"CoachPlayerLink"> | string
-    createdAt?: DateTimeFilter<"CoachPlayerLink"> | Date | string
-    updatedAt?: DateTimeFilter<"CoachPlayerLink"> | Date | string
-    coach?: XOR<UserScalarRelationFilter, UserWhereInput>
-  }, "id">
-
-  export type CoachPlayerLinkOrderByWithAggregationInput = {
-    id?: SortOrder
-    coachId?: SortOrder
-    playerId?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-    _count?: CoachPlayerLinkCountOrderByAggregateInput
-    _max?: CoachPlayerLinkMaxOrderByAggregateInput
-    _min?: CoachPlayerLinkMinOrderByAggregateInput
-  }
-
-  export type CoachPlayerLinkScalarWhereWithAggregatesInput = {
-    AND?: CoachPlayerLinkScalarWhereWithAggregatesInput | CoachPlayerLinkScalarWhereWithAggregatesInput[]
-    OR?: CoachPlayerLinkScalarWhereWithAggregatesInput[]
-    NOT?: CoachPlayerLinkScalarWhereWithAggregatesInput | CoachPlayerLinkScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"CoachPlayerLink"> | string
-    coachId?: StringWithAggregatesFilter<"CoachPlayerLink"> | string
-    playerId?: StringWithAggregatesFilter<"CoachPlayerLink"> | string
-    createdAt?: DateTimeWithAggregatesFilter<"CoachPlayerLink"> | Date | string
-    updatedAt?: DateTimeWithAggregatesFilter<"CoachPlayerLink"> | Date | string
-  }
-
-  export type TaskTemplateWhereInput = {
-    AND?: TaskTemplateWhereInput | TaskTemplateWhereInput[]
-    OR?: TaskTemplateWhereInput[]
-    NOT?: TaskTemplateWhereInput | TaskTemplateWhereInput[]
-    id?: StringFilter<"TaskTemplate"> | string
-    title?: StringFilter<"TaskTemplate"> | string
-    createdAt?: DateTimeFilter<"TaskTemplate"> | Date | string
-    updatedAt?: DateTimeFilter<"TaskTemplate"> | Date | string
-  }
-
-  export type TaskTemplateOrderByWithRelationInput = {
-    id?: SortOrder
-    title?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-  }
-
-  export type TaskTemplateWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    AND?: TaskTemplateWhereInput | TaskTemplateWhereInput[]
-    OR?: TaskTemplateWhereInput[]
-    NOT?: TaskTemplateWhereInput | TaskTemplateWhereInput[]
-    title?: StringFilter<"TaskTemplate"> | string
-    createdAt?: DateTimeFilter<"TaskTemplate"> | Date | string
-    updatedAt?: DateTimeFilter<"TaskTemplate"> | Date | string
-  }, "id">
-
-  export type TaskTemplateOrderByWithAggregationInput = {
-    id?: SortOrder
-    title?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-    _count?: TaskTemplateCountOrderByAggregateInput
-    _max?: TaskTemplateMaxOrderByAggregateInput
-    _min?: TaskTemplateMinOrderByAggregateInput
-  }
-
-  export type TaskTemplateScalarWhereWithAggregatesInput = {
-    AND?: TaskTemplateScalarWhereWithAggregatesInput | TaskTemplateScalarWhereWithAggregatesInput[]
-    OR?: TaskTemplateScalarWhereWithAggregatesInput[]
-    NOT?: TaskTemplateScalarWhereWithAggregatesInput | TaskTemplateScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"TaskTemplate"> | string
-    title?: StringWithAggregatesFilter<"TaskTemplate"> | string
-    createdAt?: DateTimeWithAggregatesFilter<"TaskTemplate"> | Date | string
-    updatedAt?: DateTimeWithAggregatesFilter<"TaskTemplate"> | Date | string
-  }
-
-  export type CalendarEventWhereInput = {
-    AND?: CalendarEventWhereInput | CalendarEventWhereInput[]
-    OR?: CalendarEventWhereInput[]
-    NOT?: CalendarEventWhereInput | CalendarEventWhereInput[]
-    id?: StringFilter<"CalendarEvent"> | string
-    title?: StringFilter<"CalendarEvent"> | string
-    date?: DateTimeFilter<"CalendarEvent"> | Date | string
-    createdAt?: DateTimeFilter<"CalendarEvent"> | Date | string
-    updatedAt?: DateTimeFilter<"CalendarEvent"> | Date | string
-  }
-
-  export type CalendarEventOrderByWithRelationInput = {
-    id?: SortOrder
-    title?: SortOrder
-    date?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-  }
-
-  export type CalendarEventWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    AND?: CalendarEventWhereInput | CalendarEventWhereInput[]
-    OR?: CalendarEventWhereInput[]
-    NOT?: CalendarEventWhereInput | CalendarEventWhereInput[]
-    title?: StringFilter<"CalendarEvent"> | string
-    date?: DateTimeFilter<"CalendarEvent"> | Date | string
-    createdAt?: DateTimeFilter<"CalendarEvent"> | Date | string
-    updatedAt?: DateTimeFilter<"CalendarEvent"> | Date | string
-  }, "id">
-
-  export type CalendarEventOrderByWithAggregationInput = {
-    id?: SortOrder
-    title?: SortOrder
-    date?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-    _count?: CalendarEventCountOrderByAggregateInput
-    _max?: CalendarEventMaxOrderByAggregateInput
-    _min?: CalendarEventMinOrderByAggregateInput
-  }
-
-  export type CalendarEventScalarWhereWithAggregatesInput = {
-    AND?: CalendarEventScalarWhereWithAggregatesInput | CalendarEventScalarWhereWithAggregatesInput[]
-    OR?: CalendarEventScalarWhereWithAggregatesInput[]
-    NOT?: CalendarEventScalarWhereWithAggregatesInput | CalendarEventScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"CalendarEvent"> | string
-    title?: StringWithAggregatesFilter<"CalendarEvent"> | string
-    date?: DateTimeWithAggregatesFilter<"CalendarEvent"> | Date | string
-    createdAt?: DateTimeWithAggregatesFilter<"CalendarEvent"> | Date | string
-    updatedAt?: DateTimeWithAggregatesFilter<"CalendarEvent"> | Date | string
-  }
-
-  export type TaskLogWhereInput = {
-    AND?: TaskLogWhereInput | TaskLogWhereInput[]
-    OR?: TaskLogWhereInput[]
-    NOT?: TaskLogWhereInput | TaskLogWhereInput[]
-    id?: StringFilter<"TaskLog"> | string
-    taskId?: StringFilter<"TaskLog"> | string
-    createdAt?: DateTimeFilter<"TaskLog"> | Date | string
-    updatedAt?: DateTimeFilter<"TaskLog"> | Date | string
-  }
-
-  export type TaskLogOrderByWithRelationInput = {
-    id?: SortOrder
-    taskId?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-  }
-
-  export type TaskLogWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    AND?: TaskLogWhereInput | TaskLogWhereInput[]
-    OR?: TaskLogWhereInput[]
-    NOT?: TaskLogWhereInput | TaskLogWhereInput[]
-    taskId?: StringFilter<"TaskLog"> | string
-    createdAt?: DateTimeFilter<"TaskLog"> | Date | string
-    updatedAt?: DateTimeFilter<"TaskLog"> | Date | string
-  }, "id">
-
-  export type TaskLogOrderByWithAggregationInput = {
-    id?: SortOrder
-    taskId?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-    _count?: TaskLogCountOrderByAggregateInput
-    _max?: TaskLogMaxOrderByAggregateInput
-    _min?: TaskLogMinOrderByAggregateInput
-  }
-
-  export type TaskLogScalarWhereWithAggregatesInput = {
-    AND?: TaskLogScalarWhereWithAggregatesInput | TaskLogScalarWhereWithAggregatesInput[]
-    OR?: TaskLogScalarWhereWithAggregatesInput[]
-    NOT?: TaskLogScalarWhereWithAggregatesInput | TaskLogScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"TaskLog"> | string
-    taskId?: StringWithAggregatesFilter<"TaskLog"> | string
-    createdAt?: DateTimeWithAggregatesFilter<"TaskLog"> | Date | string
-    updatedAt?: DateTimeWithAggregatesFilter<"TaskLog"> | Date | string
   }
 
   export type PasswordResetTokenWhereInput = {
@@ -10401,6 +7937,7 @@ export namespace Prisma {
     OR?: PasswordResetTokenWhereInput[]
     NOT?: PasswordResetTokenWhereInput | PasswordResetTokenWhereInput[]
     id?: StringFilter<"PasswordResetToken"> | string
+    email?: StringFilter<"PasswordResetToken"> | string
     token?: StringFilter<"PasswordResetToken"> | string
     expiresAt?: DateTimeFilter<"PasswordResetToken"> | Date | string
     createdAt?: DateTimeFilter<"PasswordResetToken"> | Date | string
@@ -10408,6 +7945,7 @@ export namespace Prisma {
 
   export type PasswordResetTokenOrderByWithRelationInput = {
     id?: SortOrder
+    email?: SortOrder
     token?: SortOrder
     expiresAt?: SortOrder
     createdAt?: SortOrder
@@ -10419,12 +7957,14 @@ export namespace Prisma {
     AND?: PasswordResetTokenWhereInput | PasswordResetTokenWhereInput[]
     OR?: PasswordResetTokenWhereInput[]
     NOT?: PasswordResetTokenWhereInput | PasswordResetTokenWhereInput[]
+    email?: StringFilter<"PasswordResetToken"> | string
     expiresAt?: DateTimeFilter<"PasswordResetToken"> | Date | string
     createdAt?: DateTimeFilter<"PasswordResetToken"> | Date | string
   }, "id" | "token">
 
   export type PasswordResetTokenOrderByWithAggregationInput = {
     id?: SortOrder
+    email?: SortOrder
     token?: SortOrder
     expiresAt?: SortOrder
     createdAt?: SortOrder
@@ -10438,78 +7978,295 @@ export namespace Prisma {
     OR?: PasswordResetTokenScalarWhereWithAggregatesInput[]
     NOT?: PasswordResetTokenScalarWhereWithAggregatesInput | PasswordResetTokenScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"PasswordResetToken"> | string
+    email?: StringWithAggregatesFilter<"PasswordResetToken"> | string
     token?: StringWithAggregatesFilter<"PasswordResetToken"> | string
     expiresAt?: DateTimeWithAggregatesFilter<"PasswordResetToken"> | Date | string
     createdAt?: DateTimeWithAggregatesFilter<"PasswordResetToken"> | Date | string
   }
 
+  export type PlayerProfileWhereInput = {
+    AND?: PlayerProfileWhereInput | PlayerProfileWhereInput[]
+    OR?: PlayerProfileWhereInput[]
+    NOT?: PlayerProfileWhereInput | PlayerProfileWhereInput[]
+    id?: StringFilter<"PlayerProfile"> | string
+    userId?: StringFilter<"PlayerProfile"> | string
+    name?: StringFilter<"PlayerProfile"> | string
+    handicap?: FloatNullableFilter<"PlayerProfile"> | number | null
+    createdAt?: DateTimeFilter<"PlayerProfile"> | Date | string
+    updatedAt?: DateTimeFilter<"PlayerProfile"> | Date | string
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type PlayerProfileOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    name?: SortOrder
+    handicap?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    user?: UserOrderByWithRelationInput
+  }
+
+  export type PlayerProfileWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    userId?: string
+    AND?: PlayerProfileWhereInput | PlayerProfileWhereInput[]
+    OR?: PlayerProfileWhereInput[]
+    NOT?: PlayerProfileWhereInput | PlayerProfileWhereInput[]
+    name?: StringFilter<"PlayerProfile"> | string
+    handicap?: FloatNullableFilter<"PlayerProfile"> | number | null
+    createdAt?: DateTimeFilter<"PlayerProfile"> | Date | string
+    updatedAt?: DateTimeFilter<"PlayerProfile"> | Date | string
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id" | "userId">
+
+  export type PlayerProfileOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    name?: SortOrder
+    handicap?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: PlayerProfileCountOrderByAggregateInput
+    _avg?: PlayerProfileAvgOrderByAggregateInput
+    _max?: PlayerProfileMaxOrderByAggregateInput
+    _min?: PlayerProfileMinOrderByAggregateInput
+    _sum?: PlayerProfileSumOrderByAggregateInput
+  }
+
+  export type PlayerProfileScalarWhereWithAggregatesInput = {
+    AND?: PlayerProfileScalarWhereWithAggregatesInput | PlayerProfileScalarWhereWithAggregatesInput[]
+    OR?: PlayerProfileScalarWhereWithAggregatesInput[]
+    NOT?: PlayerProfileScalarWhereWithAggregatesInput | PlayerProfileScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PlayerProfile"> | string
+    userId?: StringWithAggregatesFilter<"PlayerProfile"> | string
+    name?: StringWithAggregatesFilter<"PlayerProfile"> | string
+    handicap?: FloatNullableWithAggregatesFilter<"PlayerProfile"> | number | null
+    createdAt?: DateTimeWithAggregatesFilter<"PlayerProfile"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"PlayerProfile"> | Date | string
+  }
+
+  export type CoachPlayerLinkWhereInput = {
+    AND?: CoachPlayerLinkWhereInput | CoachPlayerLinkWhereInput[]
+    OR?: CoachPlayerLinkWhereInput[]
+    NOT?: CoachPlayerLinkWhereInput | CoachPlayerLinkWhereInput[]
+    id?: StringFilter<"CoachPlayerLink"> | string
+    coachId?: StringFilter<"CoachPlayerLink"> | string
+    playerId?: StringFilter<"CoachPlayerLink"> | string
+    createdAt?: DateTimeFilter<"CoachPlayerLink"> | Date | string
+    coach?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type CoachPlayerLinkOrderByWithRelationInput = {
+    id?: SortOrder
+    coachId?: SortOrder
+    playerId?: SortOrder
+    createdAt?: SortOrder
+    coach?: UserOrderByWithRelationInput
+  }
+
+  export type CoachPlayerLinkWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: CoachPlayerLinkWhereInput | CoachPlayerLinkWhereInput[]
+    OR?: CoachPlayerLinkWhereInput[]
+    NOT?: CoachPlayerLinkWhereInput | CoachPlayerLinkWhereInput[]
+    coachId?: StringFilter<"CoachPlayerLink"> | string
+    playerId?: StringFilter<"CoachPlayerLink"> | string
+    createdAt?: DateTimeFilter<"CoachPlayerLink"> | Date | string
+    coach?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id">
+
+  export type CoachPlayerLinkOrderByWithAggregationInput = {
+    id?: SortOrder
+    coachId?: SortOrder
+    playerId?: SortOrder
+    createdAt?: SortOrder
+    _count?: CoachPlayerLinkCountOrderByAggregateInput
+    _max?: CoachPlayerLinkMaxOrderByAggregateInput
+    _min?: CoachPlayerLinkMinOrderByAggregateInput
+  }
+
+  export type CoachPlayerLinkScalarWhereWithAggregatesInput = {
+    AND?: CoachPlayerLinkScalarWhereWithAggregatesInput | CoachPlayerLinkScalarWhereWithAggregatesInput[]
+    OR?: CoachPlayerLinkScalarWhereWithAggregatesInput[]
+    NOT?: CoachPlayerLinkScalarWhereWithAggregatesInput | CoachPlayerLinkScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"CoachPlayerLink"> | string
+    coachId?: StringWithAggregatesFilter<"CoachPlayerLink"> | string
+    playerId?: StringWithAggregatesFilter<"CoachPlayerLink"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"CoachPlayerLink"> | Date | string
+  }
+
+  export type TaskTemplateWhereInput = {
+    AND?: TaskTemplateWhereInput | TaskTemplateWhereInput[]
+    OR?: TaskTemplateWhereInput[]
+    NOT?: TaskTemplateWhereInput | TaskTemplateWhereInput[]
+    id?: StringFilter<"TaskTemplate"> | string
+    title?: StringFilter<"TaskTemplate"> | string
+    content?: StringFilter<"TaskTemplate"> | string
+    createdAt?: DateTimeFilter<"TaskTemplate"> | Date | string
+    updatedAt?: DateTimeFilter<"TaskTemplate"> | Date | string
+  }
+
+  export type TaskTemplateOrderByWithRelationInput = {
+    id?: SortOrder
+    title?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type TaskTemplateWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: TaskTemplateWhereInput | TaskTemplateWhereInput[]
+    OR?: TaskTemplateWhereInput[]
+    NOT?: TaskTemplateWhereInput | TaskTemplateWhereInput[]
+    title?: StringFilter<"TaskTemplate"> | string
+    content?: StringFilter<"TaskTemplate"> | string
+    createdAt?: DateTimeFilter<"TaskTemplate"> | Date | string
+    updatedAt?: DateTimeFilter<"TaskTemplate"> | Date | string
+  }, "id">
+
+  export type TaskTemplateOrderByWithAggregationInput = {
+    id?: SortOrder
+    title?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: TaskTemplateCountOrderByAggregateInput
+    _max?: TaskTemplateMaxOrderByAggregateInput
+    _min?: TaskTemplateMinOrderByAggregateInput
+  }
+
+  export type TaskTemplateScalarWhereWithAggregatesInput = {
+    AND?: TaskTemplateScalarWhereWithAggregatesInput | TaskTemplateScalarWhereWithAggregatesInput[]
+    OR?: TaskTemplateScalarWhereWithAggregatesInput[]
+    NOT?: TaskTemplateScalarWhereWithAggregatesInput | TaskTemplateScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"TaskTemplate"> | string
+    title?: StringWithAggregatesFilter<"TaskTemplate"> | string
+    content?: StringWithAggregatesFilter<"TaskTemplate"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"TaskTemplate"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"TaskTemplate"> | Date | string
+  }
+
+  export type ChallengeWhereInput = {
+    AND?: ChallengeWhereInput | ChallengeWhereInput[]
+    OR?: ChallengeWhereInput[]
+    NOT?: ChallengeWhereInput | ChallengeWhereInput[]
+    id?: StringFilter<"Challenge"> | string
+    title?: StringFilter<"Challenge"> | string
+    createdAt?: DateTimeFilter<"Challenge"> | Date | string
+    updatedAt?: DateTimeFilter<"Challenge"> | Date | string
+  }
+
+  export type ChallengeOrderByWithRelationInput = {
+    id?: SortOrder
+    title?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ChallengeWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: ChallengeWhereInput | ChallengeWhereInput[]
+    OR?: ChallengeWhereInput[]
+    NOT?: ChallengeWhereInput | ChallengeWhereInput[]
+    title?: StringFilter<"Challenge"> | string
+    createdAt?: DateTimeFilter<"Challenge"> | Date | string
+    updatedAt?: DateTimeFilter<"Challenge"> | Date | string
+  }, "id">
+
+  export type ChallengeOrderByWithAggregationInput = {
+    id?: SortOrder
+    title?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: ChallengeCountOrderByAggregateInput
+    _max?: ChallengeMaxOrderByAggregateInput
+    _min?: ChallengeMinOrderByAggregateInput
+  }
+
+  export type ChallengeScalarWhereWithAggregatesInput = {
+    AND?: ChallengeScalarWhereWithAggregatesInput | ChallengeScalarWhereWithAggregatesInput[]
+    OR?: ChallengeScalarWhereWithAggregatesInput[]
+    NOT?: ChallengeScalarWhereWithAggregatesInput | ChallengeScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Challenge"> | string
+    title?: StringWithAggregatesFilter<"Challenge"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"Challenge"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"Challenge"> | Date | string
+  }
+
   export type UserCreateInput = {
     id?: string
     email: string
-    password: string
-    passwordHash?: string | null
-    firstName: string
-    lastName: string
+    passwordHash: string
+    firstName?: string | null
+    lastName?: string | null
+    profileImage?: string | null
+    name?: string | null
     role?: $Enums.Role
     lastLogin?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     playerProfile?: PlayerProfileCreateNestedOneWithoutUserInput
-    coachPlayerLink?: CoachPlayerLinkCreateNestedManyWithoutCoachInput
+    coachPlayerLinks?: CoachPlayerLinkCreateNestedManyWithoutCoachInput
   }
 
   export type UserUncheckedCreateInput = {
     id?: string
     email: string
-    password: string
-    passwordHash?: string | null
-    firstName: string
-    lastName: string
+    passwordHash: string
+    firstName?: string | null
+    lastName?: string | null
+    profileImage?: string | null
+    name?: string | null
     role?: $Enums.Role
     lastLogin?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     playerProfile?: PlayerProfileUncheckedCreateNestedOneWithoutUserInput
-    coachPlayerLink?: CoachPlayerLinkUncheckedCreateNestedManyWithoutCoachInput
+    coachPlayerLinks?: CoachPlayerLinkUncheckedCreateNestedManyWithoutCoachInput
   }
 
   export type UserUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
-    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
-    firstName?: StringFieldUpdateOperationsInput | string
-    lastName?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileImage?: NullableStringFieldUpdateOperationsInput | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     lastLogin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     playerProfile?: PlayerProfileUpdateOneWithoutUserNestedInput
-    coachPlayerLink?: CoachPlayerLinkUpdateManyWithoutCoachNestedInput
+    coachPlayerLinks?: CoachPlayerLinkUpdateManyWithoutCoachNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
-    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
-    firstName?: StringFieldUpdateOperationsInput | string
-    lastName?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileImage?: NullableStringFieldUpdateOperationsInput | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     lastLogin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     playerProfile?: PlayerProfileUncheckedUpdateOneWithoutUserNestedInput
-    coachPlayerLink?: CoachPlayerLinkUncheckedUpdateManyWithoutCoachNestedInput
+    coachPlayerLinks?: CoachPlayerLinkUncheckedUpdateManyWithoutCoachNestedInput
   }
 
   export type UserCreateManyInput = {
     id?: string
     email: string
-    password: string
-    passwordHash?: string | null
-    firstName: string
-    lastName: string
+    passwordHash: string
+    firstName?: string | null
+    lastName?: string | null
+    profileImage?: string | null
+    name?: string | null
     role?: $Enums.Role
     lastLogin?: Date | string | null
     createdAt?: Date | string
@@ -10519,10 +8276,11 @@ export namespace Prisma {
   export type UserUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
-    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
-    firstName?: StringFieldUpdateOperationsInput | string
-    lastName?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileImage?: NullableStringFieldUpdateOperationsInput | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     lastLogin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -10532,81 +8290,77 @@ export namespace Prisma {
   export type UserUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
-    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
-    firstName?: StringFieldUpdateOperationsInput | string
-    lastName?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileImage?: NullableStringFieldUpdateOperationsInput | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     lastLogin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
-  export type EventCreateInput = {
+  export type PasswordResetTokenCreateInput = {
     id?: string
-    title: string
-    status?: $Enums.EventStatus
-    format: $Enums.EventFormat
+    email: string
+    token: string
+    expiresAt: Date | string
     createdAt?: Date | string
-    updatedAt?: Date | string
   }
 
-  export type EventUncheckedCreateInput = {
+  export type PasswordResetTokenUncheckedCreateInput = {
     id?: string
-    title: string
-    status?: $Enums.EventStatus
-    format: $Enums.EventFormat
+    email: string
+    token: string
+    expiresAt: Date | string
     createdAt?: Date | string
-    updatedAt?: Date | string
   }
 
-  export type EventUpdateInput = {
+  export type PasswordResetTokenUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    title?: StringFieldUpdateOperationsInput | string
-    status?: EnumEventStatusFieldUpdateOperationsInput | $Enums.EventStatus
-    format?: EnumEventFormatFieldUpdateOperationsInput | $Enums.EventFormat
+    email?: StringFieldUpdateOperationsInput | string
+    token?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
-  export type EventUncheckedUpdateInput = {
+  export type PasswordResetTokenUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    title?: StringFieldUpdateOperationsInput | string
-    status?: EnumEventStatusFieldUpdateOperationsInput | $Enums.EventStatus
-    format?: EnumEventFormatFieldUpdateOperationsInput | $Enums.EventFormat
+    email?: StringFieldUpdateOperationsInput | string
+    token?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
-  export type EventCreateManyInput = {
+  export type PasswordResetTokenCreateManyInput = {
     id?: string
-    title: string
-    status?: $Enums.EventStatus
-    format: $Enums.EventFormat
+    email: string
+    token: string
+    expiresAt: Date | string
     createdAt?: Date | string
-    updatedAt?: Date | string
   }
 
-  export type EventUpdateManyMutationInput = {
+  export type PasswordResetTokenUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
-    title?: StringFieldUpdateOperationsInput | string
-    status?: EnumEventStatusFieldUpdateOperationsInput | $Enums.EventStatus
-    format?: EnumEventFormatFieldUpdateOperationsInput | $Enums.EventFormat
+    email?: StringFieldUpdateOperationsInput | string
+    token?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
-  export type EventUncheckedUpdateManyInput = {
+  export type PasswordResetTokenUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
-    title?: StringFieldUpdateOperationsInput | string
-    status?: EnumEventStatusFieldUpdateOperationsInput | $Enums.EventStatus
-    format?: EnumEventFormatFieldUpdateOperationsInput | $Enums.EventFormat
+    email?: StringFieldUpdateOperationsInput | string
+    token?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type PlayerProfileCreateInput = {
     id?: string
+    name: string
+    handicap?: number | null
     createdAt?: Date | string
     updatedAt?: Date | string
     user: UserCreateNestedOneWithoutPlayerProfileInput
@@ -10615,12 +8369,16 @@ export namespace Prisma {
   export type PlayerProfileUncheckedCreateInput = {
     id?: string
     userId: string
+    name: string
+    handicap?: number | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
 
   export type PlayerProfileUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    handicap?: NullableFloatFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneRequiredWithoutPlayerProfileNestedInput
@@ -10629,6 +8387,8 @@ export namespace Prisma {
   export type PlayerProfileUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    handicap?: NullableFloatFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -10636,12 +8396,16 @@ export namespace Prisma {
   export type PlayerProfileCreateManyInput = {
     id?: string
     userId: string
+    name: string
+    handicap?: number | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
 
   export type PlayerProfileUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    handicap?: NullableFloatFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -10649,6 +8413,8 @@ export namespace Prisma {
   export type PlayerProfileUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    handicap?: NullableFloatFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -10657,8 +8423,7 @@ export namespace Prisma {
     id?: string
     playerId: string
     createdAt?: Date | string
-    updatedAt?: Date | string
-    coach: UserCreateNestedOneWithoutCoachPlayerLinkInput
+    coach: UserCreateNestedOneWithoutCoachPlayerLinksInput
   }
 
   export type CoachPlayerLinkUncheckedCreateInput = {
@@ -10666,15 +8431,13 @@ export namespace Prisma {
     coachId: string
     playerId: string
     createdAt?: Date | string
-    updatedAt?: Date | string
   }
 
   export type CoachPlayerLinkUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     playerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    coach?: UserUpdateOneRequiredWithoutCoachPlayerLinkNestedInput
+    coach?: UserUpdateOneRequiredWithoutCoachPlayerLinksNestedInput
   }
 
   export type CoachPlayerLinkUncheckedUpdateInput = {
@@ -10682,7 +8445,6 @@ export namespace Prisma {
     coachId?: StringFieldUpdateOperationsInput | string
     playerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type CoachPlayerLinkCreateManyInput = {
@@ -10690,14 +8452,12 @@ export namespace Prisma {
     coachId: string
     playerId: string
     createdAt?: Date | string
-    updatedAt?: Date | string
   }
 
   export type CoachPlayerLinkUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     playerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type CoachPlayerLinkUncheckedUpdateManyInput = {
@@ -10705,12 +8465,12 @@ export namespace Prisma {
     coachId?: StringFieldUpdateOperationsInput | string
     playerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type TaskTemplateCreateInput = {
     id?: string
     title: string
+    content: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -10718,6 +8478,7 @@ export namespace Prisma {
   export type TaskTemplateUncheckedCreateInput = {
     id?: string
     title: string
+    content: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -10725,6 +8486,7 @@ export namespace Prisma {
   export type TaskTemplateUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -10732,6 +8494,7 @@ export namespace Prisma {
   export type TaskTemplateUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -10739,6 +8502,7 @@ export namespace Prisma {
   export type TaskTemplateCreateManyInput = {
     id?: string
     title: string
+    content: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -10746,6 +8510,7 @@ export namespace Prisma {
   export type TaskTemplateUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -10753,162 +8518,58 @@ export namespace Prisma {
   export type TaskTemplateUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
-  export type CalendarEventCreateInput = {
+  export type ChallengeCreateInput = {
     id?: string
     title: string
-    date: Date | string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
 
-  export type CalendarEventUncheckedCreateInput = {
+  export type ChallengeUncheckedCreateInput = {
     id?: string
     title: string
-    date: Date | string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
 
-  export type CalendarEventUpdateInput = {
+  export type ChallengeUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
-    date?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
-  export type CalendarEventUncheckedUpdateInput = {
+  export type ChallengeUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
-    date?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
-  export type CalendarEventCreateManyInput = {
+  export type ChallengeCreateManyInput = {
     id?: string
     title: string
-    date: Date | string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
 
-  export type CalendarEventUpdateManyMutationInput = {
+  export type ChallengeUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
-    date?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
-  export type CalendarEventUncheckedUpdateManyInput = {
+  export type ChallengeUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
-    date?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type TaskLogCreateInput = {
-    id?: string
-    taskId: string
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type TaskLogUncheckedCreateInput = {
-    id?: string
-    taskId: string
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type TaskLogUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    taskId?: StringFieldUpdateOperationsInput | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type TaskLogUncheckedUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    taskId?: StringFieldUpdateOperationsInput | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type TaskLogCreateManyInput = {
-    id?: string
-    taskId: string
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type TaskLogUpdateManyMutationInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    taskId?: StringFieldUpdateOperationsInput | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type TaskLogUncheckedUpdateManyInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    taskId?: StringFieldUpdateOperationsInput | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type PasswordResetTokenCreateInput = {
-    id?: string
-    token: string
-    expiresAt: Date | string
-    createdAt?: Date | string
-  }
-
-  export type PasswordResetTokenUncheckedCreateInput = {
-    id?: string
-    token: string
-    expiresAt: Date | string
-    createdAt?: Date | string
-  }
-
-  export type PasswordResetTokenUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    token?: StringFieldUpdateOperationsInput | string
-    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type PasswordResetTokenUncheckedUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    token?: StringFieldUpdateOperationsInput | string
-    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type PasswordResetTokenCreateManyInput = {
-    id?: string
-    token: string
-    expiresAt: Date | string
-    createdAt?: Date | string
-  }
-
-  export type PasswordResetTokenUpdateManyMutationInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    token?: StringFieldUpdateOperationsInput | string
-    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type PasswordResetTokenUncheckedUpdateManyInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    token?: StringFieldUpdateOperationsInput | string
-    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -10993,10 +8654,11 @@ export namespace Prisma {
   export type UserCountOrderByAggregateInput = {
     id?: SortOrder
     email?: SortOrder
-    password?: SortOrder
     passwordHash?: SortOrder
     firstName?: SortOrder
     lastName?: SortOrder
+    profileImage?: SortOrder
+    name?: SortOrder
     role?: SortOrder
     lastLogin?: SortOrder
     createdAt?: SortOrder
@@ -11006,10 +8668,11 @@ export namespace Prisma {
   export type UserMaxOrderByAggregateInput = {
     id?: SortOrder
     email?: SortOrder
-    password?: SortOrder
     passwordHash?: SortOrder
     firstName?: SortOrder
     lastName?: SortOrder
+    profileImage?: SortOrder
+    name?: SortOrder
     role?: SortOrder
     lastLogin?: SortOrder
     createdAt?: SortOrder
@@ -11019,10 +8682,11 @@ export namespace Prisma {
   export type UserMinOrderByAggregateInput = {
     id?: SortOrder
     email?: SortOrder
-    password?: SortOrder
     passwordHash?: SortOrder
     firstName?: SortOrder
     lastName?: SortOrder
+    profileImage?: SortOrder
+    name?: SortOrder
     role?: SortOrder
     lastLogin?: SortOrder
     createdAt?: SortOrder
@@ -11103,65 +8767,39 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
-  export type EnumEventStatusFilter<$PrismaModel = never> = {
-    equals?: $Enums.EventStatus | EnumEventStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.EventStatus[] | ListEnumEventStatusFieldRefInput<$PrismaModel>
-    notIn?: $Enums.EventStatus[] | ListEnumEventStatusFieldRefInput<$PrismaModel>
-    not?: NestedEnumEventStatusFilter<$PrismaModel> | $Enums.EventStatus
-  }
-
-  export type EnumEventFormatFilter<$PrismaModel = never> = {
-    equals?: $Enums.EventFormat | EnumEventFormatFieldRefInput<$PrismaModel>
-    in?: $Enums.EventFormat[] | ListEnumEventFormatFieldRefInput<$PrismaModel>
-    notIn?: $Enums.EventFormat[] | ListEnumEventFormatFieldRefInput<$PrismaModel>
-    not?: NestedEnumEventFormatFilter<$PrismaModel> | $Enums.EventFormat
-  }
-
-  export type EventCountOrderByAggregateInput = {
+  export type PasswordResetTokenCountOrderByAggregateInput = {
     id?: SortOrder
-    title?: SortOrder
-    status?: SortOrder
-    format?: SortOrder
+    email?: SortOrder
+    token?: SortOrder
+    expiresAt?: SortOrder
     createdAt?: SortOrder
-    updatedAt?: SortOrder
   }
 
-  export type EventMaxOrderByAggregateInput = {
+  export type PasswordResetTokenMaxOrderByAggregateInput = {
     id?: SortOrder
-    title?: SortOrder
-    status?: SortOrder
-    format?: SortOrder
+    email?: SortOrder
+    token?: SortOrder
+    expiresAt?: SortOrder
     createdAt?: SortOrder
-    updatedAt?: SortOrder
   }
 
-  export type EventMinOrderByAggregateInput = {
+  export type PasswordResetTokenMinOrderByAggregateInput = {
     id?: SortOrder
-    title?: SortOrder
-    status?: SortOrder
-    format?: SortOrder
+    email?: SortOrder
+    token?: SortOrder
+    expiresAt?: SortOrder
     createdAt?: SortOrder
-    updatedAt?: SortOrder
   }
 
-  export type EnumEventStatusWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.EventStatus | EnumEventStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.EventStatus[] | ListEnumEventStatusFieldRefInput<$PrismaModel>
-    notIn?: $Enums.EventStatus[] | ListEnumEventStatusFieldRefInput<$PrismaModel>
-    not?: NestedEnumEventStatusWithAggregatesFilter<$PrismaModel> | $Enums.EventStatus
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumEventStatusFilter<$PrismaModel>
-    _max?: NestedEnumEventStatusFilter<$PrismaModel>
-  }
-
-  export type EnumEventFormatWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.EventFormat | EnumEventFormatFieldRefInput<$PrismaModel>
-    in?: $Enums.EventFormat[] | ListEnumEventFormatFieldRefInput<$PrismaModel>
-    notIn?: $Enums.EventFormat[] | ListEnumEventFormatFieldRefInput<$PrismaModel>
-    not?: NestedEnumEventFormatWithAggregatesFilter<$PrismaModel> | $Enums.EventFormat
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumEventFormatFilter<$PrismaModel>
-    _max?: NestedEnumEventFormatFilter<$PrismaModel>
+  export type FloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
   }
 
   export type UserScalarRelationFilter = {
@@ -11172,13 +8810,21 @@ export namespace Prisma {
   export type PlayerProfileCountOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
+    name?: SortOrder
+    handicap?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type PlayerProfileAvgOrderByAggregateInput = {
+    handicap?: SortOrder
   }
 
   export type PlayerProfileMaxOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
+    name?: SortOrder
+    handicap?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -11186,8 +8832,30 @@ export namespace Prisma {
   export type PlayerProfileMinOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
+    name?: SortOrder
+    handicap?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type PlayerProfileSumOrderByAggregateInput = {
+    handicap?: SortOrder
+  }
+
+  export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedFloatNullableFilter<$PrismaModel>
+    _min?: NestedFloatNullableFilter<$PrismaModel>
+    _max?: NestedFloatNullableFilter<$PrismaModel>
   }
 
   export type CoachPlayerLinkCountOrderByAggregateInput = {
@@ -11195,7 +8863,6 @@ export namespace Prisma {
     coachId?: SortOrder
     playerId?: SortOrder
     createdAt?: SortOrder
-    updatedAt?: SortOrder
   }
 
   export type CoachPlayerLinkMaxOrderByAggregateInput = {
@@ -11203,7 +8870,6 @@ export namespace Prisma {
     coachId?: SortOrder
     playerId?: SortOrder
     createdAt?: SortOrder
-    updatedAt?: SortOrder
   }
 
   export type CoachPlayerLinkMinOrderByAggregateInput = {
@@ -11211,12 +8877,12 @@ export namespace Prisma {
     coachId?: SortOrder
     playerId?: SortOrder
     createdAt?: SortOrder
-    updatedAt?: SortOrder
   }
 
   export type TaskTemplateCountOrderByAggregateInput = {
     id?: SortOrder
     title?: SortOrder
+    content?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -11224,6 +8890,7 @@ export namespace Prisma {
   export type TaskTemplateMaxOrderByAggregateInput = {
     id?: SortOrder
     title?: SortOrder
+    content?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -11231,74 +8898,30 @@ export namespace Prisma {
   export type TaskTemplateMinOrderByAggregateInput = {
     id?: SortOrder
     title?: SortOrder
+    content?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
 
-  export type CalendarEventCountOrderByAggregateInput = {
+  export type ChallengeCountOrderByAggregateInput = {
     id?: SortOrder
     title?: SortOrder
-    date?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
 
-  export type CalendarEventMaxOrderByAggregateInput = {
+  export type ChallengeMaxOrderByAggregateInput = {
     id?: SortOrder
     title?: SortOrder
-    date?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
 
-  export type CalendarEventMinOrderByAggregateInput = {
+  export type ChallengeMinOrderByAggregateInput = {
     id?: SortOrder
     title?: SortOrder
-    date?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-  }
-
-  export type TaskLogCountOrderByAggregateInput = {
-    id?: SortOrder
-    taskId?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-  }
-
-  export type TaskLogMaxOrderByAggregateInput = {
-    id?: SortOrder
-    taskId?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-  }
-
-  export type TaskLogMinOrderByAggregateInput = {
-    id?: SortOrder
-    taskId?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-  }
-
-  export type PasswordResetTokenCountOrderByAggregateInput = {
-    id?: SortOrder
-    token?: SortOrder
-    expiresAt?: SortOrder
-    createdAt?: SortOrder
-  }
-
-  export type PasswordResetTokenMaxOrderByAggregateInput = {
-    id?: SortOrder
-    token?: SortOrder
-    expiresAt?: SortOrder
-    createdAt?: SortOrder
-  }
-
-  export type PasswordResetTokenMinOrderByAggregateInput = {
-    id?: SortOrder
-    token?: SortOrder
-    expiresAt?: SortOrder
-    createdAt?: SortOrder
   }
 
   export type PlayerProfileCreateNestedOneWithoutUserInput = {
@@ -11395,18 +9018,18 @@ export namespace Prisma {
     deleteMany?: CoachPlayerLinkScalarWhereInput | CoachPlayerLinkScalarWhereInput[]
   }
 
-  export type EnumEventStatusFieldUpdateOperationsInput = {
-    set?: $Enums.EventStatus
-  }
-
-  export type EnumEventFormatFieldUpdateOperationsInput = {
-    set?: $Enums.EventFormat
-  }
-
   export type UserCreateNestedOneWithoutPlayerProfileInput = {
     create?: XOR<UserCreateWithoutPlayerProfileInput, UserUncheckedCreateWithoutPlayerProfileInput>
     connectOrCreate?: UserCreateOrConnectWithoutPlayerProfileInput
     connect?: UserWhereUniqueInput
+  }
+
+  export type NullableFloatFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
   }
 
   export type UserUpdateOneRequiredWithoutPlayerProfileNestedInput = {
@@ -11417,18 +9040,18 @@ export namespace Prisma {
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutPlayerProfileInput, UserUpdateWithoutPlayerProfileInput>, UserUncheckedUpdateWithoutPlayerProfileInput>
   }
 
-  export type UserCreateNestedOneWithoutCoachPlayerLinkInput = {
-    create?: XOR<UserCreateWithoutCoachPlayerLinkInput, UserUncheckedCreateWithoutCoachPlayerLinkInput>
-    connectOrCreate?: UserCreateOrConnectWithoutCoachPlayerLinkInput
+  export type UserCreateNestedOneWithoutCoachPlayerLinksInput = {
+    create?: XOR<UserCreateWithoutCoachPlayerLinksInput, UserUncheckedCreateWithoutCoachPlayerLinksInput>
+    connectOrCreate?: UserCreateOrConnectWithoutCoachPlayerLinksInput
     connect?: UserWhereUniqueInput
   }
 
-  export type UserUpdateOneRequiredWithoutCoachPlayerLinkNestedInput = {
-    create?: XOR<UserCreateWithoutCoachPlayerLinkInput, UserUncheckedCreateWithoutCoachPlayerLinkInput>
-    connectOrCreate?: UserCreateOrConnectWithoutCoachPlayerLinkInput
-    upsert?: UserUpsertWithoutCoachPlayerLinkInput
+  export type UserUpdateOneRequiredWithoutCoachPlayerLinksNestedInput = {
+    create?: XOR<UserCreateWithoutCoachPlayerLinksInput, UserUncheckedCreateWithoutCoachPlayerLinksInput>
+    connectOrCreate?: UserCreateOrConnectWithoutCoachPlayerLinksInput
+    upsert?: UserUpsertWithoutCoachPlayerLinksInput
     connect?: UserWhereUniqueInput
-    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutCoachPlayerLinkInput, UserUpdateWithoutCoachPlayerLinkInput>, UserUncheckedUpdateWithoutCoachPlayerLinkInput>
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutCoachPlayerLinksInput, UserUpdateWithoutCoachPlayerLinksInput>, UserUncheckedUpdateWithoutCoachPlayerLinksInput>
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -11582,48 +9205,45 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
-  export type NestedEnumEventStatusFilter<$PrismaModel = never> = {
-    equals?: $Enums.EventStatus | EnumEventStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.EventStatus[] | ListEnumEventStatusFieldRefInput<$PrismaModel>
-    notIn?: $Enums.EventStatus[] | ListEnumEventStatusFieldRefInput<$PrismaModel>
-    not?: NestedEnumEventStatusFilter<$PrismaModel> | $Enums.EventStatus
+  export type NestedFloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
   }
 
-  export type NestedEnumEventFormatFilter<$PrismaModel = never> = {
-    equals?: $Enums.EventFormat | EnumEventFormatFieldRefInput<$PrismaModel>
-    in?: $Enums.EventFormat[] | ListEnumEventFormatFieldRefInput<$PrismaModel>
-    notIn?: $Enums.EventFormat[] | ListEnumEventFormatFieldRefInput<$PrismaModel>
-    not?: NestedEnumEventFormatFilter<$PrismaModel> | $Enums.EventFormat
-  }
-
-  export type NestedEnumEventStatusWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.EventStatus | EnumEventStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.EventStatus[] | ListEnumEventStatusFieldRefInput<$PrismaModel>
-    notIn?: $Enums.EventStatus[] | ListEnumEventStatusFieldRefInput<$PrismaModel>
-    not?: NestedEnumEventStatusWithAggregatesFilter<$PrismaModel> | $Enums.EventStatus
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumEventStatusFilter<$PrismaModel>
-    _max?: NestedEnumEventStatusFilter<$PrismaModel>
-  }
-
-  export type NestedEnumEventFormatWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.EventFormat | EnumEventFormatFieldRefInput<$PrismaModel>
-    in?: $Enums.EventFormat[] | ListEnumEventFormatFieldRefInput<$PrismaModel>
-    notIn?: $Enums.EventFormat[] | ListEnumEventFormatFieldRefInput<$PrismaModel>
-    not?: NestedEnumEventFormatWithAggregatesFilter<$PrismaModel> | $Enums.EventFormat
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumEventFormatFilter<$PrismaModel>
-    _max?: NestedEnumEventFormatFilter<$PrismaModel>
+  export type NestedFloatNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedFloatNullableFilter<$PrismaModel>
+    _min?: NestedFloatNullableFilter<$PrismaModel>
+    _max?: NestedFloatNullableFilter<$PrismaModel>
   }
 
   export type PlayerProfileCreateWithoutUserInput = {
     id?: string
+    name: string
+    handicap?: number | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
 
   export type PlayerProfileUncheckedCreateWithoutUserInput = {
     id?: string
+    name: string
+    handicap?: number | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -11637,14 +9257,12 @@ export namespace Prisma {
     id?: string
     playerId: string
     createdAt?: Date | string
-    updatedAt?: Date | string
   }
 
   export type CoachPlayerLinkUncheckedCreateWithoutCoachInput = {
     id?: string
     playerId: string
     createdAt?: Date | string
-    updatedAt?: Date | string
   }
 
   export type CoachPlayerLinkCreateOrConnectWithoutCoachInput = {
@@ -11670,12 +9288,16 @@ export namespace Prisma {
 
   export type PlayerProfileUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    handicap?: NullableFloatFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type PlayerProfileUncheckedUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    handicap?: NullableFloatFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -11704,35 +9326,36 @@ export namespace Prisma {
     coachId?: StringFilter<"CoachPlayerLink"> | string
     playerId?: StringFilter<"CoachPlayerLink"> | string
     createdAt?: DateTimeFilter<"CoachPlayerLink"> | Date | string
-    updatedAt?: DateTimeFilter<"CoachPlayerLink"> | Date | string
   }
 
   export type UserCreateWithoutPlayerProfileInput = {
     id?: string
     email: string
-    password: string
-    passwordHash?: string | null
-    firstName: string
-    lastName: string
+    passwordHash: string
+    firstName?: string | null
+    lastName?: string | null
+    profileImage?: string | null
+    name?: string | null
     role?: $Enums.Role
     lastLogin?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    coachPlayerLink?: CoachPlayerLinkCreateNestedManyWithoutCoachInput
+    coachPlayerLinks?: CoachPlayerLinkCreateNestedManyWithoutCoachInput
   }
 
   export type UserUncheckedCreateWithoutPlayerProfileInput = {
     id?: string
     email: string
-    password: string
-    passwordHash?: string | null
-    firstName: string
-    lastName: string
+    passwordHash: string
+    firstName?: string | null
+    lastName?: string | null
+    profileImage?: string | null
+    name?: string | null
     role?: $Enums.Role
     lastLogin?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    coachPlayerLink?: CoachPlayerLinkUncheckedCreateNestedManyWithoutCoachInput
+    coachPlayerLinks?: CoachPlayerLinkUncheckedCreateNestedManyWithoutCoachInput
   }
 
   export type UserCreateOrConnectWithoutPlayerProfileInput = {
@@ -11754,38 +9377,41 @@ export namespace Prisma {
   export type UserUpdateWithoutPlayerProfileInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
-    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
-    firstName?: StringFieldUpdateOperationsInput | string
-    lastName?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileImage?: NullableStringFieldUpdateOperationsInput | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     lastLogin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    coachPlayerLink?: CoachPlayerLinkUpdateManyWithoutCoachNestedInput
+    coachPlayerLinks?: CoachPlayerLinkUpdateManyWithoutCoachNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPlayerProfileInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
-    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
-    firstName?: StringFieldUpdateOperationsInput | string
-    lastName?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileImage?: NullableStringFieldUpdateOperationsInput | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     lastLogin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    coachPlayerLink?: CoachPlayerLinkUncheckedUpdateManyWithoutCoachNestedInput
+    coachPlayerLinks?: CoachPlayerLinkUncheckedUpdateManyWithoutCoachNestedInput
   }
 
-  export type UserCreateWithoutCoachPlayerLinkInput = {
+  export type UserCreateWithoutCoachPlayerLinksInput = {
     id?: string
     email: string
-    password: string
-    passwordHash?: string | null
-    firstName: string
-    lastName: string
+    passwordHash: string
+    firstName?: string | null
+    lastName?: string | null
+    profileImage?: string | null
+    name?: string | null
     role?: $Enums.Role
     lastLogin?: Date | string | null
     createdAt?: Date | string
@@ -11793,13 +9419,14 @@ export namespace Prisma {
     playerProfile?: PlayerProfileCreateNestedOneWithoutUserInput
   }
 
-  export type UserUncheckedCreateWithoutCoachPlayerLinkInput = {
+  export type UserUncheckedCreateWithoutCoachPlayerLinksInput = {
     id?: string
     email: string
-    password: string
-    passwordHash?: string | null
-    firstName: string
-    lastName: string
+    passwordHash: string
+    firstName?: string | null
+    lastName?: string | null
+    profileImage?: string | null
+    name?: string | null
     role?: $Enums.Role
     lastLogin?: Date | string | null
     createdAt?: Date | string
@@ -11807,29 +9434,30 @@ export namespace Prisma {
     playerProfile?: PlayerProfileUncheckedCreateNestedOneWithoutUserInput
   }
 
-  export type UserCreateOrConnectWithoutCoachPlayerLinkInput = {
+  export type UserCreateOrConnectWithoutCoachPlayerLinksInput = {
     where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutCoachPlayerLinkInput, UserUncheckedCreateWithoutCoachPlayerLinkInput>
+    create: XOR<UserCreateWithoutCoachPlayerLinksInput, UserUncheckedCreateWithoutCoachPlayerLinksInput>
   }
 
-  export type UserUpsertWithoutCoachPlayerLinkInput = {
-    update: XOR<UserUpdateWithoutCoachPlayerLinkInput, UserUncheckedUpdateWithoutCoachPlayerLinkInput>
-    create: XOR<UserCreateWithoutCoachPlayerLinkInput, UserUncheckedCreateWithoutCoachPlayerLinkInput>
+  export type UserUpsertWithoutCoachPlayerLinksInput = {
+    update: XOR<UserUpdateWithoutCoachPlayerLinksInput, UserUncheckedUpdateWithoutCoachPlayerLinksInput>
+    create: XOR<UserCreateWithoutCoachPlayerLinksInput, UserUncheckedCreateWithoutCoachPlayerLinksInput>
     where?: UserWhereInput
   }
 
-  export type UserUpdateToOneWithWhereWithoutCoachPlayerLinkInput = {
+  export type UserUpdateToOneWithWhereWithoutCoachPlayerLinksInput = {
     where?: UserWhereInput
-    data: XOR<UserUpdateWithoutCoachPlayerLinkInput, UserUncheckedUpdateWithoutCoachPlayerLinkInput>
+    data: XOR<UserUpdateWithoutCoachPlayerLinksInput, UserUncheckedUpdateWithoutCoachPlayerLinksInput>
   }
 
-  export type UserUpdateWithoutCoachPlayerLinkInput = {
+  export type UserUpdateWithoutCoachPlayerLinksInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
-    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
-    firstName?: StringFieldUpdateOperationsInput | string
-    lastName?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileImage?: NullableStringFieldUpdateOperationsInput | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     lastLogin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -11837,13 +9465,14 @@ export namespace Prisma {
     playerProfile?: PlayerProfileUpdateOneWithoutUserNestedInput
   }
 
-  export type UserUncheckedUpdateWithoutCoachPlayerLinkInput = {
+  export type UserUncheckedUpdateWithoutCoachPlayerLinksInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
-    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
-    firstName?: StringFieldUpdateOperationsInput | string
-    lastName?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileImage?: NullableStringFieldUpdateOperationsInput | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     lastLogin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -11855,28 +9484,24 @@ export namespace Prisma {
     id?: string
     playerId: string
     createdAt?: Date | string
-    updatedAt?: Date | string
   }
 
   export type CoachPlayerLinkUpdateWithoutCoachInput = {
     id?: StringFieldUpdateOperationsInput | string
     playerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type CoachPlayerLinkUncheckedUpdateWithoutCoachInput = {
     id?: StringFieldUpdateOperationsInput | string
     playerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type CoachPlayerLinkUncheckedUpdateManyWithoutCoachInput = {
     id?: StringFieldUpdateOperationsInput | string
     playerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
 
