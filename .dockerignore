@@ -1,5 +1,5 @@
 
-# Node/Next-Artefakte
+# Node/Next artifacts
 **/node_modules
 **/.next
 **/dist
@@ -9,12 +9,29 @@
 .git
 .gitignore
 .DS_Store
+**/.DS_Store
 
 # Logs
 *.log
 npm-debug.log*
 pnpm-debug.log*
 
-# Env (wir setzen ENV via Compose)
-.env
-.env.*
+# Test & coverage
+**/coverage
+**/.nyc_output
+
+# Turbo cache
+.turbo
+**/.turbo
+
+# TypeScript build info
+**/*.tsbuildinfo
+
+# Env files – keep .env.example but exclude all real env files
+**/.env
+**/.env.local
+**/.env.*.local
+
+# IDE
+.vscode
+.idea

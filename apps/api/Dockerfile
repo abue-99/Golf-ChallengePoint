@@ -9,12 +9,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
 COPY . .
 
-# Create .env file for Prisma if it doesn't exist
-RUN if [ ! -f packages/db/.env ]; then cp packages/db/.env.example packages/db/.env; fi
-
 RUN pnpm install --frozen-lockfile
 
-# Set DATABASE_URL for generation (dummy for build)
+# Set DATABASE_URL for generation (dummy URL; no DB connection needed for generate)
 ENV DATABASE_URL="postgresql://user:password@localhost:5432/golf"
 
 # Generate Prisma client
