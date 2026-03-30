@@ -12,28 +12,34 @@ COPY . .
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Build Next.js app
+# Generate Prisma client (dummy URL is sufficient; no DB connection needed for generate)
+ENV DATABASE_URL="postgresql://user:password@localhost:5432/golf"
+RUN pnpm --filter @golf/db run generate
+
+# Build Next.js app with standalone output
 RUN pnpm --filter golf-challenge-point-web run build
 
 # Production stage
-FROM node:22-bookworm-slim
+FROM node:22-bookworm-slim AS runtime
 
 WORKDIR /app
 
-RUN corepack enable
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl && rm -rf /var/lib/apt/lists/*
 
-# Install only runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+# Standalone server (includes traced node_modules)
+COPY --from=builder /app/apps/web/.next/standalone ./
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/web/.next ./apps/web/.next
+# Static assets (not included in standalone output)
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
+
+# Public folder (not included in standalone output)
 COPY --from=builder /app/apps/web/public ./apps/web/public
-COPY --from=builder /app/apps/web/package.json ./apps/web/package.json
-COPY --from=builder /app/package.json ./package.json
-
-WORKDIR /app/apps/web
 
 ENV NODE_ENV=production
 EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
-CMD ["node_modules/.bin/next", "start", "-H", "0.0.0.0", "-p", "3000"]
+# server.js is at apps/web/server.js inside the standalone output
+# because outputFileTracingRoot is set to the monorepo root in next.config.ts
+CMD ["node", "apps/web/server.js"]

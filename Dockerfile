@@ -9,15 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
 COPY . .
 
-# Create .env file for Prisma if it doesn't exist
-RUN if [ ! -f packages/db/.env ]; then cp packages/db/.env.example packages/db/.env; fi
-
 RUN pnpm install --frozen-lockfile
 
-# ✅ Generate Prisma client (without needing DB connection)
+# Generate Prisma client (dummy URL is sufficient; no DB connection needed for generate)
+ENV DATABASE_URL="postgresql://user:password@localhost:5432/golf"
 RUN pnpm --filter @golf/db run generate
 
-# ✅ Build Next.js app with standalone output
+# Build Next.js app with standalone output
 RUN pnpm --filter golf-challenge-point-web run build
 
 
@@ -26,25 +24,21 @@ FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
-ARG DEPLOYMENT_MODE=standalone
-ENV DEPLOYMENT_MODE=${DEPLOYMENT_MODE}
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable && apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl && rm -rf /var/lib/apt/lists/*
-
-# ✅ Standalone server
+# Standalone server (includes traced node_modules)
 COPY --from=build /repo/apps/web/.next/standalone /app
 
-# ✅ Static assets
+# Static assets (not included in standalone output)
 COPY --from=build /repo/apps/web/.next/static /app/apps/web/.next/static
 
-# ✅ Public folder (needed for static resources)
+# Public folder (not included in standalone output)
 COPY --from=build /repo/apps/web/public /app/apps/web/public
 
-# ✅ Optional: copy full .next in dev mode for hot-reload
-RUN if [ "${DEPLOYMENT_MODE}" = "dev" ]; then \
-    cp -r /app/apps/web/.next /app/.next; \
-    fi
-
 EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
+# server.js is at apps/web/server.js inside the standalone output
+# because outputFileTracingRoot is set to the monorepo root in next.config.ts
 CMD ["node", "apps/web/server.js"]
