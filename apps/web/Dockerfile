@@ -13,8 +13,12 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 
 # Generate Prisma client (dummy URL is sufficient; no DB connection needed for generate)
-ENV DATABASE_URL="postgresql://user:password@localhost:5432/golf"
-RUN pnpm --filter @golf/db run generate
+ARG DATABASE_URL="postgresql://user:password@localhost:5432/golf"
+RUN DATABASE_URL=${DATABASE_URL} pnpm --filter @golf/db run generate
+
+# NEXT_PUBLIC_* vars must be present at build time to be bundled into client JS
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 # Build Next.js app with standalone output
 RUN pnpm --filter golf-challenge-point-web run build
