@@ -19,6 +19,9 @@ RUN DATABASE_URL=${DATABASE_URL} pnpm --filter @golf/db run generate
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
+# Run TypeScript check before the expensive next build (fail fast in seconds)
+RUN pnpm --filter golf-challenge-point-web run typecheck
+
 # Build Next.js app with standalone output
 RUN pnpm --filter golf-challenge-point-web run build
 
