@@ -36,30 +36,20 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: sh -c "pnpm --filter @golf/db run migrate:deploy && node apps/api/dist/main.js"
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('net').createConnection(4000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
     restart: unless-stopped
 
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: http://api:4000
     container_name: golf_web
     ports:
       - "3000:3000"
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: http://api:4000
+      NEXT_PUBLIC_API_URL: http://localhost:4000
     depends_on:
-      api:
-        condition: service_healthy
+      - api
     restart: unless-stopped
 
 volumes:
