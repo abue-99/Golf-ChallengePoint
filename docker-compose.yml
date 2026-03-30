@@ -36,6 +36,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    command: sh -c "pnpm --filter @golf/db run migrate:deploy && node apps/api/dist/main.js"
     healthcheck:
       test: ["CMD", "node", "-e", "require('net').createConnection(4000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"]
       interval: 15s

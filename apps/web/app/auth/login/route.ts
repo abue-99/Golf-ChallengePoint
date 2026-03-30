@@ -17,7 +17,6 @@ export async function POST(req: Request) {
     id: user.id,
     email: user.email,
     role: user.role,
-    clubId: user.clubId,
   });
 
   return NextResponse.json({ token });
