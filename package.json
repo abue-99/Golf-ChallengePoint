@@ -6,6 +6,7 @@
     "dev": "pnpm --filter @golf/db run generate && turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
     "start": "pnpm --filter ./apps/web start",
     "format": "prettier --write ."
   },
