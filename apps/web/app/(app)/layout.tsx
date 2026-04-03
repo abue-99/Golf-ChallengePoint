@@ -1,35 +1,33 @@
-import { cookies } from "next/headers";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { redirect } from "next/navigation";
 import { verifyJwt } from "@/lib/jwt";
-import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
 import HeaderAndSidebarLayout from "@/components/HeaderAndSidebarLayout";
 import type { ReactNode } from "react";
 
-export default async function AppLayout({ children }: { children: ReactNode }) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value ?? null;
+export default function AppLayout({ children }: { children: ReactNode }) {
+  const router = useRouter();
 
-  if (!token) {
-    redirect("/login");
-  }
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch("/auth/me");
+        if (!response.ok) {
+          router.push("/login");
+        }
+      } catch (error) {
+        router.push("/login");
+      }
+    };
 
-  const payload = verifyJwt<{ sub: string }>(token);
-
-  if (!payload) {
-    redirect("/login");
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: payload.sub },
-    select: { firstName: true, lastName: true },
-  });
-
-  if (!user) {
-    redirect("/login");
-  }
+    checkAuth();
+  }, [router]);
 
   return (
-    <HeaderAndSidebarLayout user={{ firstName: user.firstName ?? "", lastName: user.lastName ?? "" }}>
+    <HeaderAndSidebarLayout user={{ firstName: "", lastName: "" }}>
       {children}
     </HeaderAndSidebarLayout>
   );
