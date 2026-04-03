@@ -21,7 +21,7 @@ RUN pnpm --filter @golf/db run build
 # Build NestJS API
 RUN pnpm --filter api run build
 
-# Prune dev dependencies so only production deps are copied to runtime stage
+# Prune to production-only dependencies (copies workspace deps like @golf/db into node_modules)
 RUN pnpm deploy --filter api --prod /prod/api
 
 

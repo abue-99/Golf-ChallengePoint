@@ -37,9 +37,7 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
-    command: >
-      sh -c "node node_modules/.bin/prisma migrate deploy --schema packages/db/prisma/schema.prisma
-             && node apps/api/dist/main.js"
+    command: ["sh", "-c", "node node_modules/.bin/prisma migrate deploy --schema packages/db/prisma/schema.prisma && node apps/api/dist/main.js"]
 
   web:
     build:
