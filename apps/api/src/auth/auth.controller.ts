@@ -8,8 +8,11 @@ import {
   Req,
   Res,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
@@ -17,10 +20,14 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import { AuthenticatedUser } from './jwt.strategy';
 import { InvalidTokenException } from '../common/exceptions/auth.exception';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
@@ -54,7 +61,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return { accessToken, user };
@@ -106,7 +113,6 @@ export class AuthController {
   async me(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.getMe(user.id);
   }
-}
 
   @Post('forgot')
   async forgot(@Body() { email }: { email: string }) {
@@ -121,8 +127,6 @@ export class AuthController {
     });
 
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
-
-    // TODO: Send email via resend
     console.log('Reset URL:', resetUrl);
 
     return { ok: true };
@@ -154,6 +158,7 @@ export class AuthController {
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
-  async profile(@CurrentUser() user: any) {
+  async profile(@CurrentUser() user: AuthenticatedUser) {
     return user;
   }
+}
