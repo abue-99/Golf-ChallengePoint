@@ -1,23 +1,26 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@golf/db";
-import bcrypt from "bcrypt";
-import { signJwt } from "@/lib/jwt";
 
 export async function POST(req: Request) {
   const { email, password } = await req.json();
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://api:4000";
 
-  const match = await bcrypt.compare(password, user.passwordHash);
-  if (!match) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+  try {
+    const response = await fetch(`${apiUrl}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-  // Create token
-  const token = signJwt({
-    id: user.id,
-    email: user.email,
-    role: user.role,
-  });
+    if (!response.ok) {
+      const error = await response.json();
+      return NextResponse.json(error, { status: response.status });
+    }
 
-  return NextResponse.json({ token });
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Auth error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

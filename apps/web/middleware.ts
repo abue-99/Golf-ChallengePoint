@@ -11,7 +11,11 @@ export function middleware(req: NextRequest) {
     "/login",
     "/signup",
     "/forgot-password",
-    "/reset-password"
+    "/reset-password",
+    "/auth/login",
+    "/auth/signup",
+    "/auth/forgot",
+    "/auth/reset"
   ];
 
   // Public pages → no check
@@ -20,15 +24,15 @@ export function middleware(req: NextRequest) {
   }
 
   // Protected routes
-const PROTECTED = [
-  "/",
-  "/dashboard",
-  "/player",
-  "/coach",
-  "/club",
-  "/admin",
-  "/settings"
-];
+  const PROTECTED = [
+    "/",
+    "/dashboard",
+    "/player",
+    "/coach",
+    "/club",
+    "/admin",
+    "/settings"
+  ];
   const isProtected = PROTECTED.some((p) => path.startsWith(p));
 
   // If protected and no token → redirect to login
@@ -42,5 +46,5 @@ const PROTECTED = [
 export const config = {
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico).*)"
-  ],
+  ]
 };
