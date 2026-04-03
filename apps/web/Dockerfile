@@ -12,9 +12,8 @@ COPY . .
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Generate Prisma client (dummy URL is sufficient; no DB connection needed for generate)
-ARG DATABASE_URL="postgresql://user:password@localhost:5432/golf"
-RUN DATABASE_URL=${DATABASE_URL} pnpm --filter @golf/db run generate
+# Generate Prisma client (no DB connection needed for generate in Prisma 7)
+RUN pnpm --filter @golf/db run generate
 
 # NEXT_PUBLIC_* vars must be present at build time to be bundled into client JS
 ARG NEXT_PUBLIC_API_URL
