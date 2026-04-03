@@ -13,14 +13,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     redirect("/login");
   }
 
-  const payload = verifyJwt<{ id: string }>(token);
+  const payload = verifyJwt<{ sub: string }>(token);
 
   if (!payload) {
     redirect("/login");
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: payload.id },
+    where: { id: payload.sub },
     select: { firstName: true, lastName: true },
   });
 

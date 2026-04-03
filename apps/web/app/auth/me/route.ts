@@ -4,12 +4,12 @@ import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   const token = req.headers.get("authorization")?.replace("Bearer ", "");
-  const payload = token ? verifyJwt<any>(token) : null;
+  const payload = token ? verifyJwt<{ sub: string }>(token) : null;
 
   if (!payload) return NextResponse.json({ user: null });
 
   const user = await prisma.user.findUnique({
-    where: { id: payload.id },
+    where: { id: payload.sub },
   });
 
   return NextResponse.json(user);

@@ -25,7 +25,7 @@ export default function SignupPage() {
     setLoading(false);
 
     if (res.ok) {
-      window.location.href = "/login";
+      window.location.href = "/";
     } else {
       console.error("Signup failed", await res.json());
       alert("Signup failed — please check your input.");

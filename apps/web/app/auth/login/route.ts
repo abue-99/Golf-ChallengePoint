@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   const { email, password } = await req.json();
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://api:4000";
+  const apiUrl = process.env.API_URL || "http://golf_api:4000";
 
   try {
     const response = await fetch(`${apiUrl}/auth/login`, {
@@ -18,7 +18,14 @@ export async function POST(req: Request) {
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
+    const res = NextResponse.json(data);
+    res.cookies.set("token", data.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 15 * 60,
+    });
+    return res;
   } catch (error) {
     console.error("Auth error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

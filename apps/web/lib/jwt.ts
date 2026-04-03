@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-const SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
+const SECRET = process.env.ACCESS_SECRET || "dev-secret-change-me";
 
 export function signJwt(payload: any) {
   return jwt.sign(payload, SECRET, {
