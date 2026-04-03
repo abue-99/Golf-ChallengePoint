@@ -107,3 +107,53 @@ export class AuthController {
     return this.authService.getMe(user.id);
   }
 }
+
+  @Post('forgot')
+  async forgot(@Body() { email }: { email: string }) {
+    const token = crypto.randomBytes(32).toString('hex');
+
+    await this.prisma.passwordResetToken.create({
+      data: {
+        email,
+        token,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60),
+      },
+    });
+
+    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
+
+    // TODO: Send email via resend
+    console.log('Reset URL:', resetUrl);
+
+    return { ok: true };
+  }
+
+  @Post('reset')
+  async reset(@Body() { token, password }: { token: string; password: string }) {
+    const record = await this.prisma.passwordResetToken.findUnique({
+      where: { token },
+    });
+
+    if (!record || record.expiresAt < new Date()) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+
+    await this.prisma.user.update({
+      where: { email: record.email },
+      data: { passwordHash: hash },
+    });
+
+    await this.prisma.passwordResetToken.delete({
+      where: { token },
+    });
+
+    return { ok: true };
+  }
+
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  async profile(@CurrentUser() user: any) {
+    return user;
+  }
