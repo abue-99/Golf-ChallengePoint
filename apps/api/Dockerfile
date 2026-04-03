@@ -11,9 +11,8 @@ COPY . .
 
 RUN pnpm install --frozen-lockfile
 
-# Generate Prisma client (dummy URL is sufficient; no DB connection needed for generate)
-ARG DATABASE_URL="postgresql://user:password@localhost:5432/golf"
-RUN DATABASE_URL=${DATABASE_URL} pnpm --filter @golf/db run generate
+# Generate Prisma client (no DB connection needed for generate in Prisma 7)
+RUN pnpm --filter @golf/db run generate
 
 # Build NestJS API
 RUN pnpm --filter api run build
