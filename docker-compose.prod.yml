@@ -1,0 +1,64 @@
+version: "3.9"
+
+# Production docker-compose — uses pre-built images from GitHub Container Registry.
+# Images are built and pushed by the GitHub Actions deploy workflow (deploy.yml).
+#
+# Required environment variables (set in a .env file on the server or via the shell):
+#   GHCR_WEB_IMAGE   e.g. ghcr.io/abue-99/golf-challengepoint-web:latest
+#   GHCR_API_IMAGE   e.g. ghcr.io/abue-99/golf-challengepoint-api:latest
+#   ACCESS_SECRET    JWT access token secret (min 32 chars)
+#   REFRESH_SECRET   JWT refresh token secret (min 32 chars)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: golf_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: challengepoint
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    image: ${GHCR_API_IMAGE:-ghcr.io/abue-99/golf-challengepoint-api:latest}
+    container_name: golf_api
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/challengepoint"
+      ACCESS_SECRET: ${ACCESS_SECRET}
+      REFRESH_SECRET: ${REFRESH_SECRET}
+      ACCESS_TOKEN_EXPIRY: 15m
+      REFRESH_TOKEN_EXPIRY: 7d
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    image: ${GHCR_WEB_IMAGE:-ghcr.io/abue-99/golf-challengepoint-web:latest}
+    container_name: golf_web
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: golf_network
