@@ -6,6 +6,10 @@ generator client {
   output   = "../generated/client"
 }
 
+datasource db {
+  provider = "postgresql"
+}
+
 enum Role {
   PLAYER
   COACH
