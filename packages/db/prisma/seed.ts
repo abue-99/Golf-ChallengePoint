@@ -8,6 +8,11 @@ async function main() {
 
   const users = [
     {
+      email: 'Andy@enpas.de',
+      password: 'Berlin00',
+      role: Role.PLAYER,
+    },
+    {
       email: 'admin@test.com',
       password: 'AdminPass123!',
       role: Role.ADMIN,
@@ -28,20 +33,23 @@ async function main() {
     const passwordHash = await bcrypt.hash(u.password, BCRYPT_ROUNDS);
     await prisma.user.upsert({
       where: { email: u.email },
-      update: { passwordHash, role: u.role },
-      create: { email: u.email, passwordHash, role: u.role },
+      update: {},
+      create: {
+        email: u.email,
+        password: passwordHash,
+        role: u.role,
+      },
     });
-    console.log(`Seeded user: ${u.email} (${u.role})`);
   }
 
-  console.log('Database seeded successfully.');
+  console.log('✅ Seeded users successfully');
 }
 
 main()
-  .catch((err) => {
-    console.error('Seed failed:', err);
+  .catch((e) => {
+    console.error(e);
     process.exit(1);
   })
-  .finally(() => {
-    void prisma.$disconnect();
+  .finally(async () => {
+    await prisma.$disconnect();
   });
