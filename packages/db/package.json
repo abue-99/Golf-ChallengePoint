@@ -4,6 +4,10 @@
   "description": "",
   "author": "",
   "license": "MIT",
+  "main": "./index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
   "scripts": {
     "generate": "prisma generate",
     "prisma": "prisma",
