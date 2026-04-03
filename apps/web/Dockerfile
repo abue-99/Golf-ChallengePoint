@@ -16,6 +16,9 @@ RUN pnpm install --frozen-lockfile
 ARG DATABASE_URL="postgresql://user:password@localhost:5432/golf"
 RUN DATABASE_URL=${DATABASE_URL} pnpm --filter @golf/db run generate
 
+# Build @golf/db (compile TypeScript to JavaScript so Node.js can require it at runtime)
+RUN pnpm --filter @golf/db run build
+
 # NEXT_PUBLIC_* vars must be present at build time to be bundled into client JS
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}

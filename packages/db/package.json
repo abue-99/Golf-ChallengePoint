@@ -2,9 +2,10 @@
   "name": "@golf/db",
   "version": "0.1.0",
   "private": true,
-  "main": "./index.ts",
-  "types": "./index.ts",
+  "main": "./index.js",
+  "types": "./index.d.ts",
   "scripts": {
+    "build": "tsc -p tsconfig.json",
     "generate": "prisma generate",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
@@ -13,13 +14,13 @@
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/pg": "^8.20.0",
-    "prisma": "^6.19.2",
+    "prisma": "^7.5.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.5.0",
-    "@prisma/client": "^6.19.2",
+    "@prisma/client": "^7.5.0",
     "@prisma/client-runtime-utils": "^7.5.0",
     "bcrypt": "^6.0.0",
     "pg": "^8.20.0"
