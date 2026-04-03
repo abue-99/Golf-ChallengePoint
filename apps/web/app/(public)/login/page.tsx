@@ -80,8 +80,6 @@ export default function LoginPage() {
         return;
       }
 
-      document.cookie = `token=${data.token}; Path=/; SameSite=Lax; Secure;${rememberMe ? " Max-Age=604800;" : ""}`;
-
       window.location.href = "/";
     } catch {
       setError("Network error. Please check your connection and try again.");

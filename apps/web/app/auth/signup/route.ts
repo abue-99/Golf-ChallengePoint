@@ -1,36 +1,37 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@golf/db";
-import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
-    const { email, password, firstName, lastName, profileImage } = await req.json();
+    const body = await req.json();
 
-    if (!email || !password) {
+    if (!body.email || !body.password) {
       return NextResponse.json(
         { error: "Email and password required" },
         { status: 400 }
       );
     }
 
-    // ✅ Passwort hashen
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = await prisma.user.create({
-      data: {
-        email,
-        passwordHash: hashedPassword,   // ✅ muss passwordHash heißen
-        firstName,
-        lastName,
-        profileImage,
-      },
+    const apiUrl = process.env.API_URL || "http://golf_api:4000";
+    const response = await fetch(`${apiUrl}/auth/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
 
-    return NextResponse.json(
-      { message: "User created", userId: user.id },
-      { status: 201 }
-    );
+    const data = await response.json();
 
+    if (!response.ok) {
+      return NextResponse.json(data, { status: response.status });
+    }
+
+    const res = NextResponse.json(data, { status: 201 });
+    res.cookies.set("token", data.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 15 * 60,
+    });
+    return res;
   } catch (error) {
     console.error(error);
     return NextResponse.json(

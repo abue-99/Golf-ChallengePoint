@@ -4,7 +4,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const res = await fetch("http://golf_api:4000/auth/signup", {
+    const apiUrl = process.env.API_URL || "http://golf_api:4000";
+    const res = await fetch(`${apiUrl}/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -17,11 +18,11 @@ export async function POST(request: NextRequest) {
     }
 
     const response = NextResponse.json(data);
-    response.cookies.set("refresh_token", data.accessToken, {
+    response.cookies.set("token", data.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60,
+      maxAge: 15 * 60,
     });
 
     return response;
