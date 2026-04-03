@@ -1,4 +1,4 @@
-import { prisma } from "@golf/db";
+import { prisma } from "@challengepoint/db";
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 

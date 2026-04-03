@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from './prisma.service';
 
-jest.mock('@golf/db', () => ({
+jest.mock('@challengepoint/db', () => ({
   prisma: {
     $connect: jest.fn().mockResolvedValue(undefined),
     $disconnect: jest.fn().mockResolvedValue(undefined),
@@ -31,7 +31,7 @@ describe('PrismaService', () => {
 
   describe('onModuleInit', () => {
     it('should connect to the database', async () => {
-      const { prisma } = await import('@golf/db');
+      const { prisma } = await import('@challengepoint/db');
       await service.onModuleInit();
       expect(prisma.$connect).toHaveBeenCalled();
     });
@@ -39,7 +39,7 @@ describe('PrismaService', () => {
 
   describe('onModuleDestroy', () => {
     it('should disconnect from the database', async () => {
-      const { prisma } = await import('@golf/db');
+      const { prisma } = await import('@challengepoint/db');
       await service.onModuleDestroy();
       expect(prisma.$disconnect).toHaveBeenCalled();
     });
@@ -69,7 +69,7 @@ describe('PrismaService', () => {
 
   describe('$transaction', () => {
     it('should delegate to the prisma client $transaction', async () => {
-      const { prisma } = await import('@golf/db');
+      const { prisma } = await import('@challengepoint/db');
       const callback = jest.fn().mockResolvedValue('result');
       const transactionMock = jest.fn().mockResolvedValue('result');
       (prisma as any).$transaction = transactionMock;

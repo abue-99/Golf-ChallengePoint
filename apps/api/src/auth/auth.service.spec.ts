@@ -1,4 +1,4 @@
-jest.mock('@golf/db', () => ({
+jest.mock('@challengepoint/db', () => ({
   prisma: {
     $connect: jest.fn(),
     $disconnect: jest.fn(),

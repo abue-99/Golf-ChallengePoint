@@ -1,6 +1,6 @@
 import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Role } from '@golf/db';
+import { Role } from '@challengepoint/db';
 import { RolesGuard } from './roles.guard';
 import { InsufficientRoleException } from '../common/exceptions/auth.exception';
 import { ROLES_KEY } from './roles.decorator';

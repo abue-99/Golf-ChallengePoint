@@ -1,1 +1,1 @@
-export { prisma } from "@golf/db";
+export { prisma } from "@challengepoint/db";

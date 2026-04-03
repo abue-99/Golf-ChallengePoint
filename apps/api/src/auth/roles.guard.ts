@@ -1,6 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Role } from '@golf/db';
+import { Role } from '@challengepoint/db';
 import { ROLES_KEY } from './roles.decorator';
 import { InsufficientRoleException } from '../common/exceptions/auth.exception';
 import { AuthenticatedUser } from './jwt.strategy';

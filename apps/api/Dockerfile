@@ -12,7 +12,7 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 
 # Generate Prisma client (no DB connection needed for generate in Prisma 7)
-RUN pnpm --filter @golf/db run generate
+RUN pnpm --filter @challengepoint/db run generate
 
 # Build NestJS API
 RUN pnpm --filter api run build

@@ -1,5 +1,5 @@
 import { JwtStrategy, JwtPayload } from './jwt.strategy';
-import { Role } from '@golf/db';
+import { Role } from '@challengepoint/db';
 
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
