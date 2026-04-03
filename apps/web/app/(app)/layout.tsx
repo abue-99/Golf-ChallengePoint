@@ -1,33 +1,44 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyJwt } from "@/lib/jwt";
-import { cookies } from "next/headers";
 import HeaderAndSidebarLayout from "@/components/HeaderAndSidebarLayout";
 import type { ReactNode } from "react";
 
-export default function AppLayout({ children }: { children: ReactNode }) {
-  const router = useRouter();
+async function getUser(token: string | null) {
+  if (!token) return null;
+  
+  try {
+    const payload = verifyJwt<{ sub: string }>(token);
+    if (!payload) return null;
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch("/auth/me");
-        if (!response.ok) {
-          router.push("/login");
-        }
-      } catch (error) {
-        router.push("/login");
-      }
-    };
+    // Call API to get user data instead of direct DB access
+    const response = await fetch("http://localhost:4000/auth/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
 
-    checkAuth();
-  }, [router]);
+export default async function AppLayout({ children }: { children: ReactNode }) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value ?? null;
+
+  if (!token) {
+    redirect("/login");
+  }
+
+  const user = await getUser(token);
+
+  if (!user) {
+    redirect("/login");
+  }
 
   return (
-    <HeaderAndSidebarLayout user={{ firstName: "", lastName: "" }}>
+    <HeaderAndSidebarLayout user={{ firstName: user.firstName ?? "", lastName: user.lastName ?? "" }}>
       {children}
     </HeaderAndSidebarLayout>
   );
