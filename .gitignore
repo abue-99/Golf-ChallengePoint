@@ -11,3 +11,11 @@ coverage
 # Prisma generated client
 packages/db/generated/
 packages/db/prisma.config.ts
+
+# packages/db build artifacts
+packages/db/db.js
+packages/db/db.d.ts
+packages/db/index.js
+packages/db/index.d.ts
+packages/db/prisma.config.js
+packages/db/prisma.config.d.ts
