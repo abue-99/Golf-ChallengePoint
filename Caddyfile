@@ -1,0 +1,7 @@
+{$DOMAIN} {
+    # API: alle Requests unter /api/* an den Backend-Container
+    reverse_proxy /api/* golf_api:4000
+
+    # Web: alle übrigen Requests an den Frontend-Container
+    reverse_proxy /* golf_web:3000
+}
