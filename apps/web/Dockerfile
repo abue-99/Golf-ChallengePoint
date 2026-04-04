@@ -12,7 +12,7 @@ RUN pnpm install --frozen-lockfile
 
 RUN pnpm --filter @challengepoint/db run generate
 
-ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
+ENV DATABASE_URL="postgresql://postgres:postgres@postgres:5432/challengepoint"
 
 RUN pnpm --filter golf-challenge-point-web run build
 
