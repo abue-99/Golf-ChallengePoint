@@ -33,7 +33,7 @@ services:
       REFRESH_SECRET: ${REFRESH_SECRET:-your-refresh-secret-key-min-32-chars}
       ACCESS_TOKEN_EXPIRY: 15m
       REFRESH_TOKEN_EXPIRY: 7d
-      FRONTEND_URL: ${FRONTEND_URL:-https://localhost}
+      FRONTEND_URL: ${FRONTEND_URL:-http://178.104.48.239}
     depends_on:
       postgres:
         condition: service_healthy
@@ -51,7 +51,7 @@ services:
       NODE_ENV: production
       API_URL: http://golf_api:4000
       ACCESS_SECRET: ${ACCESS_SECRET:-your-access-secret-key-min-32-chars}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://localhost}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://178.104.48.239}
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/challengepoint
     depends_on:
       - api
@@ -63,9 +63,8 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-      - "443:443"
     environment:
-      DOMAIN: ${DOMAIN:-localhost}
+      DOMAIN: ${DOMAIN:-178.104.48.239}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

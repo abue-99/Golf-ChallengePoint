@@ -1,4 +1,4 @@
-{$DOMAIN} {
+http://{$DOMAIN} {
     # API: alle Requests unter /api/* an den Backend-Container
     reverse_proxy /api/* golf_api:4000
 
