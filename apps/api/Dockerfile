@@ -14,6 +14,9 @@ RUN pnpm install --frozen-lockfile
 # Generate Prisma client (no DB connection needed for generate in Prisma 7)
 RUN pnpm --filter @challengepoint/db run generate
 
+# Compile packages/db TypeScript to JavaScript
+RUN pnpm --filter @challengepoint/db run build
+
 # Build NestJS API
 RUN pnpm --filter api run build
 
