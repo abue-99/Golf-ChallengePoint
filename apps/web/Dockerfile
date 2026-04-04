@@ -12,6 +12,9 @@ RUN pnpm install --frozen-lockfile
 
 RUN pnpm --filter @challengepoint/db run generate
 
+# Compile packages/db TypeScript to JavaScript
+RUN pnpm --filter @challengepoint/db run build
+
 ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
 
 RUN pnpm --filter golf-challenge-point-web run build

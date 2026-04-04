@@ -4,11 +4,12 @@
   "description": "",
   "author": "",
   "license": "MIT",
-  "main": "./index.ts",
+  "main": "./index.js",
   "exports": {
-    ".": "./index.ts"
+    ".": "./index.js"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.json",
     "generate": "prisma generate",
     "prisma": "prisma",
     "prisma:generate": "prisma generate",
