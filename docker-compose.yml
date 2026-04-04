@@ -22,8 +22,8 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
     container_name: golf_api
-    ports:
-      - "4000:4000"
+    expose:
+      - "4000"
     environment:
       NODE_ENV: production
       PORT: 4000
@@ -32,7 +32,7 @@ services:
       REFRESH_SECRET: ${REFRESH_SECRET:-your-refresh-secret-key-min-32-chars}
       ACCESS_TOKEN_EXPIRY: 15m
       REFRESH_TOKEN_EXPIRY: 7d
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-https://localhost}
     depends_on:
       postgres:
         condition: service_healthy
@@ -43,20 +43,39 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
     container_name: golf_web
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       NODE_ENV: production
       API_URL: http://golf_api:4000
       ACCESS_SECRET: ${ACCESS_SECRET:-your-access-secret-key-min-32-chars}
-      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://localhost}
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/challengepoint
     depends_on:
       - api
     restart: unless-stopped
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: golf_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - web
+
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:
 
 networks:
   default:
