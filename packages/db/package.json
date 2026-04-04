@@ -9,6 +9,7 @@
     ".": "./index.ts"
   },
   "scripts": {
+    "build": "tsc",
     "generate": "prisma generate",
     "prisma": "prisma",
     "prisma:generate": "prisma generate",
