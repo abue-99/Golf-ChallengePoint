@@ -9,11 +9,7 @@
     ".": "./index.js"
   },
   "scripts": {
-<<<<<<< HEAD
     "build": "tsc",
-=======
-    "build": "tsc -p tsconfig.json",
->>>>>>> b35b186 (fix: add build step to packages/db so compiled JS is available at runtime)
     "generate": "prisma generate",
     "prisma": "prisma",
     "prisma:generate": "prisma generate",
