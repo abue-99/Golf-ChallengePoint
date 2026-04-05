@@ -1,7 +1,12 @@
 http://{$DOMAIN} {
-    # API: alle Requests unter /api/* an den Backend-Container
-    reverse_proxy /api/* golf_api:4000
+	# API: strip /api prefix then forward to the NestJS backend
+	handle /api/* {
+		uri strip_prefix /api
+		reverse_proxy golf_api:4000
+	}
 
-    # Web: alle übrigen Requests an den Frontend-Container
-    reverse_proxy /* golf_web:3000
+	# Web: all other requests go to the Next.js frontend
+	handle {
+		reverse_proxy golf_web:3000
+	}
 }

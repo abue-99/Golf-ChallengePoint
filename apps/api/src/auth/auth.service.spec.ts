@@ -33,7 +33,6 @@ const mockUser = {
 
 describe('AuthService', () => {
   let service: AuthService;
-  let prisma: jest.Mocked<PrismaService>;
   let jwtService: jest.Mocked<JwtService>;
 
   const mockPrisma = {
@@ -59,8 +58,7 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    prisma = module.get(PrismaService);
-    jwtService = module.get(JwtService);
+    jwtService = module.get<jest.Mocked<JwtService>>(JwtService);
 
     jest.clearAllMocks();
   });
@@ -113,7 +111,7 @@ describe('AuthService', () => {
 
       await service.signup(signupDto);
 
-      const createCall = mockPrisma.user.create.mock.calls[0][0];
+      const createCall = mockPrisma.user.create.mock.calls[0][0] as { data: { passwordHash: string } };
       const storedHash = createCall.data.passwordHash;
       const matches = await bcrypt.compare(signupDto.password, storedHash);
       expect(matches).toBe(true);
@@ -126,7 +124,7 @@ describe('AuthService', () => {
 
       await service.signup({ email: 'a@b.com', password: 'pass123' });
 
-      const createCall = mockPrisma.user.create.mock.calls[0][0];
+      const createCall = mockPrisma.user.create.mock.calls[0][0] as { data: { firstName: string } };
       expect(createCall.data.firstName).toBe('User');
     });
 
@@ -137,7 +135,7 @@ describe('AuthService', () => {
 
       await service.signup(signupDto);
 
-      const createCall = mockPrisma.user.create.mock.calls[0][0];
+      const createCall = mockPrisma.user.create.mock.calls[0][0] as { data: { role: string } };
       expect(createCall.data.role).toBe('PLAYER');
     });
   });
@@ -207,7 +205,7 @@ describe('AuthService', () => {
 
       const token = service.generateAccessToken('uid', 'u@test.com', 'PLAYER');
 
-      expect(jwtService.sign).toHaveBeenCalledWith(
+      expect(jwtService.sign as jest.Mock).toHaveBeenCalledWith(
         { sub: 'uid', email: 'u@test.com', role: 'PLAYER' },
         expect.objectContaining({ secret: process.env.ACCESS_SECRET }),
       );
@@ -221,7 +219,7 @@ describe('AuthService', () => {
 
       const token = service.generateRefreshToken('uid');
 
-      expect(jwtService.sign).toHaveBeenCalledWith(
+      expect(jwtService.sign as jest.Mock).toHaveBeenCalledWith(
         { sub: 'uid' },
         expect.objectContaining({ secret: process.env.REFRESH_SECRET }),
       );
