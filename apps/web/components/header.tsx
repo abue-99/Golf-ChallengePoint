@@ -1,6 +1,6 @@
 
 "use client";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Menu, Settings, User } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -15,9 +15,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 type HeaderProps = {
   user: { firstName: string; lastName: string };
+  onToggleSidebar?: () => void;
 };
 
-export default function Header({ user }: HeaderProps) {
+export default function Header({ user, onToggleSidebar }: HeaderProps) {
   const router = useRouter();
 
   const initials =
@@ -32,6 +33,15 @@ export default function Header({ user }: HeaderProps) {
 
   return (
     <header className="flex items-center bg-green-700 text-white h-14 px-4 gap-4">
+      {onToggleSidebar && (
+        <button
+          onClick={onToggleSidebar}
+          aria-label="Toggle sidebar"
+          className="flex items-center justify-center rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white p-1 -ml-1"
+        >
+          <Menu size={22} className="text-white" />
+        </button>
+      )}
       <Image
         src="/GolfChallengePoint_Logo_Inv_48x48.png"
         alt="Golf Challenge Point Logo"
