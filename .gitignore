@@ -10,4 +10,3 @@ coverage
 
 # Prisma generated client
 packages/db/generated/
-packages/db/prisma.config.ts
