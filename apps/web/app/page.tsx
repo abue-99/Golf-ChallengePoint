@@ -2,6 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   Home,
   Calendar,
@@ -9,6 +10,7 @@ import {
   BarChart,
   Settings,
   User,
+  Menu,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -22,16 +24,24 @@ const navItems = [
 
 export default function WelcomePage() {
   const router = useRouter();
+  const [expanded, setExpanded] = useState(true);
 
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="flex items-center bg-green-700 text-white h-14 px-4 gap-4 shadow-md">
+        <button
+          onClick={() => setExpanded((prev) => !prev)}
+          aria-label="Toggle sidebar"
+          className="flex items-center justify-center rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white p-2 -ml-1 hover:bg-white/20 transition-colors"
+        >
+          <Menu size={22} className="text-white" />
+        </button>
         <Image
           src="/GolfChallengePoint_Logo_Inv_48x48.png"
           alt="Golf Challenge Point"
-          width={48}
-          height={48}
+          width={40}
+          height={40}
           priority
         />
         <span className="font-bold text-lg">Golf Challenge Point</span>
@@ -51,18 +61,21 @@ export default function WelcomePage() {
       </header>
 
       {/* Body */}
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className="bg-white border-r w-64">
+        <aside
+          className={`bg-white border-r overflow-hidden flex-shrink-0 transition-all duration-300 ease-in-out ${expanded ? "w-64" : "w-12"}`}
+        >
           <nav className="flex flex-col py-4">
             {navItems.map(({ href, icon: Icon, label }) => (
               <Link
                 key={label}
                 href={href}
-                className="flex items-center gap-3 px-4 py-2 text-[var(--golf-heading)] hover:bg-gray-100"
+                title={label}
+                className={`flex items-center py-2 hover:bg-gray-100 whitespace-nowrap text-[var(--golf-heading)] ${expanded ? "gap-3 px-4" : "justify-center px-0"}`}
               >
-                <Icon className="h-5 w-5 text-[var(--golf-primary)]" />
-                {label}
+                <Icon className="h-5 w-5 text-[var(--golf-primary)] flex-shrink-0" />
+                {expanded && <span>{label}</span>}
               </Link>
             ))}
           </nav>

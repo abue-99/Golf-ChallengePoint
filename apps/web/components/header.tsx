@@ -37,7 +37,7 @@ export default function Header({ user, onToggleSidebar }: HeaderProps) {
         <button
           onClick={onToggleSidebar}
           aria-label="Toggle sidebar"
-          className="flex items-center justify-center rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white p-1 -ml-1"
+          className="flex items-center justify-center rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white p-2 -ml-1 hover:bg-white/20 transition-colors"
         >
           <Menu size={22} className="text-white" />
         </button>
