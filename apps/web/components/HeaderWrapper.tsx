@@ -15,6 +15,7 @@ export default function HeaderWrapper() {
     <Header
       user={user}
       toggleSidebar={() => setSidebarOpen((prev) => !prev)}
+      sidebarOpen={sidebarOpen}
     />
   );
 }
