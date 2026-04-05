@@ -9,7 +9,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
 import { AuthenticatedUser } from './jwt.strategy';
-import { InvalidCredentialsException, InvalidTokenException } from '../common/exceptions/auth.exception';
+import {
+  InvalidCredentialsException,
+  InvalidTokenException,
+} from '../common/exceptions/auth.exception';
 
 export interface TokenPair {
   accessToken: string;
@@ -22,7 +25,9 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async signup(dto: SignupDto): Promise<{ accessToken: string; user: AuthenticatedUser }> {
+  async signup(
+    dto: SignupDto,
+  ): Promise<{ accessToken: string; user: AuthenticatedUser }> {
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email.toLowerCase() },
@@ -47,7 +52,11 @@ export class AuthService {
     });
 
     // Generate tokens
-    const accessToken = this.generateAccessToken(user.id, user.email, user.role);
+    const accessToken = this.generateAccessToken(
+      user.id,
+      user.email,
+      user.role,
+    );
 
     return {
       accessToken,
@@ -55,7 +64,9 @@ export class AuthService {
     };
   }
 
-  async login(dto: LoginDto): Promise<{ accessToken: string; user: AuthenticatedUser }> {
+  async login(
+    dto: LoginDto,
+  ): Promise<{ accessToken: string; user: AuthenticatedUser }> {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email.toLowerCase() },
     });
@@ -64,7 +75,10 @@ export class AuthService {
       throw new InvalidCredentialsException();
     }
 
-    const passwordMatch = await bcrypt.compare(dto.password, user.passwordHash || '');
+    const passwordMatch = await bcrypt.compare(
+      dto.password,
+      user.passwordHash || '',
+    );
     if (!passwordMatch) {
       throw new InvalidCredentialsException();
     }
@@ -74,7 +88,11 @@ export class AuthService {
       data: { lastLogin: new Date() },
     });
 
-    const accessToken = this.generateAccessToken(user.id, user.email, user.role);
+    const accessToken = this.generateAccessToken(
+      user.id,
+      user.email,
+      user.role,
+    );
 
     return {
       accessToken,
@@ -86,7 +104,8 @@ export class AuthService {
     const payload = { sub: userId, email, role };
     return this.jwtService.sign(payload, {
       secret: process.env.ACCESS_SECRET,
-      expiresIn: (process.env.ACCESS_TOKEN_EXPIRY ?? '15m') as unknown as number,
+      expiresIn: (process.env.ACCESS_TOKEN_EXPIRY ??
+        '15m') as unknown as number,
     });
   }
 
@@ -95,7 +114,8 @@ export class AuthService {
       { sub: userId },
       {
         secret: process.env.REFRESH_SECRET,
-        expiresIn: (process.env.REFRESH_TOKEN_EXPIRY ?? '7d') as unknown as number,
+        expiresIn: (process.env.REFRESH_TOKEN_EXPIRY ??
+          '7d') as unknown as number,
       },
     );
   }
@@ -123,7 +143,9 @@ export class AuthService {
     }
   }
 
-  async getMe(userId: string): Promise<AuthenticatedUser & { createdAt: Date; lastLogin: Date | null }> {
+  async getMe(
+    userId: string,
+  ): Promise<AuthenticatedUser & { createdAt: Date; lastLogin: Date | null }> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -136,7 +158,10 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException({ statusCode: 401, message: 'User not found' });
+      throw new UnauthorizedException({
+        statusCode: 401,
+        message: 'User not found',
+      });
     }
 
     return user;
