@@ -1,37 +1,39 @@
 "use client";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import {
-  Home,
-  Calendar,
-  CheckSquare,
-  BarChart,
-  Settings,
-  User,
-} from "lucide-react";
+import { Menu, User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-
-const navItems = [
-  { href: "/login", icon: Home, label: "Dashboard" },
-  { href: "/login", icon: Calendar, label: "Today" },
-  { href: "/login", icon: CheckSquare, label: "Tasks" },
-  { href: "/login", icon: BarChart, label: "Stats" },
-  { href: "/login", icon: Settings, label: "Settings" },
-];
+import Sidebar from "@/components/sidebar";
 
 export default function WelcomePage() {
   const router = useRouter();
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && expanded) setExpanded(false);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [expanded]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col h-screen">
       {/* Header */}
-      <header className="flex items-center bg-green-700 text-white h-14 px-4 gap-4 shadow-md">
+      <header className="flex items-center bg-green-700 text-white h-14 px-4 gap-4 shadow-md flex-shrink-0">
+        <button
+          onClick={() => setExpanded((p) => !p)}
+          aria-label="Toggle sidebar"
+          className="flex items-center justify-center rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white p-1 -ml-1 hover:bg-white/20 transition-colors"
+        >
+          <Menu size={22} className="text-white" />
+        </button>
         <Image
           src="/GolfChallengePoint_Logo_Inv_48x48.png"
           alt="Golf Challenge Point"
-          width={48}
-          height={48}
+          width={40}
+          height={40}
           priority
         />
         <span className="font-bold text-lg">Golf Challenge Point</span>
@@ -51,25 +53,11 @@ export default function WelcomePage() {
       </header>
 
       {/* Body */}
-      <div className="flex flex-1">
-        {/* Sidebar */}
-        <aside className="bg-white border-r w-64">
-          <nav className="flex flex-col py-4">
-            {navItems.map(({ href, icon: Icon, label }) => (
-              <Link
-                key={label}
-                href={href}
-                className="flex items-center gap-3 px-4 py-2 text-[var(--golf-heading)] hover:bg-gray-100"
-              >
-                <Icon className="h-5 w-5 text-[var(--golf-primary)]" />
-                {label}
-              </Link>
-            ))}
-          </nav>
-        </aside>
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar expanded={expanded} toggleSidebar={() => setExpanded((p) => !p)} />
 
         {/* Main content */}
-        <main className="flex-1 flex items-start justify-end p-10">
+        <main className="flex-1 overflow-auto flex items-start justify-end p-10 bg-gray-50">
           <div className="max-w-sm text-right">
             <h1 className="text-2xl font-bold text-[var(--golf-heading)] mb-2">
               Willkommen bei Golf Challenge Point
