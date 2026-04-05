@@ -23,4 +23,4 @@ RUN pnpm --filter api run build
 ENV NODE_ENV=production
 EXPOSE 4000
 
-CMD ["sh", "-c", "node apps/api/dist/main.js"]
+CMD ["sh", "-c", "pnpm --filter @challengepoint/db run migrate:deploy && node apps/api/dist/main.js"]
