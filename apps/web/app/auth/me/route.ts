@@ -7,12 +7,13 @@ export async function GET(req: Request) {
 
   if (!payload) return NextResponse.json({ user: null });
 
-  // Call NestJS API instead of direct DB
+  const apiUrl = process.env.API_URL || "http://golf_api:4000";
+
   try {
-    const response = await fetch("http://localhost:4000/auth/profile", {
+    const response = await fetch(`${apiUrl}/auth/profile`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    
+
     if (!response.ok) return NextResponse.json({ user: null });
     const user = await response.json();
     return NextResponse.json(user);

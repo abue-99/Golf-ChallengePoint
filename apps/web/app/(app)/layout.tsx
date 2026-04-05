@@ -11,8 +11,8 @@ async function getUser(token: string | null) {
     const payload = verifyJwt<{ sub: string }>(token);
     if (!payload) return null;
 
-    // Call API to get user data instead of direct DB access
-    const response = await fetch("http://localhost:4000/auth/me", {
+    const apiUrl = process.env.API_URL || "http://golf_api:4000";
+    const response = await fetch(`${apiUrl}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     
