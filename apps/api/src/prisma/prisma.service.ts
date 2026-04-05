@@ -1,9 +1,9 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { prisma } from '@challengepoint/db';
+import { prisma, PrismaClient } from '@challengepoint/db';
 
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
-  private client = prisma;
+  private client: PrismaClient = prisma;
 
   async onModuleInit() {
     await this.client.$connect();
@@ -34,7 +34,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.passwordResetToken;
   }
 
-  $transaction(...args: any[]) {
-    return (this.client as any).$transaction(...args);
+  $transaction<T>(...args: Parameters<PrismaClient['$transaction']>): Promise<T> {
+    return this.client.$transaction(...args) as Promise<T>;
   }
 }
