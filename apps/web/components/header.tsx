@@ -34,16 +34,15 @@ export default function Header({ user, toggleSidebar, sidebarOpen }: HeaderProps
 
   return (
     <header className="flex items-center bg-green-700 text-white h-14 px-4 gap-4">
-      <button onClick={toggleSidebar} aria-label="Toggle sidebar" className="p-1 rounded hover:bg-green-600 transition-colors">
-        {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
+      <button onClick={toggleSidebar} aria-label="Toggle sidebar" className="h-8 w-8 flex items-center justify-center rounded-full border-2 border-green-400/70 hover:bg-green-600 transition-colors">
+        {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
       </button>
       <Image
-        src="/GolfChallengePoint_LogoInv48x48.svg"
+        src="/GolfChallengePoint_Logo_Inv_48x48.png"
         alt="Golf Challenge Point Logo"
         width={40}
         height={40}
         priority
-        unoptimized
       />
       <span className="font-bold text-lg">Golf Challenge Point</span>
       <div className="ml-auto flex items-center gap-2">
