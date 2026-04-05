@@ -22,16 +22,9 @@ export default function HeaderAndSidebarLayout({
  }, [expanded]);
  return (
   <div className='flex flex-col h-screen'>
-    <Header user={user} toggleSidebar={()=>setExpanded(p=>!p)} sidebarOpen={expanded}/>
+    <Header user={user}/>
     <div className='flex flex-row flex-1 overflow-hidden'>
-      {expanded && (
-        <div
-          className='fixed inset-0 top-14 bg-black/40 z-30 md:hidden'
-          aria-hidden='true'
-          onClick={() => setExpanded(false)}
-        />
-      )}
-      <Sidebar expanded={expanded}/>
+      <Sidebar expanded={expanded} toggleSidebar={()=>setExpanded(p=>!p)}/>
       <main className='flex-1 overflow-auto bg-gray-50 p-4'>{children}</main>
     </div>
   </div>
