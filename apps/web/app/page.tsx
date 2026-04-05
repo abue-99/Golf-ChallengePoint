@@ -11,7 +11,6 @@ import {
   Settings,
   User,
   Menu,
-  X,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -74,26 +73,15 @@ export default function WelcomePage() {
       <div className="flex flex-row flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside
-          className={`bg-white border-r overflow-hidden flex-shrink-0 transition-all duration-300 ease-in-out ${expanded ? "w-64" : "w-12"}`}
+          className={`bg-green-50 overflow-hidden flex-shrink-0 transition-all duration-300 ease-in-out ${expanded ? "w-64" : "w-12"}`}
         >
           <nav className="flex flex-col py-4">
-            {expanded && (
-              <button
-                onClick={() => setExpanded(false)}
-                aria-label="Close sidebar"
-                className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 whitespace-nowrap"
-                title="Einklappen"
-              >
-                <X size={18} className="text-gray-700" />
-                <span>Einklappen</span>
-              </button>
-            )}
             {navItems.map(({ href, icon: Icon, label }) => (
               <Link
                 key={label}
                 href={href}
                 title={label}
-                className={`flex items-center py-2 hover:bg-gray-100 whitespace-nowrap ${expanded ? "gap-3 px-4" : "justify-center px-0"}`}
+                className={`flex items-center py-2 hover:bg-green-100 whitespace-nowrap ${expanded ? "gap-3 px-4" : "justify-center px-0"}`}
               >
                 <Icon size={18} className="text-gray-700" />
                 {expanded && <span>{label}</span>}
