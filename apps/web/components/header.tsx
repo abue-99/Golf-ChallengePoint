@@ -37,9 +37,7 @@ export default function Header({ user, onToggleSidebar, sidebarExpanded }: Heade
       {onToggleSidebar && (
         <button
           onClick={onToggleSidebar}
-          aria-label={sidebarExpanded ? "Close sidebar" : "Open sidebar"}
-          aria-expanded={sidebarExpanded}
-          title={sidebarExpanded ? "Close sidebar" : "Open sidebar"}
+          aria-label="Toggle sidebar"
           className="flex items-center justify-center rounded p-1 -ml-1 transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           <Menu size={22} className="text-white" />
