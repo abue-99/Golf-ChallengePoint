@@ -28,12 +28,11 @@ export default function WelcomePage() {
       {/* Header */}
       <header className="flex items-center bg-green-700 text-white h-14 px-4 gap-4 shadow-md">
         <Image
-          src="/GolfChallengePoint_Logo40.png"
+          src="/GolfChallengePoint_Logo_Inv_48x48.png"
           alt="Golf Challenge Point"
-          width={40}
-          height={40}
+          width={48}
+          height={48}
           priority
-          unoptimized
         />
         <span className="font-bold text-lg">Golf Challenge Point</span>
         <div className="ml-auto flex items-center gap-2">

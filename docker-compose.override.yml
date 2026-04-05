@@ -1,0 +1,12 @@
+# Local development overrides – NOT used in production.
+# Docker Compose automatically merges this file with docker-compose.yml
+# when you run `docker compose up` locally, exposing port 3000 on localhost
+# so the app is reachable at http://localhost:3000.
+#
+# On the production server only docker-compose.yml is used (Caddy proxies
+# traffic internally to the web container without exposing port 3000).
+
+services:
+  web:
+    ports:
+      - "3000:3000"
