@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Home, Calendar, CheckSquare, BarChart, Settings } from 'lucide-react';
 export default function Sidebar({expanded}:{expanded:boolean}){
  return (
-  <aside className={`bg-white border-r h-full overflow-hidden transition-all duration-300 ease-in-out ${expanded ? 'w-64' : 'w-12'}`}>
+  <aside className={`bg-white border-r overflow-hidden transition-all duration-300 ease-in-out ${expanded ? 'fixed md:static top-14 bottom-0 left-0 z-40 w-64 md:h-full' : 'hidden md:block md:w-12 md:h-full'}`}>
     <nav className='flex flex-col py-4'>
       <Link href='/' className={`flex items-center py-2 hover:bg-gray-100 whitespace-nowrap ${expanded ? 'gap-3 px-4' : 'justify-center px-0'}`} title='Dashboard'><Home size={18}/>{expanded && <span>Dashboard</span>}</Link>
       <Link href='/today' className={`flex items-center py-2 hover:bg-gray-100 whitespace-nowrap ${expanded ? 'gap-3 px-4' : 'justify-center px-0'}`} title='Today'><Calendar size={18}/>{expanded && <span>Today</span>}</Link>
