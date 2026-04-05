@@ -38,8 +38,8 @@ export default function Header({ user, toggleSidebar, sidebarOpen }: HeaderProps
         {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
       </button>
       <Image
-        src="/logo.svg"
-        alt="Logo"
+        src="/GolfChallengePoint_LogoInv48x48.svg"
+        alt="Golf Challenge Point Logo"
         width={40}
         height={40}
         priority
