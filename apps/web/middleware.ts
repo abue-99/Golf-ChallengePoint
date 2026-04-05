@@ -25,7 +25,6 @@ export function middleware(req: NextRequest) {
 
   // Protected routes
   const PROTECTED = [
-    "/",
     "/dashboard",
     "/player",
     "/coach",
