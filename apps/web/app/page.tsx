@@ -40,8 +40,8 @@ export default function WelcomePage() {
         <Image
           src="/GolfChallengePoint_Logo_Inv_48x48.png"
           alt="Golf Challenge Point"
-          width={40}
-          height={40}
+          width={48}
+          height={48}
           priority
         />
         <span className="font-bold text-lg">Golf Challenge Point</span>
@@ -72,6 +72,7 @@ export default function WelcomePage() {
                 key={label}
                 href={href}
                 title={label}
+                aria-label={label}
                 className={`flex items-center py-2 hover:bg-gray-100 whitespace-nowrap text-[var(--golf-heading)] ${expanded ? "gap-3 px-4" : "justify-center px-0"}`}
               >
                 <Icon className="h-5 w-5 text-[var(--golf-primary)] flex-shrink-0" />
