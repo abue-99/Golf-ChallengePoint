@@ -17,6 +17,9 @@ import { Response, Request } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { InvalidTokenException } from '../common/exceptions/auth.exception';
+import { SignupDto } from './dto/signup.dto';
+import { LoginDto } from './dto/login.dto';
+import { AuthenticatedUser } from './jwt.strategy';
 
 const mockAuthService = {
   signup: jest.fn(),
@@ -57,7 +60,7 @@ describe('AuthController', () => {
       mockAuthService.generateRefreshToken.mockReturnValue('ref-token');
       const res = mockResponse();
 
-      const result = await controller.signup(dto as any, res);
+      const result = await controller.signup(dto as SignupDto, res);
 
       expect(result).toEqual({ accessToken: 'acc-token', user });
     });
@@ -67,9 +70,9 @@ describe('AuthController', () => {
       mockAuthService.generateRefreshToken.mockReturnValue('ref-token');
       const res = mockResponse();
 
-      await controller.signup(dto as any, res);
+      await controller.signup(dto as SignupDto, res);
 
-      expect(res.cookie).toHaveBeenCalledWith(
+      expect(res.cookie as jest.Mock).toHaveBeenCalledWith(
         'refresh_token',
         'ref-token',
         expect.objectContaining({ httpOnly: true }),
@@ -80,7 +83,7 @@ describe('AuthController', () => {
       mockAuthService.signup.mockRejectedValue(new Error('Email already in use'));
       const res = mockResponse();
 
-      await expect(controller.signup(dto as any, res)).rejects.toThrow('Email already in use');
+      await expect(controller.signup(dto as SignupDto, res)).rejects.toThrow('Email already in use');
     });
   });
 
@@ -93,7 +96,7 @@ describe('AuthController', () => {
       mockAuthService.generateRefreshToken.mockReturnValue('ref-token');
       const res = mockResponse();
 
-      const result = await controller.login(dto as any, res);
+      const result = await controller.login(dto as LoginDto, res);
 
       expect(result).toEqual({ accessToken: 'acc-token', user });
     });
@@ -103,9 +106,9 @@ describe('AuthController', () => {
       mockAuthService.generateRefreshToken.mockReturnValue('ref-token');
       const res = mockResponse();
 
-      await controller.login(dto as any, res);
+      await controller.login(dto as LoginDto, res);
 
-      expect(res.cookie).toHaveBeenCalledWith(
+      expect(res.cookie as jest.Mock).toHaveBeenCalledWith(
         'refresh_token',
         'ref-token',
         expect.objectContaining({ httpOnly: true, sameSite: 'strict' }),
@@ -116,7 +119,7 @@ describe('AuthController', () => {
       mockAuthService.login.mockRejectedValue(new Error('Invalid credentials'));
       const res = mockResponse();
 
-      await expect(controller.login(dto as any, res)).rejects.toThrow('Invalid credentials');
+      await expect(controller.login(dto as LoginDto, res)).rejects.toThrow('Invalid credentials');
     });
   });
 
@@ -146,7 +149,7 @@ describe('AuthController', () => {
 
       await controller.refresh(req, res);
 
-      expect(res.cookie).toHaveBeenCalledWith(
+      expect(res.cookie as jest.Mock).toHaveBeenCalledWith(
         'refresh_token',
         'new-refresh-token',
         expect.objectContaining({ httpOnly: true }),
@@ -168,7 +171,7 @@ describe('AuthController', () => {
       const result = controller.logout(res);
 
       expect(result).toEqual({ message: 'Logged out successfully' });
-      expect(res.clearCookie).toHaveBeenCalledWith(
+      expect(res.clearCookie as jest.Mock).toHaveBeenCalledWith(
         'refresh_token',
         expect.objectContaining({ httpOnly: true }),
       );
@@ -181,7 +184,7 @@ describe('AuthController', () => {
       const profile = { ...user, createdAt: new Date(), lastLogin: null };
       mockAuthService.getMe.mockResolvedValue(profile);
 
-      const result = await controller.me(user as any);
+      const result = await controller.me(user as AuthenticatedUser);
 
       expect(result).toEqual(profile);
       expect(mockAuthService.getMe).toHaveBeenCalledWith('uid');

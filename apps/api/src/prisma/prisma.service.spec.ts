@@ -33,7 +33,7 @@ describe('PrismaService', () => {
     it('should connect to the database', async () => {
       const { prisma } = await import('@challengepoint/db');
       await service.onModuleInit();
-      expect(prisma.$connect).toHaveBeenCalled();
+      expect(prisma.$connect as jest.Mock).toHaveBeenCalled();
     });
   });
 
@@ -41,7 +41,7 @@ describe('PrismaService', () => {
     it('should disconnect from the database', async () => {
       const { prisma } = await import('@challengepoint/db');
       await service.onModuleDestroy();
-      expect(prisma.$disconnect).toHaveBeenCalled();
+      expect(prisma.$disconnect as jest.Mock).toHaveBeenCalled();
     });
   });
 
@@ -72,7 +72,7 @@ describe('PrismaService', () => {
       const { prisma } = await import('@challengepoint/db');
       const callback = jest.fn().mockResolvedValue('result');
       const transactionMock = jest.fn().mockResolvedValue('result');
-      (prisma as any).$transaction = transactionMock;
+      (prisma as unknown as { $transaction: jest.Mock }).$transaction = transactionMock;
 
       await service.$transaction(callback);
 

@@ -27,4 +27,4 @@ async function bootstrap() {
   console.log(`API listening on http://localhost:${port}`);
 }
 
-bootstrap();
+void bootstrap();

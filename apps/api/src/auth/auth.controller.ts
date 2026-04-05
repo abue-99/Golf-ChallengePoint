@@ -158,7 +158,7 @@ export class AuthController {
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
-  async profile(@CurrentUser() user: AuthenticatedUser) {
+  profile(@CurrentUser() user: AuthenticatedUser) {
     return user;
   }
 }
