@@ -4,7 +4,7 @@ import { useState } from "react";
 import Header from "./header";
 
 export default function HeaderWrapper() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const user = {
     firstName: "Andy",
