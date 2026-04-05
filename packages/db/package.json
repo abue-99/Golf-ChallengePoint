@@ -16,9 +16,6 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "node prisma/seed.js"
   },
-  "prisma": {
-    "seed": "node prisma/seed.js"
-  },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/node": "^20.10.6",
