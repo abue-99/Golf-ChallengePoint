@@ -1,10 +1,27 @@
 "use client";
-import { useState, useEffect } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Menu, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  Home,
+  Calendar,
+  CheckSquare,
+  BarChart,
+  Settings,
+  User,
+  Menu,
+  X,
+} from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import Sidebar from "@/components/sidebar";
+
+const navItems = [
+  { href: "/login", icon: Home, label: "Dashboard" },
+  { href: "/login", icon: Calendar, label: "Today" },
+  { href: "/login", icon: CheckSquare, label: "Tasks" },
+  { href: "/login", icon: BarChart, label: "Stats" },
+  { href: "/login", icon: Settings, label: "Settings" },
+];
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -25,7 +42,7 @@ export default function WelcomePage() {
         <button
           onClick={() => setExpanded((p) => !p)}
           aria-label="Toggle sidebar"
-          className="flex items-center justify-center rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white p-1 -ml-1 hover:bg-white/20 transition-colors"
+          className="flex items-center justify-center rounded p-1 -ml-1 transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           <Menu size={22} className="text-white" />
         </button>
@@ -35,6 +52,7 @@ export default function WelcomePage() {
           width={40}
           height={40}
           priority
+          className="ml-1"
         />
         <span className="font-bold text-lg">Golf Challenge Point</span>
         <div className="ml-auto flex items-center gap-2">
@@ -53,11 +71,39 @@ export default function WelcomePage() {
       </header>
 
       {/* Body */}
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar expanded={expanded} toggleSidebar={() => setExpanded((p) => !p)} />
+      <div className="flex flex-row flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <aside
+          className={`bg-white border-r overflow-hidden flex-shrink-0 transition-all duration-300 ease-in-out ${expanded ? "w-64" : "w-12"}`}
+        >
+          <nav className="flex flex-col py-4">
+            {expanded && (
+              <button
+                onClick={() => setExpanded(false)}
+                aria-label="Close sidebar"
+                className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 whitespace-nowrap"
+                title="Einklappen"
+              >
+                <X size={18} className="text-gray-700" />
+                <span>Einklappen</span>
+              </button>
+            )}
+            {navItems.map(({ href, icon: Icon, label }) => (
+              <Link
+                key={label}
+                href={href}
+                title={label}
+                className={`flex items-center py-2 hover:bg-gray-100 whitespace-nowrap ${expanded ? "gap-3 px-4" : "justify-center px-0"}`}
+              >
+                <Icon size={18} className="text-gray-700" />
+                {expanded && <span>{label}</span>}
+              </Link>
+            ))}
+          </nav>
+        </aside>
 
         {/* Main content */}
-        <main className="flex-1 overflow-auto flex items-start justify-end p-10 bg-gray-50">
+        <main className="flex-1 overflow-auto flex items-start justify-end p-10">
           <div className="max-w-sm text-right">
             <h1 className="text-2xl font-bold text-[var(--golf-heading)] mb-2">
               Willkommen bei Golf Challenge Point
