@@ -12,10 +12,10 @@ export default function HeaderAndSidebarLayout({
   children: ReactNode;
   user: { firstName: string; lastName: string };
 }) {
- const [expanded,setExpanded]=useState(true);
+ const [expanded,setExpanded]=useState(false);
  return (
   <div className='flex flex-col h-screen'>
-    <Header user={user} toggleSidebar={()=>setExpanded(p=>!p)}/>
+    <Header user={user} toggleSidebar={()=>setExpanded(p=>!p)} sidebarOpen={expanded}/>
     <div className='flex flex-row flex-1 overflow-hidden'>
       <Sidebar expanded={expanded}/>
       <main className='flex-1 overflow-auto bg-gray-50 p-4'>{children}</main>
