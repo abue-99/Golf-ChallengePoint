@@ -34,8 +34,12 @@ export default function Header({ user, toggleSidebar, sidebarOpen }: HeaderProps
 
   return (
     <header className="flex items-center bg-green-700 text-white h-14 px-4 gap-4">
-      <button onClick={toggleSidebar} aria-label="Toggle sidebar" className="h-8 w-8 flex items-center justify-center rounded-full border-2 border-green-400/70 hover:bg-green-600 transition-colors">
-        {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+      <button
+        onClick={toggleSidebar}
+        aria-label="Toggle sidebar"
+        className="h-9 w-9 flex items-center justify-center rounded-md border-2 border-white/70 text-white hover:bg-white hover:text-green-700 transition-colors duration-200"
+      >
+        {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
       <Image
         src="/GolfChallengePoint_Logo_Inv_48x48.png"
@@ -43,6 +47,7 @@ export default function Header({ user, toggleSidebar, sidebarOpen }: HeaderProps
         width={40}
         height={40}
         priority
+        className="ml-1"
       />
       <span className="font-bold text-lg">Golf Challenge Point</span>
       <div className="ml-auto flex items-center gap-2">
