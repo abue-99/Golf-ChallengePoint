@@ -12,20 +12,8 @@ RUN pnpm install --frozen-lockfile
 
 RUN pnpm --filter @challengepoint/db run generate
 
-<<<<<<< HEAD
 # Compile packages/db TypeScript to JavaScript
 RUN pnpm --filter @challengepoint/db run build
-
-=======
-<<<<<<< HEAD
->>>>>>> b35b186 (fix: add build step to packages/db so compiled JS is available at runtime)
-ENV DATABASE_URL="postgresql://postgres:postgres@postgres:5432/challengepoint"
-=======
-# Compile packages/db TypeScript to JavaScript
-RUN pnpm --filter @challengepoint/db run build
-
-ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
->>>>>>> f49ca1e (fix: add build step to packages/db so compiled JS is available at runtime)
 
 RUN pnpm --filter golf-challenge-point-web run build
 
@@ -36,14 +24,18 @@ WORKDIR /app
 
 RUN corepack enable
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/web/.next/standalone ./apps/web/.next/standalone
+# Extract the standalone bundle at the monorepo root so that the embedded
+# server.js can resolve workspace packages at their original paths.
+COPY --from=builder /app/apps/web/.next/standalone ./
+
+# Static assets and public files must live alongside the app directory
+# so that Next.js standalone server can serve them (including the header logo).
 COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder /app/apps/web/public ./apps/web/public
-COPY --from=builder /app/apps/web/package.json ./apps/web/package.json
 
 ENV NODE_ENV=production
 EXPOSE 3000
 
-WORKDIR /app/apps/web
-CMD ["node", ".next/standalone/server.js"]
+# server.js is generated at apps/web/server.js when outputFileTracingRoot is set
+# to the monorepo root (see apps/web/next.config.ts).
+CMD ["node", "apps/web/server.js"]

@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": ".",
@@ -7,20 +6,9 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "declaration": true,
-    "emitDeclarationOnly": false
-  },
-  "include": ["*.ts"],
-  "exclude": ["node_modules", "generated"]
-=======
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "CommonJS",
-    "moduleResolution": "node",
-    "declaration": true,
-    "skipLibCheck": true,
-    "outDir": "."
+    "emitDeclarationOnly": false,
+    "skipLibCheck": true
   },
   "include": ["*.ts"],
   "exclude": ["node_modules", "generated", "prisma"]
->>>>>>> b35b186 (fix: add build step to packages/db so compiled JS is available at runtime)
 }
