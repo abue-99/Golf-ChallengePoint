@@ -1,6 +1,6 @@
 
 "use client";
-import { Menu, LogOut, Settings, User } from "lucide-react";
+import { Menu, X, LogOut, Settings, User } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -16,9 +16,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 type HeaderProps = {
   user: { firstName: string; lastName: string };
   toggleSidebar: () => void;
+  sidebarOpen: boolean;
 };
 
-export default function Header({ user, toggleSidebar }: HeaderProps) {
+export default function Header({ user, toggleSidebar, sidebarOpen }: HeaderProps) {
   const router = useRouter();
 
   const initials =
@@ -33,16 +34,15 @@ export default function Header({ user, toggleSidebar }: HeaderProps) {
 
   return (
     <header className="flex items-center bg-green-700 text-white h-14 px-4 gap-4">
-      <button onClick={toggleSidebar} aria-label="Toggle sidebar">
-        <Menu />
+      <button onClick={toggleSidebar} aria-label="Toggle sidebar" className="h-8 w-8 flex items-center justify-center rounded-full border-2 border-green-400/70 hover:bg-green-600 transition-colors">
+        {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
       </button>
       <Image
-        src="/GolfChallengePoint_Logo40.png"
-        alt="Logo"
+        src="/GolfChallengePoint_Logo_Inv_48x48.png"
+        alt="Golf Challenge Point Logo"
         width={40}
         height={40}
         priority
-        unoptimized
       />
       <span className="font-bold text-lg">Golf Challenge Point</span>
       <div className="ml-auto flex items-center gap-2">
