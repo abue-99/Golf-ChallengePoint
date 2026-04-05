@@ -1,6 +1,6 @@
 
 "use client";
-import { Menu, X, LogOut, Settings, User } from "lucide-react";
+import { LogOut, Settings, User } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -15,11 +15,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 type HeaderProps = {
   user: { firstName: string; lastName: string };
-  toggleSidebar: () => void;
-  sidebarOpen: boolean;
 };
 
-export default function Header({ user, toggleSidebar, sidebarOpen }: HeaderProps) {
+export default function Header({ user }: HeaderProps) {
   const router = useRouter();
 
   const initials =
@@ -34,13 +32,6 @@ export default function Header({ user, toggleSidebar, sidebarOpen }: HeaderProps
 
   return (
     <header className="flex items-center bg-green-700 text-white h-14 px-4 gap-4">
-      <button
-        onClick={toggleSidebar}
-        aria-label="Toggle sidebar"
-        className="h-9 w-9 flex items-center justify-center rounded-md border-2 border-white/70 text-white hover:bg-white hover:text-green-700 transition-colors duration-200"
-      >
-        {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
       <Image
         src="/GolfChallengePoint_Logo_Inv_48x48.png"
         alt="Golf Challenge Point Logo"
