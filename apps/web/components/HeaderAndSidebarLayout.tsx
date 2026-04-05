@@ -22,7 +22,7 @@ export default function HeaderAndSidebarLayout({
  }, [expanded]);
  return (
   <div className='flex flex-col h-screen'>
-    <Header user={user} onToggleSidebar={() => setExpanded(p => !p)} />
+    <Header user={user} onToggleSidebar={() => setExpanded(p => !p)} sidebarExpanded={expanded} />
     <div className='flex flex-row flex-1 overflow-hidden'>
       <Sidebar expanded={expanded} toggleSidebar={()=>setExpanded(p=>!p)}/>
       <main className='flex-1 overflow-auto bg-gray-50 p-4'>{children}</main>

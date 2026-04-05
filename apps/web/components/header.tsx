@@ -16,9 +16,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 type HeaderProps = {
   user: { firstName: string; lastName: string };
   onToggleSidebar?: () => void;
+  sidebarExpanded?: boolean;
 };
 
-export default function Header({ user, onToggleSidebar }: HeaderProps) {
+export default function Header({ user, onToggleSidebar, sidebarExpanded }: HeaderProps) {
   const router = useRouter();
 
   const initials =
@@ -36,8 +37,10 @@ export default function Header({ user, onToggleSidebar }: HeaderProps) {
       {onToggleSidebar && (
         <button
           onClick={onToggleSidebar}
-          aria-label="Toggle sidebar"
-          className="flex items-center justify-center rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white p-1 -ml-1 hover:bg-white/20 transition-colors"
+          aria-label={sidebarExpanded ? "Close sidebar" : "Open sidebar"}
+          aria-expanded={sidebarExpanded}
+          title={sidebarExpanded ? "Close sidebar" : "Open sidebar"}
+          className="flex items-center justify-center rounded p-1 -ml-1 transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           <Menu size={22} className="text-white" />
         </button>
