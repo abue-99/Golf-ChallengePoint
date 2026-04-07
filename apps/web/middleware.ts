@@ -23,6 +23,11 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Root path: redirect authenticated users to dashboard
+  if (path === "/" && token) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
   // Protected routes
   const PROTECTED = [
     "/dashboard",
