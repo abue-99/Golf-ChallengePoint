@@ -56,7 +56,7 @@ export default function Header({ user, onToggleSidebar, sidebarExpanded }: Heade
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="flex items-center gap-2 focus:outline-none rounded-full ring-offset-2 focus-visible:ring-2 focus-visible:ring-white"
+              className="flex items-center gap-2 outline-none"
               aria-label="User menu"
             >
               <Avatar className="h-8 w-8 border-2 border-white/50">
