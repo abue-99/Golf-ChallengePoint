@@ -86,7 +86,7 @@ export default function WelcomePage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                  Your profile and settings
+                  Sign in to your account
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => openAuth("login")}>

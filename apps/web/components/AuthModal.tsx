@@ -111,9 +111,22 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
     }
   }
 
+  function validateSignup(): boolean {
+    if (!signupForm.email || !isValidEmail(signupForm.email)) {
+      setSignupError("Please enter a valid email address.");
+      return false;
+    }
+    if (!signupForm.password || signupForm.password.length < 6) {
+      setSignupError("Password must be at least 6 characters.");
+      return false;
+    }
+    return true;
+  }
+
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     setSignupError(null);
+    if (!validateSignup()) return;
     setSignupLoading(true);
     try {
       const res = await fetch("/api/auth/signup", {
