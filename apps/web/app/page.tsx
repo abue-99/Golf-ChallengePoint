@@ -1,6 +1,5 @@
 "use client";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
   Home,
@@ -10,9 +9,20 @@ import {
   Settings,
   User,
   Menu,
+  LogIn,
+  UserPlus,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import Sidebar, { type NavItem } from "@/components/sidebar";
+import AuthModal from "@/components/AuthModal";
 
 const navItems: NavItem[] = [
   { href: "/login", icon: Home, label: "Dashboard" },
@@ -23,8 +33,14 @@ const navItems: NavItem[] = [
 ];
 
 export default function WelcomePage() {
-  const router = useRouter();
   const [expanded, setExpanded] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authTab, setAuthTab] = useState<"login" | "signup">("login");
+
+  function openAuth(tab: "login" | "signup") {
+    setAuthTab(tab);
+    setAuthOpen(true);
+  }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -55,19 +71,42 @@ export default function WelcomePage() {
         />
         <span className="font-bold text-lg">Golf Challenge Point</span>
         <div className="ml-auto flex items-center gap-2">
-          <button
-            onClick={() => router.push("/login")}
-            className="flex items-center gap-2 focus:outline-none rounded-full ring-offset-2 focus-visible:ring-2 focus-visible:ring-white"
-            aria-label="Login"
-          >
-            <Avatar className="h-8 w-8 border-2 border-white/50">
-              <AvatarFallback className="bg-green-800 text-white text-xs font-semibold">
-                <User size={14} />
-              </AvatarFallback>
-            </Avatar>
-          </button>
-        </div>
-      </header>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="flex items-center gap-2 focus:outline-none rounded-full ring-offset-2 focus-visible:ring-2 focus-visible:ring-white"
+                  aria-label="User menu"
+                >
+                  <Avatar className="h-8 w-8 border-2 border-white/50">
+                    <AvatarFallback className="bg-green-800 text-white text-xs font-semibold">
+                      <User size={14} />
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                  Your profile and settings
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => openAuth("login")}>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => openAuth("signup")}>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Sign Up
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
+
+        <AuthModal
+          isOpen={authOpen}
+          onClose={() => setAuthOpen(false)}
+          defaultTab={authTab}
+        />
 
       {/* Body */}
       <div className="flex flex-row flex-1 overflow-hidden">
