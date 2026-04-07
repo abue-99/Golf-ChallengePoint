@@ -138,7 +138,10 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
         window.location.href = "/";
       } else {
         const data = await res.json();
-        setSignupError(data.error || "Signup failed. Please check your input.");
+        const msg = Array.isArray(data.message)
+          ? data.message.join(", ")
+          : data.message || data.error || "Signup failed. Please check your input.";
+        setSignupError(msg);
       }
     } catch {
       setSignupError("Network error. Please check your connection.");
