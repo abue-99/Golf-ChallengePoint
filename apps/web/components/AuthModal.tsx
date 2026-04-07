@@ -103,7 +103,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
         setLoginError(res.status === 401 ? "Invalid email or password." : data.error || "Login failed.");
         return;
       }
-      window.location.href = "/";
+      window.location.href = "/dashboard";
     } catch {
       setLoginError("Network error. Please check your connection.");
     } finally {
@@ -135,7 +135,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
         body: JSON.stringify(signupForm),
       });
       if (res.ok) {
-        window.location.href = "/";
+        window.location.href = "/dashboard";
       } else {
         const data = await res.json();
         const msg = Array.isArray(data.message)
