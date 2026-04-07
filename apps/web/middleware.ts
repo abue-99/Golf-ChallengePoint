@@ -18,8 +18,11 @@ export function middleware(req: NextRequest) {
     "/auth/reset"
   ];
 
-  // Public pages → no check
+  // Auth pages (login, signup, etc.): redirect already-authenticated users to dashboard
   if (PUBLIC_PATHS.some((p) => path.startsWith(p))) {
+    if (token) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
     return NextResponse.next();
   }
 
