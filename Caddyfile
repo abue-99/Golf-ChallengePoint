@@ -1,4 +1,11 @@
 http://{$DOMAIN} {
+	# Auth routes: handled by Next.js, which proxies to the NestJS backend
+	# internally and sets the session cookie. Must come before /api/* so that
+	# these requests are NOT stripped and forwarded directly to NestJS.
+	handle /api/auth/* {
+		reverse_proxy golf_web:3000
+	}
+
 	# API: strip /api prefix then forward to the NestJS backend
 	handle /api/* {
 		uri strip_prefix /api

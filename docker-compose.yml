@@ -55,6 +55,8 @@ services:
       ACCESS_SECRET: ${ACCESS_SECRET:-your-access-secret-key-min-32-chars}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://178.104.48.239/api}
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/challengepoint
+      # Set to "true" only when the site is served over HTTPS
+      SECURE_COOKIES: ${SECURE_COOKIES:-false}
     depends_on:
       - api
     restart: unless-stopped
