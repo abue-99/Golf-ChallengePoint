@@ -1,6 +1,5 @@
 "use client";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
   Home,
@@ -13,6 +12,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Sidebar, { type NavItem } from "@/components/sidebar";
+import AuthModal from "@/components/AuthModal";
 
 const navItems: NavItem[] = [
   { href: "/login", icon: Home, label: "Dashboard" },
@@ -23,8 +23,8 @@ const navItems: NavItem[] = [
 ];
 
 export default function WelcomePage() {
-  const router = useRouter();
   const [expanded, setExpanded] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -55,19 +55,24 @@ export default function WelcomePage() {
         />
         <span className="font-bold text-lg">Golf Challenge Point</span>
         <div className="ml-auto flex items-center gap-2">
-          <button
-            onClick={() => router.push("/login")}
-            className="flex items-center gap-2 focus:outline-none rounded-full ring-offset-2 focus-visible:ring-2 focus-visible:ring-white"
-            aria-label="Login"
-          >
-            <Avatar className="h-8 w-8 border-2 border-white/50">
-              <AvatarFallback className="bg-green-800 text-white text-xs font-semibold">
-                <User size={14} />
-              </AvatarFallback>
-            </Avatar>
-          </button>
-        </div>
-      </header>
+            <button
+              onClick={() => setAuthOpen(true)}
+              className="flex items-center gap-2 focus:outline-none rounded-full ring-offset-2 focus-visible:ring-2 focus-visible:ring-white"
+              aria-label="Login"
+            >
+              <Avatar className="h-8 w-8 border-2 border-white/50">
+                <AvatarFallback className="bg-green-800 text-white text-xs font-semibold">
+                  <User size={14} />
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          </div>
+        </header>
+
+        <AuthModal
+          isOpen={authOpen}
+          onClose={() => setAuthOpen(false)}
+        />
 
       {/* Body */}
       <div className="flex flex-row flex-1 overflow-hidden">

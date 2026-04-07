@@ -14,7 +14,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 type HeaderProps = {
-  user: { firstName: string; lastName: string };
+  user: { firstName: string; lastName: string; email?: string };
   onToggleSidebar?: () => void;
   sidebarExpanded?: boolean;
 };
@@ -69,11 +69,14 @@ export default function Header({ user, onToggleSidebar, sidebarExpanded }: Heade
               </span>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel className="font-normal">
               <p className="font-medium text-sm">
                 {user.firstName} {user.lastName}
               </p>
+              {user.email && (
+                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+              )}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push("/settings")}>
