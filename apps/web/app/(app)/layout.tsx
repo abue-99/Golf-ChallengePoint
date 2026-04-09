@@ -28,13 +28,17 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const token = cookieStore.get("token")?.value ?? null;
 
   if (!token) {
-    redirect("/login");
+    redirect("/api/auth/logout");
   }
 
   const user = await getUser(token);
 
   if (!user) {
-    redirect("/login");
+    // Redirect via the logout route so the stale cookie is cleared first.
+    // A direct redirect("/login") would leave the cookie in place and cause
+    // the middleware (which redirects any request carrying a token back to
+    // /dashboard) to create an infinite redirect loop.
+    redirect("/api/auth/logout");
   }
 
   return (
