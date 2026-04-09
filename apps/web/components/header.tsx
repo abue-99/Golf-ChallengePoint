@@ -1,6 +1,5 @@
-
 "use client";
-import { LogOut, Menu, Settings, User } from "lucide-react";
+import { LogOut, Menu, User } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -11,10 +10,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type HeaderProps = {
-  user: { firstName: string; lastName: string; email?: string };
+  user: { firstName: string; lastName: string; email?: string; profileImage?: string };
   onToggleSidebar?: () => void;
   sidebarExpanded?: boolean;
 };
@@ -60,6 +59,9 @@ export default function Header({ user, onToggleSidebar, sidebarExpanded }: Heade
               aria-label="User menu"
             >
               <Avatar className="h-8 w-8 border-2 border-white/50">
+                {user.profileImage && (
+                  <AvatarImage src={user.profileImage} alt={`${user.firstName} ${user.lastName}`} />
+                )}
                 <AvatarFallback className="bg-green-800 text-white text-xs font-semibold">
                   {initials === "?" ? <User size={14} /> : initials}
                 </AvatarFallback>
@@ -79,9 +81,9 @@ export default function Header({ user, onToggleSidebar, sidebarExpanded }: Heade
               )}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push("/settings")}>
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
+            <DropdownMenuItem onClick={() => router.push("/settings/profile")}>
+              <User className="mr-2 h-4 w-4" />
+              Profile
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={handleLogout}>
@@ -94,3 +96,4 @@ export default function Header({ user, onToggleSidebar, sidebarExpanded }: Heade
     </header>
   );
 }
+

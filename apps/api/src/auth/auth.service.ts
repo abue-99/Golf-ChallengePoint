@@ -143,9 +143,7 @@ export class AuthService {
     }
   }
 
-  async getMe(
-    userId: string,
-  ): Promise<AuthenticatedUser & { createdAt: Date; lastLogin: Date | null }> {
+  async getMe(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -154,6 +152,10 @@ export class AuthService {
         role: true,
         firstName: true,
         lastName: true,
+        profileImage: true,
+        gender: true,
+        phoneNumber: true,
+        timezone: true,
         createdAt: true,
         lastLogin: true,
       },
@@ -167,5 +169,33 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async updateProfile(
+    userId: string,
+    data: {
+      firstName?: string;
+      lastName?: string;
+      profileImage?: string | null;
+      gender?: string | null;
+      phoneNumber?: string | null;
+      timezone?: string | null;
+    },
+  ) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data,
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        firstName: true,
+        lastName: true,
+        profileImage: true,
+        gender: true,
+        phoneNumber: true,
+        timezone: true,
+      },
+    });
   }
 }

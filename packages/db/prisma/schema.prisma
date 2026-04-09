@@ -24,6 +24,9 @@ model User {
   lastName     String?
   profileImage String?
   name         String?
+  gender       String?
+  phoneNumber  String?
+  timezone     String?
   role         Role      @default(PLAYER)
   lastLogin    DateTime?
   createdAt    DateTime  @default(now())
