@@ -1,10 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
+    bodyParser: false,
     cors: {
       origin: process.env.FRONTEND_URL || 'http://localhost:3000',
       credentials: true,
@@ -13,6 +15,8 @@ async function bootstrap() {
     },
   });
   
+  app.use(json({ limit: '5mb' }));
+  app.use(urlencoded({ extended: true, limit: '5mb' }));
   app.use(cookieParser());
   app.useGlobalPipes(
     new ValidationPipe({
