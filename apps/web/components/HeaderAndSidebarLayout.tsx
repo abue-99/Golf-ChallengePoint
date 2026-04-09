@@ -10,7 +10,7 @@ export default function HeaderAndSidebarLayout({
   user,
 }: {
   children: ReactNode;
-  user: { firstName: string; lastName: string; email?: string };
+  user: { firstName: string; lastName: string; email?: string; profileImage?: string };
 }) {
  const [expanded,setExpanded]=useState(false);
  useEffect(() => {
