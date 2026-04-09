@@ -251,16 +251,16 @@ export default function ProfilePage() {
       <div className="space-y-1">
         <Label>Gender</Label>
         <Select
-          value={profile.gender ?? ""}
+          value={profile.gender ?? "__unset__"}
           onValueChange={(val) =>
-            setProfile((p) => ({ ...p, gender: val === "" ? null : val }))
+            setProfile((p) => ({ ...p, gender: val === "__unset__" ? null : val }))
           }
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Prefer not to say" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Prefer not to say</SelectItem>
+            <SelectItem value="__unset__">Prefer not to say</SelectItem>
             <SelectItem value="Male">Male</SelectItem>
             <SelectItem value="Female">Female</SelectItem>
           </SelectContent>
@@ -285,16 +285,16 @@ export default function ProfilePage() {
       <div className="space-y-1">
         <Label>Timezone</Label>
         <Select
-          value={profile.timezone ?? ""}
+          value={profile.timezone ?? "__unset__"}
           onValueChange={(val) =>
-            setProfile((p) => ({ ...p, timezone: val === "" ? null : val }))
+            setProfile((p) => ({ ...p, timezone: val === "__unset__" ? null : val }))
           }
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select timezone" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">— Select timezone —</SelectItem>
+            <SelectItem value="__unset__">— Select timezone —</SelectItem>
             {TIMEZONES.map((tz) => (
               <SelectItem key={tz} value={tz}>
                 {tz.replace(/_/g, " ")}
