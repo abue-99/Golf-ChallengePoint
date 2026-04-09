@@ -108,10 +108,14 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     fetch("/api/auth/me")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to load profile");
+        return r.json();
+      })
       .then((data) => {
         if (data) {
           setProfile({
@@ -124,12 +128,21 @@ export default function ProfilePage() {
           });
         }
         setLoading(false);
-      });
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const MAX_SIZE_MB = 2;
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      setErrorMsg(`Image must be smaller than ${MAX_SIZE_MB} MB.`);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (ev) => {
       setProfile((p) => ({ ...p, profileImage: ev.target?.result as string }));
@@ -145,14 +158,25 @@ export default function ProfilePage() {
   async function handleSave() {
     setSaving(true);
     setSavedMsg("");
-    await fetch("/api/auth/profile", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(profile),
-    });
-    setSaving(false);
-    setSavedMsg("Profile saved.");
-    setTimeout(() => setSavedMsg(""), 3000);
+    setErrorMsg("");
+    try {
+      const res = await fetch("/api/auth/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setErrorMsg(data?.message ?? "Failed to save profile. Please try again.");
+      } else {
+        setSavedMsg("Profile saved.");
+        setTimeout(() => setSavedMsg(""), 3000);
+      }
+    } catch {
+      setErrorMsg("Failed to save profile. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   const initials =
@@ -196,6 +220,9 @@ export default function ProfilePage() {
         <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
           Upload New Avatar
         </Button>
+        {errorMsg && errorMsg.includes("MB") && (
+          <p className="text-sm text-red-600">{errorMsg}</p>
+        )}
       </div>
 
       {/* First Name */}
@@ -282,6 +309,7 @@ export default function ProfilePage() {
           {saving ? "Saving…" : "Save"}
         </Button>
         {savedMsg && <span className="text-sm text-green-600">{savedMsg}</span>}
+        {errorMsg && <span className="text-sm text-red-600">{errorMsg}</span>}
       </div>
     </div>
   );
