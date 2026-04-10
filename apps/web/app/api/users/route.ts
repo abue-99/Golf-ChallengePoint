@@ -13,6 +13,7 @@ export async function GET() {
   if (!token) return NextResponse.json(null, { status: 401 });
   const res = await fetch(`${API_URL}/users`, {
     headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));

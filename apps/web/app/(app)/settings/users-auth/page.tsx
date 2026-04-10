@@ -308,6 +308,7 @@ export default function UsersAuthPage() {
   const [search, setSearch] = useState("");
   const [sectionOpen, setSectionOpen] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // create modal
   const [createOpen, setCreateOpen] = useState(false);
@@ -319,7 +320,19 @@ export default function UsersAuthPage() {
   const fetchUsers = useCallback(async () => {
     try {
       const res = await fetch("/api/users");
-      if (res.ok) setUsers(await res.json());
+      if (res.ok) {
+        setUsers(await res.json());
+        setFetchError(null);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        const msg: string =
+          Array.isArray(data.message)
+            ? data.message.join(", ")
+            : data.message || data.error || `Error ${res.status}`;
+        setFetchError(msg);
+      }
+    } catch {
+      setFetchError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -407,6 +420,8 @@ export default function UsersAuthPage() {
             {/* Table */}
             {loading ? (
               <p className="text-sm text-gray-500 py-4">Loading…</p>
+            ) : fetchError ? (
+              <p className="text-sm text-red-600 py-4">{fetchError}</p>
             ) : filtered.length === 0 ? (
               <p className="text-sm text-gray-500 py-4">
                 {search ? "No matching users found." : "No users yet."}
