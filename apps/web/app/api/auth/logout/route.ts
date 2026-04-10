@@ -11,6 +11,7 @@ const COOKIE_CLEAR_OPTIONS = {
 export async function POST() {
   const res = NextResponse.json({ ok: true });
   res.cookies.set("token", "", COOKIE_CLEAR_OPTIONS);
+  res.cookies.set("refresh_token", "", COOKIE_CLEAR_OPTIONS);
   return res;
 }
 
@@ -19,5 +20,6 @@ export async function POST() {
 export async function GET(request: NextRequest) {
   const res = NextResponse.redirect(new URL("/login", request.url));
   res.cookies.set("token", "", COOKIE_CLEAR_OPTIONS);
+  res.cookies.set("refresh_token", "", COOKIE_CLEAR_OPTIONS);
   return res;
 }
