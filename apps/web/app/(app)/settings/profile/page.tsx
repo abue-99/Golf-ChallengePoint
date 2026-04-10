@@ -113,6 +113,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [fileSizeError, setFileSizeError] = useState("");
 
   const [allClubs, setAllClubs] = useState<Club[]>([]);
   const [myClubs, setMyClubs] = useState<UserClub[]>([]);
@@ -155,10 +156,11 @@ export default function ProfilePage() {
 
     const MAX_SIZE_MB = 2;
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      setErrorMsg(`Image must be smaller than ${MAX_SIZE_MB} MB.`);
+      setFileSizeError(`Image must be smaller than ${MAX_SIZE_MB} MB.`);
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
+    setFileSizeError("");
 
     const reader = new FileReader();
     reader.onload = (ev) => {

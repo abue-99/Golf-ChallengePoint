@@ -278,7 +278,7 @@ export default function TeamsPage() {
                         {team.members.map((m) => (
                           <div key={m.userId} className="relative group">
                             <Avatar className="h-7 w-7 text-xs" title={`${m.user.firstName ?? ""} ${m.user.lastName ?? ""}`.trim()}>
-                              {m.user.profileImage && <AvatarFallback>{initials(m.user)}</AvatarFallback>}
+                              {m.user.profileImage && <AvatarImage src={m.user.profileImage} alt={initials(m.user)} />}
                               <AvatarFallback className="bg-blue-100 text-blue-700">{initials(m.user)}</AvatarFallback>
                             </Avatar>
                             <button
