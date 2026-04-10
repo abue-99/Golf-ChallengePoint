@@ -34,6 +34,22 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.passwordResetToken;
   }
 
+  get club() {
+    return this.client.club;
+  }
+
+  get userClub() {
+    return this.client.userClub;
+  }
+
+  get team() {
+    return this.client.team;
+  }
+
+  get teamMember() {
+    return this.client.teamMember;
+  }
+
   $transaction<T>(...args: Parameters<PrismaClient['$transaction']>): Promise<T> {
     return this.client.$transaction(...args) as Promise<T>;
   }
