@@ -176,6 +176,7 @@ export class AuthController {
       gender?: string | null;
       phoneNumber?: string | null;
       timezone?: string | null;
+      role?: string | null;
     },
   ) {
     return this.authService.updateProfile(user.id, body);

@@ -32,7 +32,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
   const [loginLoading, setLoginLoading] = useState(false);
 
   // Signup state
-  const [signupForm, setSignupForm] = useState({ email: "", password: "", firstName: "", lastName: "" });
+  const [signupForm, setSignupForm] = useState({ email: "", password: "", firstName: "", lastName: "", role: "PLAYER" });
   const [signupLoading, setSignupLoading] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
 
@@ -307,6 +307,26 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                   onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
                   disabled={signupLoading}
                 />
+              </div>
+
+              <div className="space-y-1">
+                <Label>I am a</Label>
+                <div className="flex gap-4 pt-1">
+                  {(["PLAYER", "COACH"] as const).map((r) => (
+                    <label key={r} className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="radio"
+                        name="role"
+                        value={r}
+                        checked={signupForm.role === r}
+                        onChange={() => setSignupForm({ ...signupForm, role: r })}
+                        disabled={signupLoading}
+                        className="accent-[var(--golf-primary)]"
+                      />
+                      <span className="text-sm">{r === "PLAYER" ? "Player" : "Coach"}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               {signupError && (
