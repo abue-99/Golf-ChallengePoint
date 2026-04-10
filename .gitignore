@@ -8,5 +8,6 @@ coverage
 # Turbo cache
 .turbo
 
-# Prisma generated client
+# Prisma generated clients
 packages/db/generated/
+apps/web/prisma/generated/
