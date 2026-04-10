@@ -8,24 +8,33 @@ async function getToken() {
   return cookieStore.get("token")?.value;
 }
 
-export async function GET() {
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const token = await getToken();
   if (!token) return NextResponse.json(null, { status: 401 });
-  const res = await fetch(`${API_URL}/clubs`, {
-    headers: { Authorization: `Bearer ${token}` },
+  const { id } = await params;
+  const body = await req.json();
+  const res = await fetch(`${API_URL}/clubs/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
   });
   const data = await res.json();
   return NextResponse.json(data, { status: res.status });
 }
 
-export async function POST(req: NextRequest) {
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const token = await getToken();
   if (!token) return NextResponse.json(null, { status: 401 });
-  const body = await req.json();
-  const res = await fetch(`${API_URL}/clubs`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(body),
+  const { id } = await params;
+  const res = await fetch(`${API_URL}/clubs/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
   });
   const data = await res.json();
   return NextResponse.json(data, { status: res.status });

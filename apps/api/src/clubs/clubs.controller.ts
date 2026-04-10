@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -10,9 +11,11 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
-import { ClubsService } from './clubs.service';
+import { ClubsService, ClubDto } from './clubs.service';
 
 @Controller('clubs')
 @UseGuards(JwtAuthGuard)
@@ -22,6 +25,29 @@ export class ClubsController {
   @Get()
   listAll() {
     return this.clubsService.listAll();
+  }
+
+  @Post()
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN' as any)
+  @HttpCode(HttpStatus.CREATED)
+  createClub(@Body() body: ClubDto) {
+    return this.clubsService.createClub(body);
+  }
+
+  @Patch(':id')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN' as any)
+  updateClub(@Param('id') id: string, @Body() body: Partial<ClubDto>) {
+    return this.clubsService.updateClub(id, body);
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN' as any)
+  @HttpCode(HttpStatus.OK)
+  deleteClub(@Param('id') id: string) {
+    return this.clubsService.deleteClub(id);
   }
 
   @Get('my')
