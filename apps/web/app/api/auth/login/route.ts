@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { forwardRefreshTokenCookie } from "@/lib/auth-cookies";
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,13 +18,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(data, { status: res.status });
     }
 
+    const secure = process.env.SECURE_COOKIES === "true";
+
     const response = NextResponse.json(data);
     response.cookies.set("token", data.accessToken, {
       httpOnly: true,
-      secure: process.env.SECURE_COOKIES === "true",
+      secure,
       sameSite: "strict",
       maxAge: 15 * 60,
     });
+
+    // Forward the refresh_token cookie that the API set on the server-side
+    // response so the browser can use it to obtain new access tokens.
+    forwardRefreshTokenCookie(res, response, secure);
 
     return response;
   } catch (error) {

@@ -27,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { fetchWithAuth } from "@/lib/api";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -136,7 +137,7 @@ function CreateUserModal({
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/users", {
+      const res = await fetchWithAuth("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -319,7 +320,7 @@ export default function UsersAuthPage() {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const res = await fetch("/api/users");
+      const res = await fetchWithAuth("/api/users");
       if (res.ok) {
         setUsers(await res.json());
         setFetchError(null);
@@ -353,7 +354,7 @@ export default function UsersAuthPage() {
   });
 
   async function handleRoleChange(userId: string, role: Role) {
-    const res = await fetch(`/api/users/${userId}`, {
+    const res = await fetchWithAuth(`/api/users/${userId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role }),
@@ -371,7 +372,7 @@ export default function UsersAuthPage() {
 
   async function handleDelete() {
     if (!deleteTarget) return;
-    const res = await fetch(`/api/users/${deleteTarget.id}`, { method: "DELETE" });
+    const res = await fetchWithAuth(`/api/users/${deleteTarget.id}`, { method: "DELETE" });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data?.message ?? "Failed to delete user.");
