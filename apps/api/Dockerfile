@@ -42,7 +42,7 @@ COPY --from=builder /app/packages/db/index.d.ts ./packages/db/index.d.ts
 COPY --from=builder /app/packages/db/generated ./packages/db/generated
 COPY --from=builder /app/packages/db/prisma ./packages/db/prisma
 
-RUN pnpm install --frozen-lockfile --prod
+COPY --from=builder /app/node_modules ./node_modules
 
 ENV NODE_ENV=production
 EXPOSE 4000
