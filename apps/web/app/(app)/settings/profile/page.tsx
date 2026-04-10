@@ -97,7 +97,6 @@ type Club = { id: string; name: string };
 type UserClub = { id: string; clubId: string; club: Club };
 
 export default function ProfilePage() {
-  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [profile, setProfile] = useState<UserProfile>({
