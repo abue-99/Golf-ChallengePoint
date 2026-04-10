@@ -1,4 +1,4 @@
-FROM node:22-bookworm-slim
+FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
 
@@ -19,6 +19,30 @@ RUN pnpm --filter @challengepoint/db run build
 
 # Build NestJS API
 RUN pnpm --filter api run build
+
+# Production stage – only compiled output + prod deps
+FROM node:22-bookworm-slim
+
+WORKDIR /app
+
+RUN corepack enable
+
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+
+COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+
+COPY --from=builder /app/packages/db/package.json ./packages/db/package.json
+COPY --from=builder /app/packages/db/index.js ./packages/db/index.js
+COPY --from=builder /app/packages/db/index.d.ts ./packages/db/index.d.ts
+COPY --from=builder /app/packages/db/generated ./packages/db/generated
+COPY --from=builder /app/packages/db/prisma ./packages/db/prisma
+
+RUN pnpm install --frozen-lockfile --prod
 
 ENV NODE_ENV=production
 EXPOSE 4000

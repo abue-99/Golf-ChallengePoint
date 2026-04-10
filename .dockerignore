@@ -25,6 +25,10 @@ yarn-error.log
 .turbo
 **/.turbo
 
+# Prisma generated clients – regenerated inside Docker by `prisma generate`
+packages/db/generated/
+apps/web/prisma/generated/
+
 # TypeScript build info
 **/*.tsbuildinfo
 
