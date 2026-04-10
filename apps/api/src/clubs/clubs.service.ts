@@ -21,15 +21,16 @@ export class ClubsService {
   }
 
   async createClub(dto: ClubDto) {
-    const existing = dto.shortId
-      ? await this.prisma.club.findFirst({
-          where: { OR: [{ name: dto.name }, { shortId: dto.shortId }] },
-        })
-      : await this.prisma.club.findFirst({ where: { name: dto.name } });
-
-    if (existing) {
-      throw new ConflictException('A club with that name or Short ID already exists.');
+    if (dto.shortId) {
+      const byShortId = await this.prisma.club.findFirst({
+        where: { shortId: dto.shortId },
+      });
+      if (byShortId)
+        throw new ConflictException(`Short ID "${dto.shortId}" is already in use.`);
     }
+    const byName = await this.prisma.club.findFirst({ where: { name: dto.name } });
+    if (byName)
+      throw new ConflictException(`A club named "${dto.name}" already exists.`);
 
     return this.prisma.club.create({
       data: {
@@ -45,13 +46,31 @@ export class ClubsService {
     const club = await this.prisma.club.findUnique({ where: { id } });
     if (!club) throw new NotFoundException('Club not found.');
 
+    if (dto.name !== undefined && dto.name !== club.name) {
+      const conflict = await this.prisma.club.findFirst({
+        where: { name: dto.name, NOT: { id } },
+      });
+      if (conflict)
+        throw new ConflictException(`A club named "${dto.name}" already exists.`);
+    }
+
+    if (dto.shortId !== undefined && dto.shortId !== club.shortId) {
+      if (dto.shortId) {
+        const conflict = await this.prisma.club.findFirst({
+          where: { shortId: dto.shortId, NOT: { id } },
+        });
+        if (conflict)
+          throw new ConflictException(`Short ID "${dto.shortId}" is already in use.`);
+      }
+    }
+
     return this.prisma.club.update({
       where: { id },
       data: {
-        ...(dto.shortId !== undefined && { shortId: dto.shortId }),
-        ...(dto.name !== undefined && { name: dto.name }),
-        ...(dto.city !== undefined && { city: dto.city }),
-        ...(dto.country !== undefined && { country: dto.country }),
+        ...(dto.shortId !== undefined ? { shortId: dto.shortId } : {}),
+        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.city !== undefined ? { city: dto.city } : {}),
+        ...(dto.country !== undefined ? { country: dto.country } : {}),
       },
     });
   }

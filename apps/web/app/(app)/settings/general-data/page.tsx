@@ -96,8 +96,7 @@ const FALLBACK_COUNTRIES: Country[] = [
 async function loadCountries(): Promise<Country[]> {
   try {
     const res = await fetch(
-      "https://restcountries.com/v3.1/all?fields=name,cca2",
-      { next: { revalidate: 86400 } }
+      "https://restcountries.com/v3.1/all?fields=name,cca2"
     );
     if (!res.ok) throw new Error("failed");
     const data: { name: { common: string }; cca2: string }[] = await res.json();

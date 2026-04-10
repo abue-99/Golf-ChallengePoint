@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Role } from '@challengepoint/db';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -29,7 +30,7 @@ export class ClubsController {
 
   @Post()
   @UseGuards(RolesGuard)
-  @Roles('ADMIN' as any)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   createClub(@Body() body: ClubDto) {
     return this.clubsService.createClub(body);
@@ -37,14 +38,14 @@ export class ClubsController {
 
   @Patch(':id')
   @UseGuards(RolesGuard)
-  @Roles('ADMIN' as any)
+  @Roles(Role.ADMIN)
   updateClub(@Param('id') id: string, @Body() body: Partial<ClubDto>) {
     return this.clubsService.updateClub(id, body);
   }
 
   @Delete(':id')
   @UseGuards(RolesGuard)
-  @Roles('ADMIN' as any)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   deleteClub(@Param('id') id: string) {
     return this.clubsService.deleteClub(id);
