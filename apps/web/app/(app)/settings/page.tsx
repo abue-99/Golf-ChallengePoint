@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 type Tile = {
   title: string;
-  links: { label: string; href: string; coachOnly?: boolean }[];
+  links: { label: string; href: string }[];
   adminOnly?: boolean;
 };
 
@@ -15,7 +15,6 @@ const TILES: Tile[] = [
     links: [
       { label: "Profile", href: "/settings/profile" },
       { label: "Notifications", href: "/settings/notifications" },
-      { label: "Teams", href: "/settings/teams", coachOnly: true },
     ],
   },
   {
@@ -44,7 +43,6 @@ export default function SettingsPage() {
   }, []);
 
   const isAdmin = role === "ADMIN";
-  const isCoach = role === "COACH";
 
   return (
     <div className="p-6 space-y-6">
@@ -52,9 +50,6 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {TILES.map((tile) => {
           if (tile.adminOnly && !isAdmin) return null;
-          const visibleLinks = tile.links.filter(
-            (l) => !l.coachOnly || isCoach
-          );
           return (
             <div
               key={tile.title}
@@ -63,9 +58,9 @@ export default function SettingsPage() {
               <h2 className="text-sm font-semibold text-gray-700">
                 {tile.title}
               </h2>
-              {visibleLinks.length > 0 && (
+              {tile.links.length > 0 && (
                 <ul className="space-y-1">
-                  {visibleLinks.map((link) => (
+                  {tile.links.map((link) => (
                     <li key={link.href}>
                       <Link
                         href={link.href}

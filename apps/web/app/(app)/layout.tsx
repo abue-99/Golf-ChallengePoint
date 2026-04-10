@@ -42,7 +42,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <HeaderAndSidebarLayout user={{ firstName: user.firstName ?? "", lastName: user.lastName ?? "", email: user.email ?? "", profileImage: user.profileImage ?? undefined }}>
+    <HeaderAndSidebarLayout
+      user={{ firstName: user.firstName ?? "", lastName: user.lastName ?? "", email: user.email ?? "", profileImage: user.profileImage ?? undefined }}
+      role={user.role ?? "PLAYER"}
+    >
       {children}
     </HeaderAndSidebarLayout>
   );
