@@ -43,6 +43,7 @@ COPY --from=builder /app/packages/db/db.js ./packages/db/db.js
 COPY --from=builder /app/packages/db/db.d.ts ./packages/db/db.d.ts
 COPY --from=builder /app/packages/db/generated ./packages/db/generated
 COPY --from=builder /app/packages/db/prisma ./packages/db/prisma
+COPY --from=builder /app/packages/db/prisma.config.ts ./packages/db/prisma.config.ts
 
 COPY --from=builder /app/node_modules ./node_modules
 
