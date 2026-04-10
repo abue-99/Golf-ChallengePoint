@@ -22,8 +22,10 @@ const TILES: Tile[] = [
     links: [],
   },
   {
-    title: "Clubs & Academies",
-    links: [],
+    title: "General data",
+    links: [
+      { label: "Clubs/ Academies", href: "/settings/general-data" },
+    ],
     adminOnly: true,
   },
   {

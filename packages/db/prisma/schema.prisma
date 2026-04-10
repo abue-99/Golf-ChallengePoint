@@ -43,7 +43,10 @@ model User {
 
 model Club {
   id        String     @id @default(cuid())
+  shortId   String?    @unique
   name      String     @unique
+  city      String?
+  country   String?
   createdAt DateTime   @default(now())
   userClubs UserClub[]
 
