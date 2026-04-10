@@ -27,7 +27,9 @@ const TILES: Tile[] = [
   },
   {
     title: "Users & Authorizations",
-    links: [],
+    links: [
+      { label: "Users", href: "/settings/users-auth" },
+    ],
   },
 ];
 

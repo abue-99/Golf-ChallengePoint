@@ -22,6 +22,6 @@ export class SignupDto {
 
   @IsString()
   @IsOptional()
-  @IsIn(['PLAYER', 'COACH'])
+  @IsIn(['PLAYER', 'COACH', 'ADMIN'])
   role?: string;
 }

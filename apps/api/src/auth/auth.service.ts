@@ -47,7 +47,7 @@ export class AuthService {
         passwordHash,
         firstName: dto.firstName || 'User',
         lastName: dto.lastName || '',
-        role: (dto.role as 'PLAYER' | 'COACH') ?? 'PLAYER',
+        role: (dto.role as 'PLAYER' | 'COACH' | 'ADMIN') ?? 'PLAYER',
       },
     });
 
