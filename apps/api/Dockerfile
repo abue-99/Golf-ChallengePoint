@@ -39,6 +39,8 @@ COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/packages/db/package.json ./packages/db/package.json
 COPY --from=builder /app/packages/db/index.js ./packages/db/index.js
 COPY --from=builder /app/packages/db/index.d.ts ./packages/db/index.d.ts
+COPY --from=builder /app/packages/db/db.js ./packages/db/db.js
+COPY --from=builder /app/packages/db/db.d.ts ./packages/db/db.d.ts
 COPY --from=builder /app/packages/db/generated ./packages/db/generated
 COPY --from=builder /app/packages/db/prisma ./packages/db/prisma
 
