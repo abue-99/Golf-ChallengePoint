@@ -47,6 +47,7 @@ COPY --from=builder /app/packages/db/prisma.config.ts ./packages/db/prisma.confi
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=builder /app/packages/db/node_modules ./packages/db/node_modules
 
 ENV NODE_ENV=production
 EXPOSE 4000
