@@ -47,7 +47,7 @@ export class AuthService {
         passwordHash,
         firstName: dto.firstName || 'User',
         lastName: dto.lastName || '',
-        role: 'PLAYER', // Default role
+        role: (dto.role as 'PLAYER' | 'COACH') ?? 'PLAYER',
       },
     });
 
@@ -180,11 +180,21 @@ export class AuthService {
       gender?: string | null;
       phoneNumber?: string | null;
       timezone?: string | null;
+      role?: string | null;
     },
   ) {
+    const updateData: Record<string, unknown> = {};
+    if (data.firstName !== undefined) updateData.firstName = data.firstName;
+    if (data.lastName !== undefined) updateData.lastName = data.lastName;
+    if (data.profileImage !== undefined) updateData.profileImage = data.profileImage;
+    if (data.gender !== undefined) updateData.gender = data.gender;
+    if (data.phoneNumber !== undefined) updateData.phoneNumber = data.phoneNumber;
+    if (data.timezone !== undefined) updateData.timezone = data.timezone;
+    if (data.role === 'PLAYER' || data.role === 'COACH') updateData.role = data.role;
+
     return this.prisma.user.update({
       where: { id: userId },
-      data,
+      data: updateData,
       select: {
         id: true,
         email: true,

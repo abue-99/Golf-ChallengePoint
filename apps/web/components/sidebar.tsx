@@ -10,7 +10,7 @@ export type NavItem = {
   label: string;
 };
 
-const defaultNavItems: NavItem[] = [
+export const defaultNavItems: NavItem[] = [
   { href: '/', icon: Home, label: 'Dashboard' },
   { href: '/today', icon: Calendar, label: 'Today' },
   { href: '/tasks', icon: CheckSquare, label: 'Tasks' },

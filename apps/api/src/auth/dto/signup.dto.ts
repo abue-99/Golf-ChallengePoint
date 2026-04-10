@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsIn } from 'class-validator';
 
 export class SignupDto {
   @IsEmail({}, { message: 'Invalid email format' })
@@ -19,4 +19,9 @@ export class SignupDto {
   @IsString()
   @IsOptional()
   profileImage?: string;
+
+  @IsString()
+  @IsOptional()
+  @IsIn(['PLAYER', 'COACH'])
+  role?: string;
 }

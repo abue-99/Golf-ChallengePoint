@@ -43,6 +43,17 @@ async function main() {
   }
 
   console.log('✅ Seeded users successfully');
+
+  const clubs = ['Rio Pinar Golf Academy', 'BGC Stolper Heide Akademie'];
+  for (const name of clubs) {
+    await prisma.club.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
+  }
+
+  console.log('✅ Seeded clubs successfully');
 }
 
 main()

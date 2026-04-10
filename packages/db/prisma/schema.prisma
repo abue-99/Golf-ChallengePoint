@@ -34,8 +34,58 @@ model User {
 
   playerProfile    PlayerProfile?
   coachPlayerLinks CoachPlayerLink[] @relation("CoachToPlayer")
+  userClubs        UserClub[]
+  coachTeams       Team[]            @relation("CoachTeams")
+  teamMemberships  TeamMember[]
 
   @@map("users")
+}
+
+model Club {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  userClubs UserClub[]
+
+  @@map("clubs")
+}
+
+model UserClub {
+  id        String   @id @default(cuid())
+  userId    String
+  clubId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, clubId])
+  @@map("user_clubs")
+}
+
+model Team {
+  id          String       @id @default(cuid())
+  shortName   String
+  description String
+  category    String
+  coachId     String
+  coach       User         @relation("CoachTeams", fields: [coachId], references: [id], onDelete: Cascade)
+  members     TeamMember[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([teamId, userId])
+  @@map("team_members")
 }
 
 model PasswordResetToken {
