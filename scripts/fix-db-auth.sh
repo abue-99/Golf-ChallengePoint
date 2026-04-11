@@ -48,13 +48,13 @@ echo "======================================================"
 echo ""
 
 # Verify the postgres container is running
-if ! docker compose -f "$REPO_DIR/docker-compose.yml" ps postgres | grep -q "running"; then
+if ! docker compose -f "$REPO_DIR/docker-compose.yml" ps --status running postgres 2>/dev/null | grep -q "postgres"; then
   echo "Starting postgres container..."
   docker compose -f "$REPO_DIR/docker-compose.yml" up -d postgres
   echo "Waiting for postgres to be ready..."
   for i in $(seq 1 30); do
     if docker compose -f "$REPO_DIR/docker-compose.yml" exec -T postgres \
-         pg_isready -U "$POSTGRES_USER_VAL" -d challengepoint &>/dev/null 2>&1; then
+         pg_isready -U "$POSTGRES_USER_VAL" &>/dev/null 2>&1; then
       echo "Postgres is ready."
       break
     fi
@@ -64,12 +64,15 @@ fi
 
 echo "Resetting password for user '$POSTGRES_USER_VAL' inside the postgres container..."
 
+# Escape any single quotes in the password (SQL literal safety)
+ESCAPED_PASSWORD="${POSTGRES_PASSWORD_VAL//\'/\'\'}"
+
 # Run ALTER USER inside the container.
 # Inside the container the postgres OS user has peer/trust access so no
 # password is required for this psql call.
 docker compose -f "$REPO_DIR/docker-compose.yml" exec -T postgres \
   psql -U "$POSTGRES_USER_VAL" -d postgres \
-  -c "ALTER USER \"$POSTGRES_USER_VAL\" PASSWORD '$POSTGRES_PASSWORD_VAL';"
+  -c "ALTER USER \"$POSTGRES_USER_VAL\" PASSWORD '$ESCAPED_PASSWORD';"
 
 echo ""
 echo "Done.  Password updated successfully."
