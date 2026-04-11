@@ -30,7 +30,7 @@ export class ClubsController {
 
   @Post()
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.SYSADMIN)
   @HttpCode(HttpStatus.CREATED)
   createClub(@Body() body: ClubDto) {
     return this.clubsService.createClub(body);
@@ -38,14 +38,14 @@ export class ClubsController {
 
   @Patch(':id')
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.SYSADMIN)
   updateClub(@Param('id') id: string, @Body() body: Partial<ClubDto>) {
     return this.clubsService.updateClub(id, body);
   }
 
   @Delete(':id')
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.SYSADMIN)
   @HttpCode(HttpStatus.OK)
   deleteClub(@Param('id') id: string) {
     return this.clubsService.deleteClub(id);

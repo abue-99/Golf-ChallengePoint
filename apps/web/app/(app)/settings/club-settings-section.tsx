@@ -14,7 +14,7 @@ export default function ClubSettingsSection({ role }: { role: string }) {
       .then(setClub);
   }, []);
 
-  const readOnly = role === "COACH";
+  const readOnly = role !== "SYSADMIN";
   if (!club) return null;
 
   async function save() {

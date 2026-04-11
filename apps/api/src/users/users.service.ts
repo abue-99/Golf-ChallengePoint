@@ -21,7 +21,7 @@ export class UsersService {
     });
   }
 
-  async updateRole(id: string, role: 'PLAYER' | 'COACH' | 'ADMIN') {
+  async updateRole(id: string, role: 'PLAYER' | 'COACH' | 'ADMIN' | 'SYSADMIN') {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('User not found.');
     return this.prisma.user.update({

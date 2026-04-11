@@ -316,6 +316,7 @@ export default function GeneralDataPage() {
   const [search, setSearch] = useState("");
   const [sectionOpen, setSectionOpen] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [isSysAdmin, setIsSysAdmin] = useState(false);
 
   // form modal
   const [formOpen, setFormOpen] = useState(false);
@@ -338,6 +339,10 @@ export default function GeneralDataPage() {
   useEffect(() => {
     fetchClubs();
     loadCountries().then(setCountries);
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((u) => setIsSysAdmin(u?.role === "SYSADMIN"))
+      .catch(() => setIsSysAdmin(false));
   }, [fetchClubs]);
 
   const filtered = clubs.filter((c) => {
@@ -447,11 +452,13 @@ export default function GeneralDataPage() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-              {/* Add button */}
-              <Button onClick={openAdd} className="shrink-0">
-                <Plus className="mr-1 h-4 w-4" />
-                Add
-              </Button>
+              {/* Add button – SYSADMIN only */}
+              {isSysAdmin && (
+                <Button onClick={openAdd} className="shrink-0">
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add
+                </Button>
+              )}
             </div>
 
             {/* Table */}
@@ -459,7 +466,7 @@ export default function GeneralDataPage() {
               <p className="text-sm text-gray-500 py-4">Loading…</p>
             ) : filtered.length === 0 ? (
               <p className="text-sm text-gray-500 py-4">
-                {search ? "No matching clubs found." : "No clubs yet. Click Add to create one."}
+                {search ? "No matching clubs found." : "No clubs yet."}
               </p>
             ) : (
               <div className="rounded-lg border overflow-hidden">
@@ -470,16 +477,16 @@ export default function GeneralDataPage() {
                       <TableHead className="font-semibold">Long Name</TableHead>
                       <TableHead className="font-semibold">City</TableHead>
                       <TableHead className="font-semibold">Country</TableHead>
-                      <TableHead className="w-12" />
+                      {isSysAdmin && <TableHead className="w-12" />}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filtered.map((club) => (
                       <TableRow
                         key={club.id}
-                        className="cursor-pointer"
-                        onDoubleClick={() => openEdit(club)}
-                        title="Double-click to edit"
+                        className={isSysAdmin ? "cursor-pointer" : undefined}
+                        onDoubleClick={isSysAdmin ? () => openEdit(club) : undefined}
+                        title={isSysAdmin ? "Double-click to edit" : undefined}
                       >
                         <TableCell className="font-mono text-xs font-medium text-gray-700">
                           {club.shortId ?? "—"}
@@ -491,18 +498,20 @@ export default function GeneralDataPage() {
                         <TableCell className="text-gray-600">
                           {club.country ?? "—"}
                         </TableCell>
-                        <TableCell>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openDelete(club);
-                            }}
-                            aria-label={`Delete ${club.name}`}
-                            className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </TableCell>
+                        {isSysAdmin && (
+                          <TableCell>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openDelete(club);
+                              }}
+                              aria-label={`Delete ${club.name}`}
+                              className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -513,8 +522,8 @@ export default function GeneralDataPage() {
         )}
       </div>
 
-      {/* Form modal */}
-      {formOpen && (
+      {/* Form modal – SYSADMIN only */}
+      {isSysAdmin && formOpen && (
         <ClubFormModal
           open={true}
           onClose={() => setFormOpen(false)}
@@ -525,8 +534,8 @@ export default function GeneralDataPage() {
         />
       )}
 
-      {/* Delete confirm modal */}
-      {deleteOpen && deleteTarget && (
+      {/* Delete confirm modal – SYSADMIN only */}
+      {isSysAdmin && deleteOpen && deleteTarget && (
         <DeleteConfirmModal
           open={true}
           clubName={deleteTarget.name}
