@@ -5,19 +5,26 @@ import { PrismaService } from '../prisma/prisma.service';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private readonly userSelect = {
+    id: true,
+    email: true,
+    firstName: true,
+    lastName: true,
+    profileImage: true,
+    role: true,
+    createdAt: true,
+    lastLogin: true,
+    userClubs: {
+      select: {
+        club: { select: { name: true } },
+      },
+    },
+  } as const;
+
   listAll() {
     return this.prisma.user.findMany({
       orderBy: { createdAt: 'asc' },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        profileImage: true,
-        role: true,
-        createdAt: true,
-        lastLogin: true,
-      },
+      select: this.userSelect,
     });
   }
 
@@ -27,16 +34,7 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: { role },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        profileImage: true,
-        role: true,
-        createdAt: true,
-        lastLogin: true,
-      },
+      select: this.userSelect,
     });
   }
 
