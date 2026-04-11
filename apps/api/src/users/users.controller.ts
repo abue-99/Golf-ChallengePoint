@@ -43,7 +43,7 @@ export class UsersController {
     // ADMINs may only assign COACH or ADMIN.
     if (caller.role !== 'SYSADMIN' && !['COACH', 'ADMIN'].includes(body.role)) {
       throw new ForbiddenException(
-        `Admins can only assign the Coach or Admin role, not ${body.role}.`,
+        `ADMINs can only assign the Coach or Admin role, not ${body.role}.`,
       );
     }
     return this.usersService.updateRole(id, body.role);

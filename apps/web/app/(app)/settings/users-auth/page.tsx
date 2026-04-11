@@ -91,7 +91,13 @@ function UserAvatar({ user }: { user: User }) {
   );
 }
 
-// ── Role badge ────────────────────────────────────────────────────────────────
+const ROLE_LABELS: Record<Role, string> = {
+  PLAYER: "Player",
+  COACH: "Coach",
+  ADMIN: "Admin",
+  SYSADMIN: "Sysadmin",
+};
+
 
 const ROLE_COLORS: Record<Role, string> = {
   SYSADMIN: "bg-red-100 text-red-700",
@@ -608,7 +614,7 @@ export default function UsersAuthPage() {
                                 <SelectContent>
                                   {roleOptions.map((r) => (
                                     <SelectItem key={r} value={r}>
-                                      {r.charAt(0) + r.slice(1).toLowerCase()}
+                                      {ROLE_LABELS[r]}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
