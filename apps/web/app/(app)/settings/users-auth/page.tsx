@@ -52,7 +52,7 @@ type NewUserForm = {
   lastName: string;
   email: string;
   password: string;
-  role: Role;
+  clubId: string;
 };
 
 const EMPTY_NEW_USER: NewUserForm = {
@@ -60,7 +60,7 @@ const EMPTY_NEW_USER: NewUserForm = {
   lastName: "",
   email: "",
   password: "",
-  role: "PLAYER",
+  clubId: "",
 };
 
 // ── Avatar helper ─────────────────────────────────────────────────────────────
@@ -188,12 +188,12 @@ function CreateUserModal({
   open,
   onClose,
   onCreated,
-  currentRole,
+  allClubs,
 }: {
   open: boolean;
   onClose: () => void;
   onCreated: () => void;
-  currentRole: Role | null;
+  allClubs: Club[];
 }) {
   const [form, setForm] = useState<NewUserForm>(EMPTY_NEW_USER);
   const [error, setError] = useState("");
@@ -215,16 +215,18 @@ function CreateUserModal({
     }
     setSaving(true);
     try {
+      const body: Record<string, string | undefined> = {
+        email: form.email.trim(),
+        password: form.password,
+        firstName: form.firstName.trim() || undefined,
+        lastName: form.lastName.trim() || undefined,
+      };
+      if (form.clubId) body.clubId = form.clubId;
+
       const res = await fetchWithAuth("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: form.email.trim(),
-          password: form.password,
-          firstName: form.firstName.trim() || undefined,
-          lastName: form.lastName.trim() || undefined,
-          role: form.role,
-        }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -300,20 +302,25 @@ function CreateUserModal({
           </div>
 
           <div className="space-y-1">
-            <Label>Role</Label>
+            <Label htmlFor="cu-club">
+              Club <span className="text-gray-400 text-xs">(optional)</span>
+            </Label>
             <Select
-              value={form.role}
-              onValueChange={(val) => setForm((f) => ({ ...f, role: val as Role }))}
+              value={form.clubId}
+              onValueChange={(val) => setForm((f) => ({ ...f, clubId: val }))}
+              disabled={saving}
             >
-              <SelectTrigger className="w-full">
-                <SelectValue />
+              <SelectTrigger id="cu-club" className="w-full">
+                <SelectValue placeholder="Select a club" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="PLAYER">Player</SelectItem>
-                <SelectItem value="COACH">Coach</SelectItem>
-                <SelectItem value="ADMIN">Admin</SelectItem>
-                {currentRole === "SYSADMIN" && (
-                  <SelectItem value="SYSADMIN">Sysadmin</SelectItem>
+                {allClubs.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+                {allClubs.length === 0 && (
+                  <SelectItem value="__none__" disabled>No clubs available</SelectItem>
                 )}
               </SelectContent>
             </Select>
@@ -429,7 +436,7 @@ export default function UsersAuthPage() {
       .then((me) => {
         if (me?.role) {
           setCurrentRole(me.role as Role);
-          if (me.role === "SYSADMIN") {
+          if (me.role === "SYSADMIN" || me.role === "ADMIN") {
             fetchWithAuth("/api/clubs")
               .then((r) => r.ok ? r.json() : [])
               .then((clubs: Club[]) => setAllClubs(clubs))
@@ -674,7 +681,7 @@ export default function UsersAuthPage() {
           open={true}
           onClose={() => setCreateOpen(false)}
           onCreated={fetchUsers}
-          currentRole={currentRole}
+          allClubs={allClubs}
         />
       )}
 

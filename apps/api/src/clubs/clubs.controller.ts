@@ -19,17 +19,23 @@ import { AuthenticatedUser } from '../auth/jwt.strategy';
 import { ClubsService, ClubDto } from './clubs.service';
 
 @Controller('clubs')
-@UseGuards(JwtAuthGuard)
 export class ClubsController {
   constructor(private readonly clubsService: ClubsService) {}
 
+  /** Public endpoint – no authentication required. Used by the signup form. */
+  @Get('public')
+  listPublic() {
+    return this.clubsService.listAll();
+  }
+
   @Get()
+  @UseGuards(JwtAuthGuard)
   listAll() {
     return this.clubsService.listAll();
   }
 
   @Post()
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SYSADMIN)
   @HttpCode(HttpStatus.CREATED)
   createClub(@Body() body: ClubDto) {
@@ -37,14 +43,14 @@ export class ClubsController {
   }
 
   @Patch(':id')
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SYSADMIN)
   updateClub(@Param('id') id: string, @Body() body: Partial<ClubDto>) {
     return this.clubsService.updateClub(id, body);
   }
 
   @Delete(':id')
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SYSADMIN)
   @HttpCode(HttpStatus.OK)
   deleteClub(@Param('id') id: string) {
@@ -52,11 +58,13 @@ export class ClubsController {
   }
 
   @Get('my')
+  @UseGuards(JwtAuthGuard)
   getMyClubs(@CurrentUser() user: AuthenticatedUser) {
     return this.clubsService.getUserClubs(user.id);
   }
 
   @Post('my')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   addClub(
     @CurrentUser() user: AuthenticatedUser,
@@ -66,6 +74,7 @@ export class ClubsController {
   }
 
   @Delete('my/:clubId')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   removeClub(
     @CurrentUser() user: AuthenticatedUser,
