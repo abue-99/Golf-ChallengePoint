@@ -42,6 +42,7 @@ type User = {
   role: Role;
   createdAt: string;
   lastLogin: string | null;
+  userClubs: { club: { name: string } }[];
 };
 
 type NewUserForm = {
@@ -113,10 +114,12 @@ function CreateUserModal({
   open,
   onClose,
   onCreated,
+  currentRole,
 }: {
   open: boolean;
   onClose: () => void;
   onCreated: () => void;
+  currentRole: Role | null;
 }) {
   const [form, setForm] = useState<NewUserForm>(EMPTY_NEW_USER);
   const [error, setError] = useState("");
@@ -235,7 +238,9 @@ function CreateUserModal({
                 <SelectItem value="PLAYER">Player</SelectItem>
                 <SelectItem value="COACH">Coach</SelectItem>
                 <SelectItem value="ADMIN">Admin</SelectItem>
-                <SelectItem value="SYSADMIN">Sysadmin</SelectItem>
+                {currentRole === "SYSADMIN" && (
+                  <SelectItem value="SYSADMIN">Sysadmin</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -312,6 +317,7 @@ export default function UsersAuthPage() {
   const [sectionOpen, setSectionOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [currentRole, setCurrentRole] = useState<Role | null>(null);
 
   // create modal
   const [createOpen, setCreateOpen] = useState(false);
@@ -343,15 +349,21 @@ export default function UsersAuthPage() {
 
   useEffect(() => {
     fetchUsers();
+    fetchWithAuth("/api/auth/me")
+      .then((r) => r.ok ? r.json() : null)
+      .then((me) => { if (me?.role) setCurrentRole(me.role as Role); })
+      .catch((err) => { console.error("Failed to fetch current user role:", err); });
   }, [fetchUsers]);
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase();
     const name = `${u.firstName ?? ""} ${u.lastName ?? ""}`.toLowerCase();
+    const clubs = u.userClubs.map((uc) => uc.club.name).join(", ").toLowerCase();
     return (
       name.includes(q) ||
       u.email.toLowerCase().includes(q) ||
-      u.role.toLowerCase().includes(q)
+      u.role.toLowerCase().includes(q) ||
+      clubs.includes(q)
     );
   });
 
@@ -438,67 +450,95 @@ export default function UsersAuthPage() {
                       <TableHead className="font-semibold">Name</TableHead>
                       <TableHead className="font-semibold">Email</TableHead>
                       <TableHead className="font-semibold">Role</TableHead>
+                      <TableHead className="font-semibold">Clubs</TableHead>
+                      <TableHead className="font-semibold">Last Login</TableHead>
                       <TableHead className="font-semibold">Joined</TableHead>
                       <TableHead className="w-12" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.map((user) => (
-                      <TableRow key={user.id}>
-                        {/* Avatar */}
-                        <TableCell>
-                          <UserAvatar user={user} />
-                        </TableCell>
+                    {filtered.map((user) => {
+                      const isSysadminRow = user.role === "SYSADMIN";
+                      const canEditRole =
+                        currentRole === "SYSADMIN" ||
+                        (currentRole === "ADMIN" && !isSysadminRow);
+                      const clubNames = user.userClubs.map((uc) => uc.club.name);
 
-                        {/* Name */}
-                        <TableCell className="font-medium">
-                          {[user.firstName, user.lastName].filter(Boolean).join(" ") || "—"}
-                        </TableCell>
+                      return (
+                        <TableRow key={user.id}>
+                          {/* Avatar */}
+                          <TableCell>
+                            <UserAvatar user={user} />
+                          </TableCell>
 
-                        {/* Email */}
-                        <TableCell className="text-gray-600 text-sm">
-                          {user.email}
-                        </TableCell>
+                          {/* Name */}
+                          <TableCell className="font-medium">
+                            {[user.firstName, user.lastName].filter(Boolean).join(" ") || "—"}
+                          </TableCell>
 
-                        {/* Role selector */}
-                        <TableCell>
-                          <Select
-                            value={user.role}
-                            onValueChange={(val) =>
-                              handleRoleChange(user.id, val as Role)
-                            }
-                          >
-                            <SelectTrigger className="h-8 w-32 text-xs">
-                              <SelectValue>
-                                <RoleBadge role={user.role} />
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="PLAYER">Player</SelectItem>
-                              <SelectItem value="COACH">Coach</SelectItem>
-                              <SelectItem value="ADMIN">Admin</SelectItem>
-                              <SelectItem value="SYSADMIN">Sysadmin</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
+                          {/* Email */}
+                          <TableCell className="text-gray-600 text-sm">
+                            {user.email}
+                          </TableCell>
 
-                        {/* Joined */}
-                        <TableCell className="text-gray-500 text-sm">
-                          {new Date(user.createdAt).toLocaleDateString()}
-                        </TableCell>
+                          {/* Role selector */}
+                          <TableCell>
+                            {canEditRole ? (
+                              <Select
+                                value={user.role}
+                                onValueChange={(val) =>
+                                  handleRoleChange(user.id, val as Role)
+                                }
+                              >
+                                <SelectTrigger className="h-8 w-32 text-xs">
+                                  <SelectValue>
+                                    <RoleBadge role={user.role} />
+                                  </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="PLAYER">Player</SelectItem>
+                                  <SelectItem value="COACH">Coach</SelectItem>
+                                  <SelectItem value="ADMIN">Admin</SelectItem>
+                                  {currentRole === "SYSADMIN" && (
+                                    <SelectItem value="SYSADMIN">Sysadmin</SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <RoleBadge role={user.role} />
+                            )}
+                          </TableCell>
 
-                        {/* Delete */}
-                        <TableCell>
-                          <button
-                            onClick={() => openDelete(user)}
-                            aria-label={`Delete ${user.email}`}
-                            className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          {/* Clubs */}
+                          <TableCell className="text-gray-600 text-sm">
+                            {clubNames.length > 0 ? clubNames.join(", ") : "—"}
+                          </TableCell>
+
+                          {/* Last Login */}
+                          <TableCell className="text-gray-500 text-sm">
+                            {user.lastLogin
+                              ? new Date(user.lastLogin).toLocaleDateString()
+                              : "—"}
+                          </TableCell>
+
+                          {/* Joined */}
+                          <TableCell className="text-gray-500 text-sm">
+                            {new Date(user.createdAt).toLocaleDateString()}
+                          </TableCell>
+
+                          {/* Delete */}
+                          <TableCell>
+                            <button
+                              onClick={() => openDelete(user)}
+                              aria-label={`Delete ${user.email}`}
+                              className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -513,6 +553,7 @@ export default function UsersAuthPage() {
           open={true}
           onClose={() => setCreateOpen(false)}
           onCreated={fetchUsers}
+          currentRole={currentRole}
         />
       )}
 
