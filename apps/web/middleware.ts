@@ -57,12 +57,11 @@ export async function middleware(req: NextRequest) {
           }
         );
         if (refreshRes.ok) {
-          // Forward the Set-Cookie headers (new token + rotated refresh token)
-          // from the refresh response so the browser receives the updated cookies.
+          // Forward all Set-Cookie headers (new token + rotated refresh token)
+          // from the refresh response so the browser receives both updated cookies.
           const res = NextResponse.next();
-          const setCookie = refreshRes.headers.get("set-cookie");
-          if (setCookie) {
-            res.headers.set("set-cookie", setCookie);
+          for (const cookie of refreshRes.headers.getSetCookie()) {
+            res.headers.append("set-cookie", cookie);
           }
           return res;
         }

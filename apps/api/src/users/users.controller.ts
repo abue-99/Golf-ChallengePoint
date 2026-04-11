@@ -38,7 +38,9 @@ export class UsersController {
     // ADMIN-level callers may only assign PLAYER or COACH.
     // SYSADMIN can assign any role.
     if (caller.role !== 'SYSADMIN' && !['PLAYER', 'COACH'].includes(body.role)) {
-      throw new ForbiddenException('Admins can only assign the Player or Coach role.');
+      throw new ForbiddenException(
+        `Admins can only assign the Player or Coach role, not ${body.role}.`,
+      );
     }
     return this.usersService.updateRole(id, body.role);
   }

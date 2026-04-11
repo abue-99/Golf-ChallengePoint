@@ -23,16 +23,20 @@ export async function POST(request: NextRequest) {
 
     // If the user selected a club, join it immediately using the fresh access token.
     if (clubId && data.accessToken) {
-      await fetch(`${apiUrl}/clubs/my`, {
+      const clubRes = await fetch(`${apiUrl}/clubs/my`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${data.accessToken}`,
         },
         body: JSON.stringify({ clubId }),
-      }).catch(() => {
-        // Best-effort: don't fail signup if the club join fails.
+      }).catch((err) => {
+        console.error("Club join error after signup:", err);
+        return null;
       });
+      if (clubRes && !clubRes.ok) {
+        console.error(`Club join failed after signup: ${clubRes.status} ${clubRes.statusText}`);
+      }
     }
 
     const secure = process.env.SECURE_COOKIES === "true";
