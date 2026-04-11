@@ -42,11 +42,14 @@ export async function POST(req: NextRequest) {
   // If a club was specified, assign it to the newly created user.
   // Use the admin's token since we have it available.
   if (clubId && data.user?.id) {
-    await fetch(`${API_URL}/users/${data.user.id}/clubs`, {
+    const clubRes = await fetch(`${API_URL}/users/${data.user.id}/clubs`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ clubId }),
-    }).catch(() => {});
+    }).catch((err) => { console.error("Club assignment error after user creation:", err); return null; });
+    if (clubRes && !clubRes.ok) {
+      console.error(`Club assignment failed after user creation: ${clubRes.status} ${clubRes.statusText}`);
+    }
   }
 
   return NextResponse.json(data, { status: res.status });

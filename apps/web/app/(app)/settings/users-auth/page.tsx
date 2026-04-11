@@ -215,11 +215,11 @@ function CreateUserModal({
     }
     setSaving(true);
     try {
-      const body: Record<string, string> = {
+      const body: Record<string, string | undefined> = {
         email: form.email.trim(),
         password: form.password,
-        firstName: form.firstName.trim() || "",
-        lastName: form.lastName.trim() || "",
+        firstName: form.firstName.trim() || undefined,
+        lastName: form.lastName.trim() || undefined,
       };
       if (form.clubId) body.clubId = form.clubId;
 
