@@ -364,7 +364,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                       </SelectItem>
                     ))}
                     {!clubsLoading && clubs.length === 0 && (
-                      <SelectItem value="" disabled>No clubs available</SelectItem>
+                      <SelectItem value="__none__" disabled>No clubs available</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
