@@ -90,7 +90,6 @@ type UserProfile = {
   gender: string | null;
   phoneNumber: string | null;
   timezone: string | null;
-  role: string;
 };
 
 type Club = { id: string; name: string };
@@ -106,7 +105,6 @@ export default function ProfilePage() {
     gender: null,
     phoneNumber: null,
     timezone: null,
-    role: "PLAYER",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -133,7 +131,6 @@ export default function ProfilePage() {
             gender: data.gender ?? null,
             phoneNumber: data.phoneNumber ?? null,
             timezone: data.timezone ?? null,
-            role: data.role ?? "PLAYER",
           });
         }
         setLoading(false);
@@ -296,26 +293,6 @@ export default function ProfilePage() {
           onChange={(e) => setProfile((p) => ({ ...p, lastName: e.target.value }))}
           placeholder="Last Name"
         />
-      </div>
-
-      {/* Role */}
-      <div className="space-y-2">
-        <Label>I am a</Label>
-        <div className="flex gap-4">
-          {(["PLAYER", "COACH"] as const).map((r) => (
-            <label key={r} className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="radio"
-                name="profileRole"
-                value={r}
-                checked={profile.role === r}
-                onChange={() => setProfile((p) => ({ ...p, role: r }))}
-                className="accent-[var(--golf-primary)]"
-              />
-              <span className="text-sm">{r === "PLAYER" ? "Player" : "Coach"}</span>
-            </label>
-          ))}
-        </div>
       </div>
 
       {/* Gender */}

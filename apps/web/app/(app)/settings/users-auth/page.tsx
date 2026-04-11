@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { ChevronDown, ChevronRight, Plus, Trash2, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Trash2, Search, X } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,8 @@ import { fetchWithAuth } from "@/lib/api";
 
 type Role = "PLAYER" | "COACH" | "ADMIN" | "SYSADMIN";
 
+type Club = { id: string; name: string };
+
 type User = {
   id: string;
   email: string;
@@ -42,7 +44,7 @@ type User = {
   role: Role;
   createdAt: string;
   lastLogin: string | null;
-  userClubs: { club: { name: string } }[];
+  userClubs: { clubId: string; club: Club }[];
 };
 
 type NewUserForm = {
@@ -89,7 +91,13 @@ function UserAvatar({ user }: { user: User }) {
   );
 }
 
-// ── Role badge ────────────────────────────────────────────────────────────────
+const ROLE_LABELS: Record<Role, string> = {
+  PLAYER: "Player",
+  COACH: "Coach",
+  ADMIN: "Admin",
+  SYSADMIN: "Sysadmin",
+};
+
 
 const ROLE_COLORS: Record<Role, string> = {
   SYSADMIN: "bg-red-100 text-red-700",
@@ -105,6 +113,72 @@ function RoleBadge({ role }: { role: Role }) {
     >
       {role}
     </span>
+  );
+}
+
+// ── Club cell (SYSADMIN can add/remove clubs) ─────────────────────────────────
+
+function ClubCell({
+  user,
+  currentRole,
+  allClubs,
+  onAddClub,
+  onRemoveClub,
+}: {
+  user: User;
+  currentRole: Role | null;
+  allClubs: Club[];
+  onAddClub: (userId: string, clubId: string) => Promise<void>;
+  onRemoveClub: (userId: string, clubId: string) => Promise<void>;
+}) {
+  const assignedIds = new Set(user.userClubs.map((uc) => uc.clubId));
+  const available = allClubs.filter((c) => !assignedIds.has(c.id));
+
+  if (currentRole !== "SYSADMIN") {
+    const names = user.userClubs.map((uc) => uc.club.name);
+    return (
+      <span className="text-gray-600 text-sm">
+        {names.length > 0 ? names.join(", ") : "—"}
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {user.userClubs.map((uc) => (
+        <span
+          key={uc.clubId}
+          className="inline-flex items-center gap-1 rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800"
+        >
+          {uc.club.name}
+          <button
+            type="button"
+            aria-label={`Remove ${uc.club.name}`}
+            onClick={() => onRemoveClub(user.id, uc.clubId)}
+            className="ml-0.5 hover:text-red-600"
+          >
+            <X size={10} />
+          </button>
+        </span>
+      ))}
+      {available.length > 0 && (
+        <Select
+          value=""
+          onValueChange={(val) => val && onAddClub(user.id, val)}
+        >
+          <SelectTrigger className="h-6 w-6 p-0 border-dashed rounded shrink-0" aria-label="Add club">
+            <Plus className="h-3 w-3 mx-auto" />
+          </SelectTrigger>
+          <SelectContent>
+            {available.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+    </div>
   );
 }
 
@@ -237,9 +311,7 @@ function CreateUserModal({
               <SelectContent>
                 <SelectItem value="PLAYER">Player</SelectItem>
                 <SelectItem value="COACH">Coach</SelectItem>
-                {currentRole === "SYSADMIN" && (
-                  <SelectItem value="ADMIN">Admin</SelectItem>
-                )}
+                <SelectItem value="ADMIN">Admin</SelectItem>
                 {currentRole === "SYSADMIN" && (
                   <SelectItem value="SYSADMIN">Sysadmin</SelectItem>
                 )}
@@ -320,6 +392,7 @@ export default function UsersAuthPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [currentRole, setCurrentRole] = useState<Role | null>(null);
+  const [allClubs, setAllClubs] = useState<Club[]>([]);
 
   // create modal
   const [createOpen, setCreateOpen] = useState(false);
@@ -353,7 +426,17 @@ export default function UsersAuthPage() {
     fetchUsers();
     fetchWithAuth("/api/auth/me")
       .then((r) => r.ok ? r.json() : null)
-      .then((me) => { if (me?.role) setCurrentRole(me.role as Role); })
+      .then((me) => {
+        if (me?.role) {
+          setCurrentRole(me.role as Role);
+          if (me.role === "SYSADMIN") {
+            fetchWithAuth("/api/clubs")
+              .then((r) => r.ok ? r.json() : [])
+              .then((clubs: Club[]) => setAllClubs(clubs))
+              .catch(() => {});
+          }
+        }
+      })
       .catch((err) => { console.error("Failed to fetch current user role:", err); });
   }, [fetchUsers]);
 
@@ -381,6 +464,28 @@ export default function UsersAuthPage() {
     }
   }
 
+  async function handleAddUserClub(userId: string, clubId: string) {
+    const res = await fetchWithAuth(`/api/users/${userId}/clubs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clubId }),
+    });
+    if (res.ok) {
+      const updated: User = await res.json();
+      setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+    }
+  }
+
+  async function handleRemoveUserClub(userId: string, clubId: string) {
+    const res = await fetchWithAuth(`/api/users/${userId}/clubs/${clubId}`, {
+      method: "DELETE",
+    });
+    if (res.ok) {
+      const updated: User = await res.json();
+      setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+    }
+  }
+
   function openDelete(user: User) {
     setDeleteTarget(user);
     setDeleteOpen(true);
@@ -394,6 +499,15 @@ export default function UsersAuthPage() {
       throw new Error(data?.message ?? "Failed to delete user.");
     }
     await fetchUsers();
+  }
+
+  // Role options available to the current admin in the table row dropdown
+  function getRoleOptions(userRole: Role): Role[] {
+    if (currentRole === "SYSADMIN") {
+      return ["PLAYER", "COACH", "ADMIN", "SYSADMIN"];
+    }
+    // ADMIN: can only assign COACH or ADMIN
+    return ["COACH", "ADMIN"];
   }
 
   return (
@@ -464,7 +578,7 @@ export default function UsersAuthPage() {
                       const canEditRole =
                         currentRole === "SYSADMIN" ||
                         (currentRole === "ADMIN" && !isSysadminRow);
-                      const clubNames = user.userClubs.map((uc) => uc.club.name);
+                      const roleOptions = getRoleOptions(user.role);
 
                       return (
                         <TableRow key={user.id}>
@@ -498,15 +612,12 @@ export default function UsersAuthPage() {
                                   </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
-                                   <SelectItem value="PLAYER">Player</SelectItem>
-                                   <SelectItem value="COACH">Coach</SelectItem>
-                                   {currentRole === "SYSADMIN" && (
-                                     <SelectItem value="ADMIN">Admin</SelectItem>
-                                   )}
-                                   {currentRole === "SYSADMIN" && (
-                                     <SelectItem value="SYSADMIN">Sysadmin</SelectItem>
-                                   )}
-                                 </SelectContent>
+                                  {roleOptions.map((r) => (
+                                    <SelectItem key={r} value={r}>
+                                      {ROLE_LABELS[r]}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
                               </Select>
                             ) : (
                               <RoleBadge role={user.role} />
@@ -514,8 +625,14 @@ export default function UsersAuthPage() {
                           </TableCell>
 
                           {/* Clubs */}
-                          <TableCell className="text-gray-600 text-sm">
-                            {clubNames.length > 0 ? clubNames.join(", ") : "—"}
+                          <TableCell>
+                            <ClubCell
+                              user={user}
+                              currentRole={currentRole}
+                              allClubs={allClubs}
+                              onAddClub={handleAddUserClub}
+                              onRemoveClub={handleRemoveUserClub}
+                            />
                           </TableCell>
 
                           {/* Last Login */}

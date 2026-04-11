@@ -47,7 +47,7 @@ export class AuthService {
         passwordHash,
         firstName: dto.firstName || 'User',
         lastName: dto.lastName || '',
-        role: (dto.role as 'PLAYER' | 'COACH' | 'ADMIN') ?? 'PLAYER',
+        role: 'PLAYER',
       },
     });
 
@@ -190,7 +190,6 @@ export class AuthService {
     if (data.gender !== undefined) updateData.gender = data.gender;
     if (data.phoneNumber !== undefined) updateData.phoneNumber = data.phoneNumber;
     if (data.timezone !== undefined) updateData.timezone = data.timezone;
-    if (data.role === 'PLAYER' || data.role === 'COACH') updateData.role = data.role;
 
     return this.prisma.user.update({
       where: { id: userId },
