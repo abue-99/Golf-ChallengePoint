@@ -5,6 +5,13 @@ import { X, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Link from "next/link";
 
 function isValidEmail(value: string): boolean {
@@ -12,6 +19,13 @@ function isValidEmail(value: string): boolean {
 }
 
 type Tab = "login" | "signup";
+
+interface Club {
+  id: string;
+  name: string;
+  city: string | null;
+  country: string | null;
+}
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -32,9 +46,13 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
   const [loginLoading, setLoginLoading] = useState(false);
 
   // Signup state
-  const [signupForm, setSignupForm] = useState({ email: "", password: "", firstName: "", lastName: "", role: "PLAYER" });
+  const [signupForm, setSignupForm] = useState({ email: "", password: "", firstName: "", lastName: "", clubId: "" });
   const [signupLoading, setSignupLoading] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
+
+  // Clubs for signup dropdown
+  const [clubs, setClubs] = useState<Club[]>([]);
+  const [clubsLoading, setClubsLoading] = useState(false);
 
   const loginEmailRef = useRef<HTMLInputElement>(null);
   const signupFirstRef = useRef<HTMLInputElement>(null);
@@ -61,6 +79,18 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
   useEffect(() => {
     setTab(defaultTab);
   }, [defaultTab]);
+
+  // Load clubs when the signup tab is first shown
+  useEffect(() => {
+    if (tab === "signup" && clubs.length === 0 && !clubsLoading) {
+      setClubsLoading(true);
+      fetch("/api/clubs/public")
+        .then((r) => (r.ok ? r.json() : []))
+        .then((data: Club[]) => setClubs(data))
+        .catch(() => setClubs([]))
+        .finally(() => setClubsLoading(false));
+    }
+  }, [tab, clubs.length, clubsLoading]);
 
   if (!isOpen) return null;
 
@@ -129,10 +159,18 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
     if (!validateSignup()) return;
     setSignupLoading(true);
     try {
+      const payload: Record<string, string> = {
+        email: signupForm.email,
+        password: signupForm.password,
+        firstName: signupForm.firstName,
+        lastName: signupForm.lastName,
+      };
+      if (signupForm.clubId) payload.clubId = signupForm.clubId;
+
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(signupForm),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         window.location.href = "/dashboard";
@@ -310,23 +348,26 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
               </div>
 
               <div className="space-y-1">
-                <Label>I am a</Label>
-                <div className="flex gap-4 pt-1">
-                  {(["PLAYER", "COACH"] as const).map((r) => (
-                    <label key={r} className="flex items-center gap-2 cursor-pointer select-none">
-                      <input
-                        type="radio"
-                        name="role"
-                        value={r}
-                        checked={signupForm.role === r}
-                        onChange={() => setSignupForm({ ...signupForm, role: r })}
-                        disabled={signupLoading}
-                        className="accent-[var(--golf-primary)]"
-                      />
-                      <span className="text-sm">{r === "PLAYER" ? "Player" : "Coach"}</span>
-                    </label>
-                  ))}
-                </div>
+                <Label htmlFor="modal-club">Club <span className="text-gray-400 text-xs">(optional)</span></Label>
+                <Select
+                  value={signupForm.clubId}
+                  onValueChange={(val) => setSignupForm({ ...signupForm, clubId: val })}
+                  disabled={signupLoading || clubsLoading}
+                >
+                  <SelectTrigger id="modal-club" className="w-full">
+                    <SelectValue placeholder={clubsLoading ? "Loading clubs…" : "Select your club"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clubs.map((club) => (
+                      <SelectItem key={club.id} value={club.id}>
+                        {club.name}{club.city ? ` · ${club.city}` : ""}
+                      </SelectItem>
+                    ))}
+                    {!clubsLoading && clubs.length === 0 && (
+                      <SelectItem value="" disabled>No clubs available</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
 
               {signupError && (
@@ -347,3 +388,4 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
     </div>
   );
 }
+
