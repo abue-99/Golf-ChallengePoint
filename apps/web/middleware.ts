@@ -57,10 +57,36 @@ export async function middleware(req: NextRequest) {
           }
         );
         if (refreshRes.ok) {
-          // Forward all Set-Cookie headers (new token + rotated refresh token)
-          // from the refresh response so the browser receives both updated cookies.
-          const res = NextResponse.next();
-          for (const cookie of refreshRes.headers.getSetCookie()) {
+          const newSetCookies = refreshRes.headers.getSetCookie();
+
+          // Parse the new cookie values (name=value) from the Set-Cookie headers.
+          const parsedNew: Record<string, string> = {};
+          for (const raw of newSetCookies) {
+            const cookieMatch = raw.match(/^([^=]+)=([^;]*)/);
+            if (cookieMatch) parsedNew[cookieMatch[1].trim()] = cookieMatch[2];
+          }
+
+          // Merge the new cookies into the existing request cookie header so
+          // that Server Components (e.g. the app layout) see the refreshed
+          // access token for THIS request, not just the next one.
+          const existing: Record<string, string> = {};
+          for (const part of (req.headers.get("cookie") ?? "").split(";")) {
+            const equalsIndex = part.indexOf("=");
+            if (equalsIndex === -1) continue;
+            existing[part.slice(0, equalsIndex).trim()] = part.slice(equalsIndex + 1);
+          }
+          const merged = { ...existing, ...parsedNew };
+          const cookieHeader = Object.entries(merged)
+            .map(([k, v]) => `${k}=${v}`)
+            .join("; ");
+
+          const requestHeaders = new Headers(req.headers);
+          requestHeaders.set("cookie", cookieHeader);
+
+          // Continue with updated request headers (visible to Server Components)
+          // and forward Set-Cookie to the browser so it persists the new cookies.
+          const res = NextResponse.next({ request: { headers: requestHeaders } });
+          for (const cookie of newSetCookies) {
             res.headers.append("set-cookie", cookie);
           }
           return res;
