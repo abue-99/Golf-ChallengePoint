@@ -119,7 +119,7 @@ function CreateUserModal({
   open: boolean;
   onClose: () => void;
   onCreated: () => void;
-  currentRole: Role;
+  currentRole: Role | null;
 }) {
   const [form, setForm] = useState<NewUserForm>(EMPTY_NEW_USER);
   const [error, setError] = useState("");
@@ -317,7 +317,7 @@ export default function UsersAuthPage() {
   const [sectionOpen, setSectionOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [currentRole, setCurrentRole] = useState<Role>("PLAYER");
+  const [currentRole, setCurrentRole] = useState<Role | null>(null);
 
   // create modal
   const [createOpen, setCreateOpen] = useState(false);
@@ -352,7 +352,7 @@ export default function UsersAuthPage() {
     fetchWithAuth("/api/auth/me")
       .then((r) => r.ok ? r.json() : null)
       .then((me) => { if (me?.role) setCurrentRole(me.role as Role); })
-      .catch(() => {});
+      .catch((err) => { console.error("Failed to fetch current user role:", err); });
   }, [fetchUsers]);
 
   const filtered = users.filter((u) => {
