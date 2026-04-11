@@ -4,18 +4,35 @@ import { forwardRefreshTokenCookie } from "@/lib/auth-cookies";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const { clubId, ...signupPayload } = body;
 
     const apiUrl = process.env.API_URL || "http://golf_api:4000";
+
+    // Always sign up as PLAYER — role selection is removed from the sign-up form.
     const res = await fetch(`${apiUrl}/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ ...signupPayload, role: "PLAYER" }),
     });
 
     const data = await res.json();
 
     if (!res.ok) {
       return NextResponse.json(data, { status: res.status });
+    }
+
+    // If the user selected a club, join it immediately using the fresh access token.
+    if (clubId && data.accessToken) {
+      await fetch(`${apiUrl}/clubs/my`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${data.accessToken}`,
+        },
+        body: JSON.stringify({ clubId }),
+      }).catch(() => {
+        // Best-effort: don't fail signup if the club join fails.
+      });
     }
 
     const secure = process.env.SECURE_COOKIES === "true";

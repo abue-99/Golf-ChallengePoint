@@ -237,7 +237,9 @@ function CreateUserModal({
               <SelectContent>
                 <SelectItem value="PLAYER">Player</SelectItem>
                 <SelectItem value="COACH">Coach</SelectItem>
-                <SelectItem value="ADMIN">Admin</SelectItem>
+                {currentRole === "SYSADMIN" && (
+                  <SelectItem value="ADMIN">Admin</SelectItem>
+                )}
                 {currentRole === "SYSADMIN" && (
                   <SelectItem value="SYSADMIN">Sysadmin</SelectItem>
                 )}
@@ -496,13 +498,15 @@ export default function UsersAuthPage() {
                                   </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="PLAYER">Player</SelectItem>
-                                  <SelectItem value="COACH">Coach</SelectItem>
-                                  <SelectItem value="ADMIN">Admin</SelectItem>
-                                  {currentRole === "SYSADMIN" && (
-                                    <SelectItem value="SYSADMIN">Sysadmin</SelectItem>
-                                  )}
-                                </SelectContent>
+                                   <SelectItem value="PLAYER">Player</SelectItem>
+                                   <SelectItem value="COACH">Coach</SelectItem>
+                                   {currentRole === "SYSADMIN" && (
+                                     <SelectItem value="ADMIN">Admin</SelectItem>
+                                   )}
+                                   {currentRole === "SYSADMIN" && (
+                                     <SelectItem value="SYSADMIN">Sysadmin</SelectItem>
+                                   )}
+                                 </SelectContent>
                               </Select>
                             ) : (
                               <RoleBadge role={user.role} />
