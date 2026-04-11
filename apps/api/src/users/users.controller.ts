@@ -29,7 +29,7 @@ export class UsersController {
   @Patch(':id/role')
   updateRole(
     @Param('id') id: string,
-    @Body() body: { role: 'PLAYER' | 'COACH' | 'ADMIN' },
+    @Body() body: { role: 'PLAYER' | 'COACH' | 'ADMIN' | 'SYSADMIN' },
   ) {
     return this.usersService.updateRole(id, body.role);
   }
