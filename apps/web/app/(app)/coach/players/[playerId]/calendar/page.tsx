@@ -49,11 +49,12 @@ function coerceInputSchema(schema: string): InputSchema {
 }
 
 async function getTemplates(): Promise<TaskTemplate[]> {
-  const url = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/task-templates`;
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to load templates");
+  const url = `${process.env.API_URL || "http://golf_api:4000"}/task-templates`;
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) return [];
 
-  const data = (await res.json()) as ApiTemplate[];
+    const data = (await res.json()) as ApiTemplate[];
 
   // ✅ Sauberes Mapping auf den *Projekt*-Typ TaskTemplate
   return data.map((t) => ({
@@ -62,6 +63,10 @@ async function getTemplates(): Promise<TaskTemplate[]> {
     category: coerceCategory(t.title, t.category),
     inputSchema: coerceInputSchema(t.schema),
   }));
+  } catch (err) {
+    console.error("Failed to load task templates:", err);
+    return [];
+  }
 }
 
 export default async function PlayerCalendarPage({
