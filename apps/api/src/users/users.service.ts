@@ -16,7 +16,8 @@ export class UsersService {
     lastLogin: true,
     userClubs: {
       select: {
-        club: { select: { name: true } },
+        clubId: true,
+        club: { select: { id: true, name: true } },
       },
     },
   } as const;
@@ -28,12 +29,52 @@ export class UsersService {
     });
   }
 
+  async listForAdmin(adminId: string) {
+    const adminClubs = await this.prisma.userClub.findMany({
+      where: { userId: adminId },
+      select: { clubId: true },
+    });
+    const clubIds = adminClubs.map((uc) => uc.clubId);
+    if (clubIds.length === 0) return [];
+    return this.prisma.user.findMany({
+      where: {
+        userClubs: { some: { clubId: { in: clubIds } } },
+      },
+      orderBy: { createdAt: 'asc' },
+      select: this.userSelect,
+    });
+  }
+
   async updateRole(id: string, role: 'PLAYER' | 'COACH' | 'ADMIN' | 'SYSADMIN') {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('User not found.');
     return this.prisma.user.update({
       where: { id },
       data: { role },
+      select: this.userSelect,
+    });
+  }
+
+  async addUserClub(userId: string, clubId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found.');
+    await this.prisma.userClub.upsert({
+      where: { userId_clubId: { userId, clubId } },
+      update: {},
+      create: { userId, clubId },
+    });
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      select: this.userSelect,
+    });
+  }
+
+  async removeUserClub(userId: string, clubId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found.');
+    await this.prisma.userClub.deleteMany({ where: { userId, clubId } });
+    return this.prisma.user.findUnique({
+      where: { id: userId },
       select: this.userSelect,
     });
   }

@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Delete,
   Body,
@@ -25,7 +26,10 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  listAll() {
+  listAll(@CurrentUser() caller: AuthenticatedUser) {
+    if (caller.role === 'ADMIN') {
+      return this.usersService.listForAdmin(caller.id);
+    }
     return this.usersService.listAll();
   }
 
@@ -35,14 +39,33 @@ export class UsersController {
     @Body() body: { role: 'PLAYER' | 'COACH' | 'ADMIN' | 'SYSADMIN' },
     @CurrentUser() caller: AuthenticatedUser,
   ) {
-    // ADMIN-level callers may only assign PLAYER or COACH.
-    // SYSADMIN can assign any role.
-    if (caller.role !== 'SYSADMIN' && !['PLAYER', 'COACH'].includes(body.role)) {
+    // SYSADMINs can assign any role.
+    // ADMINs may only assign COACH or ADMIN.
+    if (caller.role !== 'SYSADMIN' && !['COACH', 'ADMIN'].includes(body.role)) {
       throw new ForbiddenException(
-        `Admins can only assign the Player or Coach role, not ${body.role}.`,
+        `Admins can only assign the Coach or Admin role, not ${body.role}.`,
       );
     }
     return this.usersService.updateRole(id, body.role);
+  }
+
+  @Post(':id/clubs')
+  @Roles(Role.SYSADMIN)
+  addUserClub(
+    @Param('id') id: string,
+    @Body() body: { clubId: string },
+  ) {
+    return this.usersService.addUserClub(id, body.clubId);
+  }
+
+  @Delete(':id/clubs/:clubId')
+  @Roles(Role.SYSADMIN)
+  @HttpCode(HttpStatus.OK)
+  removeUserClub(
+    @Param('id') id: string,
+    @Param('clubId') clubId: string,
+  ) {
+    return this.usersService.removeUserClub(id, clubId);
   }
 
   @Delete(':id')
