@@ -89,25 +89,18 @@ pnpm --filter @challengepoint/db run build
 echo "    Done."
 
 # ------------------------------------------------------------------------------
-# 6. Start Postgres via Docker and run migrations
+# 6. Run database migrations
 # ------------------------------------------------------------------------------
 echo ""
-echo ">>> [6/7] Starting Postgres and running migrations ..."
-docker compose -f "$REPO_DIR/docker-compose.yml" up -d postgres
+echo ">>> [6/7] Running database migrations ..."
 
-echo "    Waiting for Postgres to be ready ..."
-for i in $(seq 1 30); do
-  if docker compose -f "$REPO_DIR/docker-compose.yml" exec -T postgres \
-       pg_isready -U postgres -d challengepoint &>/dev/null; then
-    echo "    Postgres is ready."
-    break
-  fi
-  sleep 1
-done
+DB_URL="$(grep -E '^DATABASE_URL=' "$REPO_DIR/.env" | cut -d= -f2- | tr -d '"')"
+if [ -z "$DB_URL" ]; then
+  echo "    ERROR: DATABASE_URL is not set in .env – add your managed DB connection string first."
+  exit 1
+fi
 
-# Run pending migrations
-DATABASE_URL="$(grep -E '^DATABASE_URL=' "$REPO_DIR/.env" | cut -d= -f2- | tr -d '"')" \
-  pnpm --filter @challengepoint/db exec prisma migrate deploy
+DATABASE_URL="$DB_URL" pnpm --filter @challengepoint/db exec prisma migrate deploy
 echo "    Migrations done."
 
 # ------------------------------------------------------------------------------
@@ -121,7 +114,7 @@ echo "    Press Ctrl+C to stop both servers."
 echo ""
 
 # Run both in parallel and forward output
-trap 'kill %1 %2 2>/dev/null; docker compose -f "$REPO_DIR/docker-compose.yml" stop postgres' INT TERM
+trap 'kill %1 %2 2>/dev/null' INT TERM
 
 (
   cd "$REPO_DIR"
