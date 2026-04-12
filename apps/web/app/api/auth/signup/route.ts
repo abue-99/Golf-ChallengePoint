@@ -8,11 +8,10 @@ export async function POST(request: NextRequest) {
 
     const apiUrl = process.env.API_URL || "http://golf_api:4000";
 
-    // Always sign up as PLAYER — role selection is removed from the sign-up form.
     const res = await fetch(`${apiUrl}/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...signupPayload, role: "PLAYER" }),
+      body: JSON.stringify(signupPayload),
     });
 
     const data = await res.json();
