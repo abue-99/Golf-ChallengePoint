@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users } from "lucide-react";
+import { User, Users } from "lucide-react";
 
 type Team = {
   id: string;
@@ -24,14 +25,29 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function Dashboard() {
+  const router = useRouter();
+  const [role, setRole] = useState<string | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [playerCount, setPlayerCount] = useState<number>(0);
 
   useEffect(() => {
-    fetch("/api/teams")
-      .then((r) => r.ok ? r.json() : [])
-      .then((data) => setTeams(Array.isArray(data) ? data : []))
-      .catch(() => {});
+    fetch("/api/auth/me")
+      .then((r) => r.ok ? r.json() : null)
+      .then((me) => { if (me?.role) setRole(me.role); });
   }, []);
+
+  useEffect(() => {
+    if (!role) return;
+    if (role === "COACH" || role === "ADMIN") {
+      Promise.all([
+        fetch("/api/teams").then((r) => r.ok ? r.json() : []),
+        fetch("/api/teams/club-players").then((r) => r.ok ? r.json() : []),
+      ]).then(([t, p]) => {
+        setTeams(Array.isArray(t) ? t : []);
+        setPlayerCount(Array.isArray(p) ? p.length : 0);
+      }).catch(() => {});
+    }
+  }, [role]);
 
   const recentActivity = [...teams]
     .sort((a, b) => {
@@ -40,6 +56,8 @@ export default function Dashboard() {
       return tb - ta;
     })
     .slice(0, 3);
+
+  const isCoachOrAdmin = role === "COACH" || role === "ADMIN";
 
   return (
     <div className="space-y-8">
@@ -51,49 +69,83 @@ export default function Dashboard() {
         </h1>
       </header>
 
-      {/* Players/Teams tile */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="shadow-sm hover:shadow-md transition-all border border-[var(--golf-muted)]">
-          <CardHeader>
-            <CardTitle className="text-sm text-[var(--golf-muted-text)]">
-              Players/Teams
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-3xl font-semibold flex items-center gap-2 text-[var(--golf-heading)]">
-            {teams.length} <Users className="h-6 w-6 text-[var(--golf-primary)]" />
-          </CardContent>
-        </Card>
-      </section>
+      {/* Role-specific tiles */}
+      {isCoachOrAdmin && (
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Players/Teams tile – double-click navigates to /teams */}
+          <Card
+            className="shadow-sm hover:shadow-md transition-all border border-[var(--golf-muted)] cursor-pointer select-none"
+            onDoubleClick={() => router.push("/teams")}
+            title="Double-click to open Players/Teams"
+          >
+            <CardHeader>
+              <CardTitle className="text-sm text-[var(--golf-muted-text)]">
+                Players / Teams
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-2xl font-semibold text-[var(--golf-heading)]">
+                <span>{playerCount}</span>
+                <User className="h-5 w-5 text-[var(--golf-primary)]" />
+              </div>
+              <div className="flex items-center gap-2 text-2xl font-semibold text-[var(--golf-heading)]">
+                <span>{teams.length}</span>
+                <Users className="h-5 w-5 text-[var(--golf-primary)]" />
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+      )}
 
-      {/* Recent Activity */}
-      <section className="space-y-3">
-        <h2 className="text-xl font-semibold text-[var(--golf-heading)]">
-          Recent Activity
-        </h2>
+      {/* Recent Activity (COACH / ADMIN only) */}
+      {isCoachOrAdmin && (
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold text-[var(--golf-heading)]">
+            Recent Activity
+          </h2>
 
-        <Card className="shadow-sm border border-[var(--golf-muted)]">
-          <CardContent className="divide-y p-0">
-            {recentActivity.length === 0 ? (
-              <div className="p-4 text-sm text-[var(--golf-muted-text)]">No recent activity.</div>
-            ) : (
-              recentActivity.map((t) => {
-                const ts = t.updatedAt ?? t.createdAt;
-                return (
-                  <div
-                    key={t.id}
-                    className="p-4 flex items-center justify-between text-[var(--golf-heading)]"
-                  >
-                    <span className="text-sm">Team &ldquo;{t.shortName}&rdquo; updated</span>
-                    <span className="text-xs text-[var(--golf-muted-text)]">
-                      {ts ? timeAgo(ts) : "—"}
-                    </span>
-                  </div>
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
-      </section>
+          <Card className="shadow-sm border border-[var(--golf-muted)]">
+            <CardContent className="divide-y p-0">
+              {recentActivity.length === 0 ? (
+                <div className="p-4 text-sm text-[var(--golf-muted-text)]">No recent activity.</div>
+              ) : (
+                recentActivity.map((t) => {
+                  const ts = t.updatedAt ?? t.createdAt;
+                  return (
+                    <div
+                      key={t.id}
+                      className="p-4 flex items-center justify-between text-[var(--golf-heading)]"
+                    >
+                      <span className="text-sm">Team &ldquo;{t.shortName}&rdquo; updated</span>
+                      <span className="text-xs text-[var(--golf-muted-text)]">
+                        {ts ? timeAgo(ts) : "—"}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+            </CardContent>
+          </Card>
+        </section>
+      )}
+
+      {/* Player dashboard */}
+      {role === "PLAYER" && (
+        <section className="space-y-3">
+          <p className="text-sm text-[var(--golf-muted-text)]">
+            Welcome! Use the navigation to manage your challenges and training sessions.
+          </p>
+        </section>
+      )}
+
+      {/* SysAdmin dashboard */}
+      {role === "SYSADMIN" && (
+        <section className="space-y-3">
+          <p className="text-sm text-[var(--golf-muted-text)]">
+            System administration overview. Use Settings to manage clubs and users.
+          </p>
+        </section>
+      )}
 
     </div>
   );

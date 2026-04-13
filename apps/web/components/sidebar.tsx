@@ -29,7 +29,7 @@ export default function Sidebar({
       <nav className='flex flex-col py-4'>
         {navItems.map(({ href, icon: Icon, label }) => (
           <Link key={label} href={href} className={itemClass} title={label}>
-            <Icon className="text-gray-700" />
+            <Icon size={expanded ? 19 : 24} className="text-gray-700" />
             {expanded && <span>{label}</span>}
           </Link>
         ))}
