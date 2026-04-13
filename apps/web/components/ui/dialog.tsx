@@ -6,6 +6,7 @@ const Ctx = React.createContext<{ open: boolean; setOpen: (v: boolean) => void }
 
 export function Dialog({ open, onOpenChange, children }: { open?: boolean; onOpenChange?: (v: boolean) => void; children: React.ReactNode }) {
   const [inner, setInner] = React.useState(!!open);
+  React.useEffect(() => { setInner(!!open); }, [open]);
   const setOpen = (v: boolean) => { setInner(v); onOpenChange?.(v); };
   return <Ctx.Provider value={{ open: inner, setOpen }}>{children}</Ctx.Provider>;
 }

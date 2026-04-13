@@ -1,12 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2, Plus, UserPlus, X } from "lucide-react";
+import { Trash2, Plus, UserPlus, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -122,11 +128,14 @@ export default function TeamsPage() {
   const [allPlayers, setAllPlayers] = useState<Player[]>([]);
   const [myClubs, setMyClubs] = useState<ClubOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null);
 
   const [addMemberTeamId, setAddMemberTeamId] = useState<string | null>(null);
   // Players filtered for the "add member" dropdown of a specific team
@@ -202,7 +211,10 @@ export default function TeamsPage() {
 
   async function handleDelete(teamId: string) {
     const res = await fetch(`/api/teams/${teamId}`, { method: "DELETE" });
-    if (res.ok) setTeams((prev) => prev.filter((t) => t.id !== teamId));
+    if (res.ok) {
+      setTeams((prev) => prev.filter((t) => t.id !== teamId));
+      setEditingTeam((prev) => (prev?.id === teamId ? null : prev));
+    }
   }
 
   async function openAddMember(team: Team) {
@@ -229,6 +241,7 @@ export default function TeamsPage() {
     if (res.ok) {
       const updated = await res.json();
       setTeams((prev) => prev.map((t) => (t.id === teamId ? updated : t)));
+      setEditingTeam((prev) => (prev?.id === teamId ? updated : prev));
     }
     setAddMemberTeamId(null);
   }
@@ -240,8 +253,40 @@ export default function TeamsPage() {
     if (res.ok) {
       const updated = await res.json();
       setTeams((prev) => prev.map((t) => (t.id === teamId ? updated : t)));
+      setEditingTeam((prev) => (prev?.id === teamId ? updated : prev));
     }
   }
+
+  async function handleUpdate(teamId: string, data: Partial<FormState>) {
+    const res = await fetch(`/api/teams/${teamId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        icon: data.icon ?? null,
+        shortName: data.shortName?.trim(),
+        description: data.description?.trim() || null,
+        category: data.categoryInput?.trim() || data.category,
+        clubId: data.clubId || null,
+      }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setTeams((prev) => prev.map((t) => (t.id === teamId ? updated : t)));
+      setEditingTeam(updated);
+    }
+    return res.ok;
+  }
+
+  const filtered = teams.filter((t) => {
+    const q = search.toLowerCase();
+    const club = myClubs.find((c) => c.id === t.clubId)?.name ?? "";
+    return (
+      t.shortName.toLowerCase().includes(q) ||
+      t.category.toLowerCase().includes(q) ||
+      (t.description ?? "").toLowerCase().includes(q) ||
+      club.toLowerCase().includes(q)
+    );
+  });
 
   if (role && role !== "COACH" && role !== "ADMIN") {
     return (
@@ -292,7 +337,7 @@ export default function TeamsPage() {
               ))}
             </div>
             {/* Colored circle icons */}
-            <div className="flex flex-wrap gap-1 pt-1">
+            <div className="flex flex-wrap gap-1 mt-3 pt-2 border-t border-gray-200">
               {TEAM_COLOR_CIRCLES.map(({ value, label }) => (
                 <button
                   key={value}
@@ -396,8 +441,21 @@ export default function TeamsPage() {
       )}
 
       {/* Teams Table */}
+      {/* Search bar */}
+      <div className="relative w-full max-w-xs">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+        <Input
+          className="pl-8"
+          placeholder="Search teams…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
       {teams.length === 0 ? (
         <p className="text-sm text-gray-500">No teams yet. Create your first team above.</p>
+      ) : filtered.length === 0 ? (
+        <p className="text-sm text-gray-500">No matching teams found.</p>
       ) : (
         <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
           <table className="w-full text-sm">
@@ -405,19 +463,26 @@ export default function TeamsPage() {
               <tr>
                 <th className="px-4 py-3 text-left">Team</th>
                 <th className="px-4 py-3 text-left">Category</th>
+                <th className="px-4 py-3 text-left">Club</th>
                 <th className="px-4 py-3 text-left">Description</th>
                 <th className="px-4 py-3 text-left">Members</th>
                 <th className="px-4 py-3 text-right"></th>
               </tr>
             </thead>
             <tbody className="divide-y">
-              {teams.map((team) => {
+              {filtered.map((team) => {
                 const teamMemberIds = new Set(team.members.map((m) => m.userId));
                 const isAddingToThisTeam = addMemberTeamId === team.id;
                 const availablePlayers = (isAddingToThisTeam ? teamPlayers : allPlayers)
                   .filter((p) => !teamMemberIds.has(p.id));
+                const clubName = myClubs.find((c) => c.id === team.clubId)?.name;
                 return (
-                  <tr key={team.id} className="align-top">
+                  <tr
+                    key={team.id}
+                    className="align-top cursor-pointer hover:bg-gray-50"
+                    onDoubleClick={() => setEditingTeam(team)}
+                    title="Double-click to edit"
+                  >
                     <td className="px-4 py-3 font-medium whitespace-nowrap">
                       <span className="flex items-center gap-1.5">
                         {team.icon && <TeamIcon icon={team.icon} size={18} />}
@@ -425,6 +490,9 @@ export default function TeamsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-gray-500">{team.category}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-gray-500">
+                      {clubName ?? <span className="text-gray-400 italic">—</span>}
+                    </td>
                     <td className="px-4 py-3 text-gray-600 max-w-xs">
                       {team.description || <span className="text-gray-400 italic">—</span>}
                     </td>
@@ -437,7 +505,7 @@ export default function TeamsPage() {
                               <AvatarFallback className="bg-blue-100 text-blue-700">{initials(m.user)}</AvatarFallback>
                             </Avatar>
                             <button
-                              onClick={() => handleRemoveMember(team.id, m.userId)}
+                              onClick={(e) => { e.stopPropagation(); handleRemoveMember(team.id, m.userId); }}
                               className="absolute -top-1 -right-1 hidden group-hover:flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white"
                               aria-label="Remove member"
                             >
@@ -446,7 +514,7 @@ export default function TeamsPage() {
                           </div>
                         ))}
                         {isAddingToThisTeam ? (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                             {teamPlayersLoading ? (
                               <span className="text-xs text-gray-400">Loading…</span>
                             ) : availablePlayers.length > 0 ? (
@@ -472,14 +540,14 @@ export default function TeamsPage() {
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7"
-                              onClick={() => setAddMemberTeamId(null)}
+                              onClick={(e) => { e.stopPropagation(); setAddMemberTeamId(null); }}
                             >
                               <X size={12} />
                             </Button>
                           </div>
                         ) : (
                           <button
-                            onClick={() => openAddMember(team)}
+                            onClick={(e) => { e.stopPropagation(); openAddMember(team); }}
                             className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500"
                             aria-label="Add member"
                           >
@@ -493,7 +561,7 @@ export default function TeamsPage() {
                         variant="ghost"
                         size="icon"
                         className="text-red-500 hover:text-red-700"
-                        onClick={() => handleDelete(team.id)}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(team.id); }}
                         aria-label="Delete team"
                       >
                         <Trash2 size={16} />
@@ -506,6 +574,294 @@ export default function TeamsPage() {
           </table>
         </div>
       )}
+
+      {/* Edit Team Dialog */}
+      {editingTeam && (
+        <EditTeamDialog
+          team={editingTeam}
+          categories={categories}
+          myClubs={myClubs}
+          allPlayers={allPlayers}
+          onClose={() => setEditingTeam(null)}
+          onUpdate={handleUpdate}
+          onAddMember={handleAddMember}
+          onRemoveMember={handleRemoveMember}
+        />
+      )}
     </div>
+  );
+}
+
+// ── Edit Team Dialog ──────────────────────────────────────────────────────────
+
+function EditTeamDialog({
+  team,
+  categories,
+  myClubs,
+  allPlayers,
+  onClose,
+  onUpdate,
+  onAddMember,
+  onRemoveMember,
+}: {
+  team: Team;
+  categories: string[];
+  myClubs: ClubOption[];
+  allPlayers: Player[];
+  onClose: () => void;
+  onUpdate: (teamId: string, data: Partial<FormState>) => Promise<boolean>;
+  onAddMember: (teamId: string, userId: string) => Promise<void>;
+  onRemoveMember: (teamId: string, userId: string) => Promise<void>;
+}) {
+  const [form, setForm] = useState<FormState>({
+    icon: team.icon ?? "",
+    shortName: team.shortName,
+    description: team.description ?? "",
+    category: team.category,
+    categoryInput: "",
+    clubId: team.clubId ?? "",
+  });
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [savedMsg, setSavedMsg] = useState("");
+
+  const [editPlayersLoading, setEditPlayersLoading] = useState(false);
+  const [editPlayers, setEditPlayers] = useState<Player[]>(allPlayers);
+
+  // Re-sync form when the team prop changes (e.g. after member add/remove)
+  useEffect(() => {
+    setForm({
+      icon: team.icon ?? "",
+      shortName: team.shortName,
+      description: team.description ?? "",
+      category: team.category,
+      categoryInput: "",
+      clubId: team.clubId ?? "",
+    });
+  }, [team]);
+
+  // Load club-filtered players when clubId changes
+  useEffect(() => {
+    if (!team.clubId) {
+      setEditPlayers(allPlayers);
+      return;
+    }
+    setEditPlayersLoading(true);
+    fetch(`/api/teams/club-players?clubId=${encodeURIComponent(team.clubId)}`)
+      .then((r) => r.json())
+      .then((data) => setEditPlayers(Array.isArray(data) ? data : []))
+      .catch(() => setEditPlayers(allPlayers))
+      .finally(() => setEditPlayersLoading(false));
+  }, [team.clubId, allPlayers]);
+
+  function resolvedCategory() {
+    return form.categoryInput.trim() || form.category;
+  }
+
+  async function handleSave() {
+    if (!form.shortName.trim()) { setFormError("Short name is required."); return; }
+    if (form.shortName.trim().length > 20) { setFormError("Short name must be ≤ 20 characters."); return; }
+    if (form.description.trim().length > 200) { setFormError("Description must be ≤ 200 characters."); return; }
+    const cat = resolvedCategory();
+    if (!cat) { setFormError("Category is required."); return; }
+    setFormError("");
+    setSaving(true);
+    const ok = await onUpdate(team.id, { ...form, category: cat, categoryInput: "" });
+    setSaving(false);
+    if (ok) {
+      setSavedMsg("Saved.");
+      setTimeout(() => setSavedMsg(""), 2000);
+    } else {
+      setFormError("Failed to save.");
+    }
+  }
+
+  const memberIds = new Set(team.members.map((m) => m.userId));
+  const availablePlayers = editPlayers.filter((p) => !memberIds.has(p.id));
+
+  return (
+    <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Team</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 mt-2">
+          {/* Icon picker */}
+          <div className="space-y-1">
+            <Label>Icon <span className="text-gray-400 text-xs">(optional)</span></Label>
+            <div className="flex flex-wrap gap-1">
+              {TEAM_ICONS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, icon: f.icon === emoji ? "" : emoji }))}
+                  className={`text-xl p-1 rounded border transition-colors ${
+                    form.icon === emoji
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-transparent hover:border-gray-300"
+                  }`}
+                  aria-label={`Select icon ${emoji}`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-1 mt-3 pt-2 border-t border-gray-200">
+              {TEAM_COLOR_CIRCLES.map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, icon: f.icon === value ? "" : value }))}
+                  className={`p-1 rounded-full border transition-colors ${
+                    form.icon === value
+                      ? "border-blue-500 ring-2 ring-blue-300"
+                      : "border-transparent hover:border-gray-400"
+                  }`}
+                  aria-label={`Select ${label} circle`}
+                  title={label}
+                >
+                  <TeamIcon icon={value} size={22} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Short Name */}
+          <div className="space-y-1">
+            <Label htmlFor="edit-shortName">Short Name <span className="text-gray-400 text-xs">(max 20 chars)</span></Label>
+            <Input
+              id="edit-shortName"
+              maxLength={20}
+              value={form.shortName}
+              onChange={(e) => setForm((f) => ({ ...f, shortName: e.target.value }))}
+            />
+          </div>
+
+          {/* Description */}
+          <div className="space-y-1">
+            <Label htmlFor="edit-description">
+              Description{" "}
+              <span className="text-gray-400 text-xs">
+                (optional, max 200 chars — {form.description.length}/200)
+              </span>
+            </Label>
+            <Textarea
+              id="edit-description"
+              maxLength={200}
+              rows={3}
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            />
+          </div>
+
+          {/* Category */}
+          <div className="space-y-1">
+            <Label>Category <span className="text-gray-400 text-xs">(required)</span></Label>
+            {categories.length > 0 && !form.categoryInput && (
+              <Select
+                value={form.category}
+                onValueChange={(val) => setForm((f) => ({ ...f, category: val, categoryInput: "" }))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select existing or type new below" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Input
+              value={form.categoryInput}
+              onChange={(e) => setForm((f) => ({ ...f, categoryInput: e.target.value, category: "" }))}
+              placeholder={categories.length > 0 ? "Or type a new category…" : "Type a category…"}
+            />
+          </div>
+
+          {/* Club */}
+          {myClubs.length > 0 && (
+            <div className="space-y-1">
+              <Label>Club <span className="text-gray-400 text-xs">(optional)</span></Label>
+              <Select
+                value={form.clubId || "__none__"}
+                onValueChange={(val) => setForm((f) => ({ ...f, clubId: val === "__none__" ? "" : val }))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All clubs (no restriction)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">All clubs (no restriction)</SelectItem>
+                  {myClubs.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Members */}
+          <div className="space-y-2">
+            <Label>Members</Label>
+            {team.members.length > 0 ? (
+              <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-gray-50">
+                {team.members.map((m) => (
+                  <span
+                    key={m.userId}
+                    className="inline-flex items-center gap-1 rounded bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-800"
+                  >
+                    <Avatar className="h-4 w-4 text-[8px]">
+                      {m.user.profileImage && <AvatarImage src={m.user.profileImage} alt={initials(m.user)} />}
+                      <AvatarFallback className="bg-blue-100 text-blue-700 text-[8px]">{initials(m.user)}</AvatarFallback>
+                    </Avatar>
+                    {`${m.user.firstName ?? ""} ${m.user.lastName ?? ""}`.trim() || m.userId}
+                    <button
+                      type="button"
+                      aria-label="Remove member"
+                      onClick={() => onRemoveMember(team.id, m.userId)}
+                      className="ml-0.5 hover:text-red-600"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400">No members yet.</p>
+            )}
+            {editPlayersLoading ? (
+              <p className="text-xs text-gray-400">Loading players…</p>
+            ) : availablePlayers.length > 0 ? (
+              <Select onValueChange={(userId) => onAddMember(team.id, userId)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Add a member…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availablePlayers.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {`${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.id}
+                      {p.role && p.role !== "PLAYER" && (
+                        <span className="ml-1 text-gray-400 text-xs">({p.role})</span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+          </div>
+
+          {formError && <p className="text-sm text-red-600">{formError}</p>}
+          {savedMsg && <p className="text-sm text-green-600">{savedMsg}</p>}
+
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" onClick={onClose}>Close</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
