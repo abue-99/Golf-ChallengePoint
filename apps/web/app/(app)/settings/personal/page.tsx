@@ -100,7 +100,7 @@ type UserProfile = {
 };
 
 type Club = { id: string; name: string };
-type UserClub = { id: string; clubId: string; club: Club };
+type UserClub = { id: string; clubId: string; club: Club | null };
 
 // ── Change Password Dialog ────────────────────────────────────────────────────
 
@@ -535,7 +535,7 @@ type CoachUser = {
   lastName: string | null;
   profileImage: string | null;
   email: string;
-  userClubs?: { clubId: string; club: { id: string; name: string } }[];
+  userClubs?: { clubId: string; club: { id: string; name: string } | null }[];
 };
 
 function coachDisplayName(c: CoachUser) {
@@ -563,10 +563,10 @@ function MyClubsAndCoachesSection() {
       fetch("/api/clubs").then((r) => r.json()),
       fetch("/api/clubs/my").then((r) => r.json()),
     ]).then(([available, my, clubs, myClubsData]) => {
-      setAvailableCoaches(Array.isArray(available) ? available : []);
-      setMyCoaches(Array.isArray(my) ? my : []);
-      setAllClubs(Array.isArray(clubs) ? clubs : []);
-      setMyClubs(Array.isArray(myClubsData) ? myClubsData : []);
+      setAvailableCoaches(Array.isArray(available) ? available.filter(Boolean) : []);
+      setMyCoaches(Array.isArray(my) ? my.filter(Boolean) : []);
+      setAllClubs(Array.isArray(clubs) ? clubs.filter(Boolean) : []);
+      setMyClubs(Array.isArray(myClubsData) ? myClubsData.filter(Boolean) : []);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -646,15 +646,15 @@ function MyClubsAndCoachesSection() {
         <Label>Clubs &amp; Academies</Label>
         {myClubs.length > 0 && (
           <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-gray-50">
-            {myClubs.map((uc) => (
+            {myClubs.filter((uc) => uc.club).map((uc) => (
               <span
                 key={uc.clubId}
                 className="inline-flex items-center gap-1 rounded bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-800"
               >
-                {uc.club.name}
+                {uc.club!.name}
                 <button
                   type="button"
-                  aria-label={`Remove ${uc.club.name}`}
+                  aria-label={`Remove ${uc.club!.name}`}
                   onClick={() => handleRemoveClub(uc.clubId)}
                   disabled={clubsLoading}
                   className="ml-0.5 hover:text-red-600"
@@ -710,7 +710,7 @@ function MyClubsAndCoachesSection() {
                   <div className="font-medium leading-tight">{coachDisplayName(coach)}</div>
                   {coach.userClubs && coach.userClubs.length > 0 && (
                     <div className="text-xs text-gray-500 leading-tight">
-                      {coach.userClubs.map((uc) => uc.club.name).join(", ")}
+                      {coach.userClubs.map((uc) => uc.club?.name ?? "").filter(Boolean).join(", ")}
                     </div>
                   )}
                 </div>
@@ -742,7 +742,7 @@ function MyClubsAndCoachesSection() {
                 <SelectItem key={c.id} value={c.id}>
                   {coachDisplayName(c)}
                   {c.userClubs && c.userClubs.length > 0 &&
-                    ` (${c.userClubs.map((uc) => uc.club.name).join(", ")})`}
+                    ` (${c.userClubs.map((uc) => uc.club?.name ?? "").filter(Boolean).join(", ")})`}
                 </SelectItem>
               ))}
             </SelectContent>

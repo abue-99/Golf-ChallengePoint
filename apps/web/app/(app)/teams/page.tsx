@@ -85,7 +85,7 @@ type Player = {
   timezone?: string | null;
   lastLogin?: string | null;
   role?: string;
-  userClubs?: { clubId: string; club: { id: string; name: string } }[];
+  userClubs?: { clubId: string; club: { id: string; name: string } | null }[];
 };
 
 type TeamMember = {
@@ -956,7 +956,7 @@ function PlayerDetailDialog({
               <div className="flex justify-between gap-2">
                 <span className="font-medium text-gray-500 shrink-0">Clubs</span>
                 <span className="text-right">
-                  {player.userClubs.map((uc) => uc.club.name).join(", ")}
+                  {player.userClubs.map((uc) => uc.club?.name ?? "").filter(Boolean).join(", ")}
                 </span>
               </div>
             )}
@@ -1137,7 +1137,7 @@ function PlayersSection({
             const name = `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.email || "—";
             const playerInitials = `${p.firstName?.[0] ?? ""}${p.lastName?.[0] ?? ""}`.toUpperCase() || "?";
             const isInactive = !p.lastLogin;
-            const clubs = p.userClubs?.map((uc) => uc.club.name) ?? [];
+            const clubs = p.userClubs?.map((uc) => uc.club?.name ?? "").filter(Boolean) ?? [];
 
             return (
               <div
