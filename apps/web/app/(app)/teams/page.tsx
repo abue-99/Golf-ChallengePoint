@@ -301,7 +301,7 @@ export default function TeamsPage() {
   return (
     <div className="p-6 space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Teams</h1>
+        <h1 className="text-2xl font-bold">Players &amp; Teams</h1>
         <Button
           size="sm"
           onClick={() => { setShowForm((v) => !v); setForm(EMPTY_FORM); setFormError(""); }}
@@ -588,6 +588,9 @@ export default function TeamsPage() {
           onRemoveMember={handleRemoveMember}
         />
       )}
+
+      {/* ── Players Section ── */}
+      <PlayersSection players={allPlayers} />
     </div>
   );
 }
@@ -863,5 +866,75 @@ function EditTeamDialog({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ── Players Section ───────────────────────────────────────────────────────────
+
+function PlayersSection({
+  players,
+}: {
+  players: Player[];
+}) {
+  const [search, setSearch] = useState("");
+
+  const filtered = players.filter((p) => {
+    const q = search.toLowerCase();
+    const name = `${p.firstName ?? ""} ${p.lastName ?? ""}`.toLowerCase();
+    return name.includes(q) || p.id.toLowerCase().includes(q);
+  });
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold">Players</h2>
+
+      <div className="relative w-full max-w-xs">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+        <Input
+          className="pl-8"
+          placeholder="Search players…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      {players.length === 0 ? (
+        <p className="text-sm text-gray-500">No players found.</p>
+      ) : filtered.length === 0 ? (
+        <p className="text-sm text-gray-500">No matching players found.</p>
+      ) : (
+        <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+              <tr>
+                <th className="px-4 py-3 text-left w-10"></th>
+                <th className="px-4 py-3 text-left">Name</th>
+                <th className="px-4 py-3 text-left">Club</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {filtered.map((p) => {
+                const name = `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || "—";
+                const playerInitials = `${p.firstName?.[0] ?? ""}${p.lastName?.[0] ?? ""}`.toUpperCase() || "?";
+                return (
+                  <tr key={p.id} className="align-middle hover:bg-gray-50">
+                    <td className="px-4 py-2">
+                      <Avatar className="h-7 w-7 text-xs">
+                        {p.profileImage && <AvatarImage src={p.profileImage} alt={playerInitials} />}
+                        <AvatarFallback className="bg-blue-100 text-blue-700">{playerInitials}</AvatarFallback>
+                      </Avatar>
+                    </td>
+                    <td className="px-4 py-2 font-medium whitespace-nowrap">{name}</td>
+                    <td className="px-4 py-2 text-gray-500">
+                      <span className="italic text-gray-400">—</span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 }
