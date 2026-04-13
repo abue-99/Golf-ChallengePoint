@@ -1,50 +1,17 @@
 "use client";
 import Image from "next/image";
-import { useState, useEffect } from "react";
-import {
-  Home,
-  Calendar,
-  CheckSquare,
-  BarChart,
-  Settings,
-  User,
-  Menu,
-} from "lucide-react";
+import { useState } from "react";
+import { User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import Sidebar, { type NavItem } from "@/components/sidebar";
 import AuthModal from "@/components/AuthModal";
 
-const navItems: NavItem[] = [
-  { href: "/login", icon: Home, label: "Dashboard" },
-  { href: "/login", icon: Calendar, label: "Today" },
-  { href: "/login", icon: CheckSquare, label: "Tasks" },
-  { href: "/login", icon: BarChart, label: "Stats" },
-  { href: "/login", icon: Settings, label: "Settings" },
-];
-
 export default function WelcomePage() {
-  const [expanded, setExpanded] = useState(false);
-  const [authOpen, setAuthOpen] = useState(false);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && expanded) setExpanded(false);
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [expanded]);
+  const [authOpen, setAuthOpen] = useState(true);
 
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
       <header className="flex items-center bg-green-700 text-white h-14 px-4 gap-4 shadow-md flex-shrink-0">
-        <button
-          onClick={() => setExpanded((p) => !p)}
-          aria-label="Toggle sidebar"
-          className="flex items-center justify-center rounded p-1 -ml-1 transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-        >
-          <Menu size={22} className="text-white" />
-        </button>
         <Image
           src="/GolfChallengePoint_Logo_Inv_48x48.png"
           alt="Golf Challenge Point"
@@ -75,22 +42,17 @@ export default function WelcomePage() {
         />
 
       {/* Body */}
-      <div className="flex flex-row flex-1 overflow-hidden">
-        <Sidebar expanded={expanded} toggleSidebar={() => setExpanded((p) => !p)} navItems={navItems} />
-
-        {/* Main content */}
-        <main className="flex-1 overflow-auto flex items-start justify-end p-10">
-          <div className="max-w-sm text-right">
-            <h1 className="text-2xl font-bold text-[var(--golf-heading)] mb-2">
-              Willkommen bei Golf Challenge Point
-            </h1>
-            <p className="text-sm text-[var(--golf-muted-text)]">
-              Bitte melde dich an, um deine Challenges, Fortschritte und
-              Trainingseinheiten zu verwalten.
-            </p>
-          </div>
-        </main>
-      </div>
+      <main className="flex-1 overflow-auto flex items-start justify-start p-10">
+        <div className="max-w-sm text-left">
+          <h1 className="text-2xl font-bold text-[var(--golf-heading)] mb-2">
+            Willkommen bei Golf Challenge Point
+          </h1>
+          <p className="text-sm text-[var(--golf-muted-text)]">
+            Bitte melde dich an, um deine Challenges, Fortschritte und
+            Trainingseinheiten zu verwalten.
+          </p>
+        </div>
+      </main>
     </div>
   );
 }

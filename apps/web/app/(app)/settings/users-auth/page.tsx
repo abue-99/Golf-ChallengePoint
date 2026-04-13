@@ -696,7 +696,7 @@ export default function UsersAuthPage() {
                       const roleOptions = getRoleOptions(user.role);
 
                       return (
-                        <TableRow key={user.id}>
+                        <TableRow key={user.id} onDoubleClick={() => openEdit(user)} className="cursor-pointer">
                           {/* Avatar */}
                           <TableCell>
                             <UserAvatar user={user} />

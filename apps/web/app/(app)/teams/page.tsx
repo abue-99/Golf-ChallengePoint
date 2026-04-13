@@ -73,7 +73,7 @@ function TeamIcon({
   return <span className={`text-[${size}px] leading-none ${className}`}>{icon}</span>;
 }
 
-type ClubOption = { id: string; name: string };
+type ClubOption = { id: string; shortId?: string | null; name: string };
 
 type Player = {
   id: string;
@@ -301,7 +301,7 @@ export default function TeamsPage() {
   return (
     <div className="p-6 space-y-6 max-w-6xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Players &amp; Teams</h1>
+        <h1 className="text-2xl font-bold">Teams</h1>
         <Button
           size="sm"
           onClick={() => { setShowForm((v) => !v); setForm(EMPTY_FORM); setFormError(""); }}
@@ -458,12 +458,12 @@ export default function TeamsPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
               <tr>
-                <th className="px-4 py-3 text-left">Team</th>
-                <th className="px-4 py-3 text-left">Description</th>
-                <th className="px-4 py-3 text-left">Category</th>
-                <th className="px-4 py-3 text-left">Club</th>
-                <th className="px-4 py-3 text-left">Members</th>
-                <th className="px-4 py-3 text-right"></th>
+                <th className="px-4 py-2 text-left">Team</th>
+                <th className="px-4 py-2 text-left">Description</th>
+                <th className="px-4 py-2 text-left">Category</th>
+                <th className="px-4 py-2 text-left">Club</th>
+                <th className="px-4 py-2 text-left">Members</th>
+                <th className="px-4 py-2 text-right"></th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -472,7 +472,9 @@ export default function TeamsPage() {
                 const isAddingToThisTeam = addMemberTeamId === team.id;
                 const availablePlayers = (isAddingToThisTeam ? teamPlayers : allPlayers)
                   .filter((p) => !teamMemberIds.has(p.id));
-                const clubName = myClubs.find((c) => c.id === team.clubId)?.name;
+                const club = myClubs.find((c) => c.id === team.clubId);
+                const clubDisplayName = club ? (club.shortId || club.name) : null;
+                const clubFullName = club?.name;
                 return (
                   <tr
                     key={team.id}
@@ -480,20 +482,22 @@ export default function TeamsPage() {
                     onDoubleClick={() => setEditingTeam(team)}
                     title="Double-click to edit"
                   >
-                    <td className="px-4 py-3 font-medium whitespace-nowrap">
+                    <td className="px-4 py-1.5 font-medium whitespace-nowrap">
                       <span className="flex items-center gap-1.5">
                         {team.icon && <TeamIcon icon={team.icon} size={18} />}
                         {team.shortName}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 max-w-xs">
+                    <td className="px-4 py-1.5 text-gray-600 max-w-xs">
                       {team.description || <span className="text-gray-400 italic">—</span>}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-gray-500">{team.category}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-gray-500">
-                      {clubName ?? <span className="text-gray-400 italic">—</span>}
+                    <td className="px-4 py-1.5 whitespace-nowrap text-gray-500">{team.category}</td>
+                    <td className="px-4 py-1.5 whitespace-nowrap text-gray-500">
+                      {clubDisplayName
+                        ? <span title={clubFullName}>{clubDisplayName}</span>
+                        : <span className="text-gray-400 italic">—</span>}
                     </td>
-                    <td className="px-4 py-3 min-w-[160px]">
+                    <td className="px-4 py-1.5 min-w-[160px]">
                       <div className="flex flex-wrap items-center gap-1">
                         {team.members.map((m) => (
                           <div key={m.userId} className="relative group">
@@ -553,7 +557,7 @@ export default function TeamsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-1.5 text-right">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -566,7 +570,7 @@ export default function TeamsPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-red-500 hover:text-red-700"
+                        className="text-gray-400 hover:text-gray-600"
                         onClick={(e) => { e.stopPropagation(); handleDelete(team.id); }}
                         aria-label="Delete team"
                       >
@@ -890,7 +894,7 @@ function PlayersSection({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">Players</h2>
+      <h2 className="text-2xl font-bold">Players</h2>
 
       <div className="relative w-full max-w-xs">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
@@ -911,9 +915,9 @@ function PlayersSection({
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
               <tr>
-                <th className="px-4 py-3 text-left w-10"></th>
-                <th className="px-4 py-3 text-left">Name</th>
-                <th className="px-4 py-3 text-left">Club</th>
+                <th className="px-4 py-2 text-left w-10"></th>
+                <th className="px-4 py-2 text-left">Name</th>
+                <th className="px-4 py-2 text-left">Club</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -922,14 +926,14 @@ function PlayersSection({
                 const playerInitials = `${p.firstName?.[0] ?? ""}${p.lastName?.[0] ?? ""}`.toUpperCase() || "?";
                 return (
                   <tr key={p.id} className="align-middle hover:bg-gray-50">
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-1">
                       <Avatar className="h-7 w-7 text-xs">
                         {p.profileImage && <AvatarImage src={p.profileImage} alt={playerInitials} />}
                         <AvatarFallback className="bg-blue-100 text-blue-700">{playerInitials}</AvatarFallback>
                       </Avatar>
                     </td>
-                    <td className="px-4 py-2 font-medium whitespace-nowrap">{name}</td>
-                    <td className="px-4 py-2 text-gray-500">
+                    <td className="px-4 py-1 font-medium whitespace-nowrap">{name}</td>
+                    <td className="px-4 py-1 text-gray-500">
                       <span className="italic text-gray-400">—</span>
                     </td>
                   </tr>
