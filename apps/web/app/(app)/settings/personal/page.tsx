@@ -584,24 +584,25 @@ function ProfileSection() {
       </div>
 
       <div className="flex items-center gap-4">
-        <Button onClick={handleSave} disabled={saving}>
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          className="bg-green-600 hover:bg-green-700 text-white"
+        >
           {saving ? "Saving…" : "Save"}
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => setChangePasswordOpen(true)}
+          className="gap-2 ml-4"
+        >
+          <KeyRound size={15} />
+          Change Password
         </Button>
         {savedMsg && <span className="text-sm text-green-600">{savedMsg}</span>}
         {errorMsg && (
           <span className="text-sm text-red-600">{errorMsg}</span>
         )}
-      </div>
-
-      <div className="pt-2 border-t">
-        <Button
-          variant="outline"
-          onClick={() => setChangePasswordOpen(true)}
-          className="gap-2"
-        >
-          <KeyRound size={15} />
-          Change Password
-        </Button>
       </div>
 
       <ChangePasswordDialog

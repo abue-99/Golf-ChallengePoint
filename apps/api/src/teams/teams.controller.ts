@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -21,35 +22,48 @@ import { TeamsService } from './teams.service';
 export class TeamsController {
   constructor(private readonly teamsService: TeamsService) {}
 
-  private requireCoach(user: AuthenticatedUser) {
-    if ((user.role as string) !== 'COACH') throw new ForbiddenException('Only coaches can manage teams');
+  private requireCoachOrAdmin(user: AuthenticatedUser) {
+    const role = user.role as string;
+    if (role !== 'COACH' && role !== 'ADMIN') {
+      throw new ForbiddenException('Only coaches and admins can manage teams');
+    }
   }
 
   @Get()
   getMyTeams(@CurrentUser() user: AuthenticatedUser) {
-    this.requireCoach(user);
+    this.requireCoachOrAdmin(user);
     return this.teamsService.getCoachTeams(user.id);
   }
 
   @Get('categories')
   getCategories(@CurrentUser() user: AuthenticatedUser) {
-    this.requireCoach(user);
+    this.requireCoachOrAdmin(user);
     return this.teamsService.getCoachCategories(user.id);
   }
 
   @Get('club-players')
-  getClubPlayers(@CurrentUser() user: AuthenticatedUser) {
-    this.requireCoach(user);
-    return this.teamsService.getClubPlayers(user.id);
+  getClubPlayers(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('clubId') clubId?: string,
+  ) {
+    this.requireCoachOrAdmin(user);
+    return this.teamsService.getClubUsers(user.id, clubId);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   createTeam(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: { shortName: string; description: string; category: string },
+    @Body()
+    body: {
+      icon?: string;
+      shortName: string;
+      description?: string;
+      category: string;
+      clubId?: string;
+    },
   ) {
-    this.requireCoach(user);
+    this.requireCoachOrAdmin(user);
     return this.teamsService.createTeam(user.id, body);
   }
 
@@ -58,9 +72,16 @@ export class TeamsController {
   updateTeam(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
-    @Body() body: { shortName?: string; description?: string; category?: string },
+    @Body()
+    body: {
+      icon?: string;
+      shortName?: string;
+      description?: string;
+      category?: string;
+      clubId?: string | null;
+    },
   ) {
-    this.requireCoach(user);
+    this.requireCoachOrAdmin(user);
     return this.teamsService.updateTeam(user.id, id, body);
   }
 
@@ -70,7 +91,7 @@ export class TeamsController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
   ) {
-    this.requireCoach(user);
+    this.requireCoachOrAdmin(user);
     return this.teamsService.deleteTeam(user.id, id);
   }
 
@@ -81,7 +102,7 @@ export class TeamsController {
     @Param('id') id: string,
     @Body() body: { userId: string },
   ) {
-    this.requireCoach(user);
+    this.requireCoachOrAdmin(user);
     return this.teamsService.addMember(user.id, id, body.userId);
   }
 
@@ -92,7 +113,7 @@ export class TeamsController {
     @Param('id') id: string,
     @Param('userId') userId: string,
   ) {
-    this.requireCoach(user);
+    this.requireCoachOrAdmin(user);
     return this.teamsService.removeMember(user.id, id, userId);
   }
 }

@@ -17,6 +17,7 @@ export class TeamsService {
                 firstName: true,
                 lastName: true,
                 profileImage: true,
+                role: true,
               },
             },
           },
@@ -35,7 +36,28 @@ export class TeamsService {
     return teams.map((t) => t.category).filter(Boolean);
   }
 
-  async getClubPlayers(coachId: string) {
+  async getClubUsers(coachId: string, clubId?: string) {
+    if (clubId) {
+      // Return all users (any role) from the specified club
+      const members = await this.prisma.userClub.findMany({
+        where: { clubId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              profileImage: true,
+              role: true,
+            },
+          },
+        },
+        distinct: ['userId'],
+      });
+      return members.map((m) => m.user);
+    }
+
+    // No club specified: return all users from all clubs the coach belongs to
     const coachClubs = await this.prisma.userClub.findMany({
       where: { userId: coachId },
       select: { clubId: true },
@@ -43,7 +65,7 @@ export class TeamsService {
     const clubIds = coachClubs.map((c) => c.clubId);
 
     const members = await this.prisma.userClub.findMany({
-      where: { clubId: { in: clubIds }, user: { role: 'PLAYER' } },
+      where: { clubId: { in: clubIds } },
       include: {
         user: {
           select: {
@@ -51,6 +73,7 @@ export class TeamsService {
             firstName: true,
             lastName: true,
             profileImage: true,
+            role: true,
           },
         },
       },
@@ -60,9 +83,20 @@ export class TeamsService {
     return members.map((m) => m.user);
   }
 
+  // Keep backward-compat alias
+  getClubPlayers(coachId: string) {
+    return this.getClubUsers(coachId);
+  }
+
   async createTeam(
     coachId: string,
-    data: { shortName: string; description: string; category: string },
+    data: {
+      icon?: string;
+      shortName: string;
+      description?: string;
+      category: string;
+      clubId?: string;
+    },
   ) {
     return this.prisma.team.create({
       data: { ...data, coachId },
@@ -75,6 +109,7 @@ export class TeamsService {
                 firstName: true,
                 lastName: true,
                 profileImage: true,
+                role: true,
               },
             },
           },
@@ -86,7 +121,13 @@ export class TeamsService {
   async updateTeam(
     coachId: string,
     teamId: string,
-    data: { shortName?: string; description?: string; category?: string },
+    data: {
+      icon?: string;
+      shortName?: string;
+      description?: string;
+      category?: string;
+      clubId?: string | null;
+    },
   ) {
     const team = await this.prisma.team.findUnique({ where: { id: teamId } });
     if (!team) throw new NotFoundException('Team not found');
@@ -103,6 +144,7 @@ export class TeamsService {
                 firstName: true,
                 lastName: true,
                 profileImage: true,
+                role: true,
               },
             },
           },
@@ -151,6 +193,7 @@ export class TeamsService {
                 firstName: true,
                 lastName: true,
                 profileImage: true,
+                role: true,
               },
             },
           },
