@@ -94,12 +94,12 @@ export class TeamsService {
       icon?: string;
       shortName: string;
       description?: string;
-      category: string;
+      category?: string;
       clubId?: string;
     },
   ) {
     return this.prisma.team.create({
-      data: { ...data, coachId },
+      data: { ...data, category: data.category ?? '', coachId },
       include: {
         members: {
           include: {

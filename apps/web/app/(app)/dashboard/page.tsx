@@ -75,22 +75,23 @@ export default function Dashboard() {
           {/* Players/Teams tile – double-click navigates to /teams */}
           <Card
             className="shadow-sm hover:shadow-md transition-all border border-[var(--golf-muted)] cursor-pointer select-none"
+            onClick={() => router.push("/teams")}
             onDoubleClick={() => router.push("/teams")}
-            title="Double-click to open Players/Teams"
+            title="Click to open Players/Teams"
           >
             <CardHeader>
               <CardTitle className="text-sm text-[var(--golf-muted-text)]">
                 Players / Teams
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col gap-2">
+            <CardContent className="flex flex-row gap-6">
               <div className="flex items-center gap-2 text-2xl font-semibold text-[var(--golf-heading)]">
-                <span>{playerCount}</span>
                 <User className="h-5 w-5 text-[var(--golf-primary)]" />
+                <span>{playerCount}</span>
               </div>
               <div className="flex items-center gap-2 text-2xl font-semibold text-[var(--golf-heading)]">
-                <span>{teams.length}</span>
                 <Users className="h-5 w-5 text-[var(--golf-primary)]" />
+                <span>{teams.length}</span>
               </div>
             </CardContent>
           </Card>
