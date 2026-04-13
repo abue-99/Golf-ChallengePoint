@@ -171,6 +171,28 @@ export class AuthService {
     return user;
   }
 
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const match = await bcrypt.compare(currentPassword, user.passwordHash || '');
+    if (!match) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    const hash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: hash },
+    });
+  }
+
   async updateProfile(
     userId: string,
     data: {

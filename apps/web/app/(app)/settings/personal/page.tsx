@@ -2,10 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ChevronDown, ChevronRight, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronRight, KeyRound, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -96,6 +102,153 @@ type UserProfile = {
 type Club = { id: string; name: string };
 type UserClub = { id: string; clubId: string; club: Club };
 
+// ── Change Password Dialog ────────────────────────────────────────────────────
+
+function ChangePasswordDialog({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  function reset() {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setSaving(false);
+    setSuccessMsg("");
+    setErrorMsg("");
+  }
+
+  function handleOpenChange(v: boolean) {
+    if (!v) {
+      reset();
+      onClose();
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    if (newPassword.length < 8) {
+      setErrorMsg("New password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setErrorMsg("New passwords do not match.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = Array.isArray(data.message)
+          ? data.message.join(", ")
+          : data.message || data.error || "Failed to change password.";
+        setErrorMsg(msg);
+      } else {
+        setSuccessMsg("Password changed successfully.");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    } catch {
+      setErrorMsg("Network error. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Change Password</DialogTitle>
+        </DialogHeader>
+
+        {successMsg ? (
+          <p className="text-sm text-green-600 mt-2">{successMsg}</p>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+            <div className="space-y-1">
+              <Label htmlFor="cp-current">Current Password</Label>
+              <Input
+                id="cp-current"
+                type="password"
+                placeholder="••••••••"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                disabled={saving}
+                autoComplete="current-password"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="cp-new">
+                New Password{" "}
+                <span className="text-gray-400 text-xs">(min 8 characters)</span>
+              </Label>
+              <Input
+                id="cp-new"
+                type="password"
+                placeholder="••••••••"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                disabled={saving}
+                autoComplete="new-password"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="cp-confirm">Confirm New Password</Label>
+              <Input
+                id="cp-confirm"
+                type="password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={saving}
+                autoComplete="new-password"
+              />
+            </div>
+
+            {errorMsg && <p className="text-sm text-red-600">{errorMsg}</p>}
+
+            <div className="flex justify-end gap-2 pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleOpenChange(false)}
+                disabled={saving}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? "Saving…" : "Change Password"}
+              </Button>
+            </div>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function CollapsibleSection({
   title,
   defaultOpen = false,
@@ -141,6 +294,7 @@ function ProfileSection() {
   const [savedMsg, setSavedMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [fileSizeError, setFileSizeError] = useState("");
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   const [allClubs, setAllClubs] = useState<Club[]>([]);
   const [myClubs, setMyClubs] = useState<UserClub[]>([]);
@@ -438,6 +592,22 @@ function ProfileSection() {
           <span className="text-sm text-red-600">{errorMsg}</span>
         )}
       </div>
+
+      <div className="pt-2 border-t">
+        <Button
+          variant="outline"
+          onClick={() => setChangePasswordOpen(true)}
+          className="gap-2"
+        >
+          <KeyRound size={15} />
+          Change Password
+        </Button>
+      </div>
+
+      <ChangePasswordDialog
+        open={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
+      />
     </div>
   );
 }

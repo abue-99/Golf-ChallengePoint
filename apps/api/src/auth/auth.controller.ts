@@ -157,6 +157,24 @@ export class AuthController {
     return { ok: true };
   }
 
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: { currentPassword: string; newPassword: string },
+  ) {
+    if (!body.newPassword || body.newPassword.length < 8) {
+      throw new BadRequestException('New password must be at least 8 characters');
+    }
+    await this.authService.changePassword(
+      user.id,
+      body.currentPassword,
+      body.newPassword,
+    );
+    return { ok: true };
+  }
+
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   profile(@CurrentUser() user: AuthenticatedUser) {
