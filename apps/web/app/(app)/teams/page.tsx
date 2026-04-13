@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Trash2, Plus, UserPlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,11 +15,66 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+// Common icons represented as emoji for team assignment
+const TEAM_ICONS = [
+  "⛳", "🏌️", "🏆", "⭐", "🎯", "🔥", "💪", "🌟", "🦅", "🐯",
+  "🦁", "🚀", "🎖️", "🥇", "⚡", "🌊", "🏅", "🎽", "🧠", "💎",
+];
+
+// Colored circle icons stored as "circle:#hex"
+const TEAM_COLOR_CIRCLES: { value: string; label: string }[] = [
+  { value: "circle:#ef4444", label: "Red" },
+  { value: "circle:#f97316", label: "Orange" },
+  { value: "circle:#f59e0b", label: "Amber" },
+  { value: "circle:#eab308", label: "Yellow" },
+  { value: "circle:#84cc16", label: "Lime" },
+  { value: "circle:#22c55e", label: "Green" },
+  { value: "circle:#10b981", label: "Emerald" },
+  { value: "circle:#14b8a6", label: "Teal" },
+  { value: "circle:#06b6d4", label: "Cyan" },
+  { value: "circle:#3b82f6", label: "Blue" },
+  { value: "circle:#6366f1", label: "Indigo" },
+  { value: "circle:#8b5cf6", label: "Violet" },
+  { value: "circle:#ec4899", label: "Pink" },
+  { value: "circle:#f43f5e", label: "Rose" },
+  { value: "circle:#64748b", label: "Slate" },
+];
+
+/** Renders a team icon – either a coloured circle SVG or an emoji string. */
+function TeamIcon({
+  icon,
+  size = 22,
+  className = "",
+}: {
+  icon: string;
+  size?: number;
+  className?: string;
+}) {
+  if (icon.startsWith("circle:")) {
+    const color = icon.slice(7);
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 22 22"
+        className={className}
+        aria-hidden="true"
+      >
+        <circle cx="11" cy="11" r="10" fill={color} />
+      </svg>
+    );
+  }
+  return <span className={`text-[${size}px] leading-none ${className}`}>{icon}</span>;
+}
+
+type ClubOption = { id: string; name: string };
+
 type Player = {
   id: string;
   firstName: string | null;
   lastName: string | null;
   profileImage: string | null;
+  role?: string;
 };
 
 type TeamMember = {
@@ -30,24 +85,30 @@ type TeamMember = {
 
 type Team = {
   id: string;
+  icon: string | null;
   shortName: string;
-  description: string;
+  description: string | null;
   category: string;
+  clubId: string | null;
   members: TeamMember[];
 };
 
 type FormState = {
+  icon: string;
   shortName: string;
   description: string;
   category: string;
   categoryInput: string;
+  clubId: string;
 };
 
 const EMPTY_FORM: FormState = {
+  icon: "",
   shortName: "",
   description: "",
   category: "",
   categoryInput: "",
+  clubId: "",
 };
 
 function initials(p: Player) {
@@ -58,7 +119,8 @@ export default function TeamsPage() {
   const [role, setRole] = useState<string | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [allPlayers, setAllPlayers] = useState<Player[]>([]);
+  const [myClubs, setMyClubs] = useState<ClubOption[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
@@ -67,6 +129,9 @@ export default function TeamsPage() {
   const [saving, setSaving] = useState(false);
 
   const [addMemberTeamId, setAddMemberTeamId] = useState<string | null>(null);
+  // Players filtered for the "add member" dropdown of a specific team
+  const [teamPlayers, setTeamPlayers] = useState<Player[]>([]);
+  const [teamPlayersLoading, setTeamPlayersLoading] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -75,15 +140,20 @@ export default function TeamsPage() {
   }, []);
 
   useEffect(() => {
-    if (role !== "COACH") return;
+    if (role !== "COACH" && role !== "ADMIN") return;
     Promise.all([
       fetch("/api/teams").then((r) => r.json()),
       fetch("/api/teams/categories").then((r) => r.json()),
       fetch("/api/teams/club-players").then((r) => r.json()),
-    ]).then(([t, c, p]) => {
+      fetch("/api/clubs/my").then((r) => r.json()),
+    ]).then(([t, c, p, clubs]) => {
       setTeams(Array.isArray(t) ? t : []);
       setCategories(Array.isArray(c) ? c : []);
-      setPlayers(Array.isArray(p) ? p : []);
+      setAllPlayers(Array.isArray(p) ? p : []);
+      // clubs/my returns UserClub[] with club embedded
+      if (Array.isArray(clubs)) {
+        setMyClubs(clubs.map((uc: { club: ClubOption }) => uc.club).filter(Boolean));
+      }
       setLoading(false);
     });
   }, [role]);
@@ -94,13 +164,11 @@ export default function TeamsPage() {
 
   function validateForm(): boolean {
     if (!form.shortName.trim()) { setFormError("Short name is required."); return false; }
-    if (form.shortName.trim().length > 15) { setFormError("Short name must be ≤ 15 characters."); return false; }
-    if (!form.description.trim()) { setFormError("Description is required."); return false; }
-    if (form.description.trim().length < 100) { setFormError("Description must be at least 100 characters."); return false; }
+    if (form.shortName.trim().length > 20) { setFormError("Short name must be ≤ 20 characters."); return false; }
     if (form.description.trim().length > 200) { setFormError("Description must be ≤ 200 characters."); return false; }
     const cat = resolvedCategory();
     if (!cat) { setFormError("Category is required."); return false; }
-    if (cat.length > 15) { setFormError("Category must be ≤ 15 characters."); return false; }
+    if (cat.length > 50) { setFormError("Category must be ≤ 50 characters."); return false; }
     setFormError("");
     return true;
   }
@@ -112,9 +180,11 @@ export default function TeamsPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        icon: form.icon || null,
         shortName: form.shortName.trim(),
-        description: form.description.trim(),
+        description: form.description.trim() || null,
         category: resolvedCategory(),
+        clubId: form.clubId || null,
       }),
     });
     if (res.ok) {
@@ -133,6 +203,21 @@ export default function TeamsPage() {
   async function handleDelete(teamId: string) {
     const res = await fetch(`/api/teams/${teamId}`, { method: "DELETE" });
     if (res.ok) setTeams((prev) => prev.filter((t) => t.id !== teamId));
+  }
+
+  async function openAddMember(team: Team) {
+    setAddMemberTeamId(team.id);
+    setTeamPlayersLoading(true);
+    try {
+      const url = team.clubId
+        ? `/api/teams/club-players?clubId=${encodeURIComponent(team.clubId)}`
+        : "/api/teams/club-players";
+      const res = await fetch(url);
+      const data = await res.json();
+      setTeamPlayers(Array.isArray(data) ? data : []);
+    } finally {
+      setTeamPlayersLoading(false);
+    }
   }
 
   async function handleAddMember(teamId: string, userId: string) {
@@ -158,10 +243,10 @@ export default function TeamsPage() {
     }
   }
 
-  if (role && role !== "COACH") {
+  if (role && role !== "COACH" && role !== "ADMIN") {
     return (
       <div className="p-6">
-        <p className="text-sm text-gray-500">Only coaches can manage teams.</p>
+        <p className="text-sm text-gray-500">Only coaches and admins can manage teams.</p>
       </div>
     );
   }
@@ -185,11 +270,53 @@ export default function TeamsPage() {
         <div className="rounded-xl border bg-white p-5 space-y-4 shadow-sm">
           <h2 className="text-sm font-semibold text-gray-700">New Team</h2>
 
+          {/* Icon picker */}
           <div className="space-y-1">
-            <Label htmlFor="shortName">Short Name <span className="text-gray-400 text-xs">(max 15 chars)</span></Label>
+            <Label>Icon <span className="text-gray-400 text-xs">(optional)</span></Label>
+            {/* Emoji icons */}
+            <div className="flex flex-wrap gap-1">
+              {TEAM_ICONS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, icon: f.icon === emoji ? "" : emoji }))}
+                  className={`text-xl p-1 rounded border transition-colors ${
+                    form.icon === emoji
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-transparent hover:border-gray-300"
+                  }`}
+                  aria-label={`Select icon ${emoji}`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+            {/* Colored circle icons */}
+            <div className="flex flex-wrap gap-1 pt-1">
+              {TEAM_COLOR_CIRCLES.map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, icon: f.icon === value ? "" : value }))}
+                  className={`p-1 rounded-full border transition-colors ${
+                    form.icon === value
+                      ? "border-blue-500 ring-2 ring-blue-300"
+                      : "border-transparent hover:border-gray-400"
+                  }`}
+                  aria-label={`Select ${label} circle`}
+                  title={label}
+                >
+                  <TeamIcon icon={value} size={22} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="shortName">Short Name <span className="text-gray-400 text-xs">(max 20 chars)</span></Label>
             <Input
               id="shortName"
-              maxLength={15}
+              maxLength={20}
               value={form.shortName}
               onChange={(e) => setForm((f) => ({ ...f, shortName: e.target.value }))}
               placeholder="e.g. Team Alpha"
@@ -200,13 +327,13 @@ export default function TeamsPage() {
             <Label htmlFor="description">
               Description{" "}
               <span className="text-gray-400 text-xs">
-                (100–200 chars, {form.description.length}/200)
+                (optional, max 200 chars — {form.description.length}/200)
               </span>
             </Label>
             <Textarea
               id="description"
               maxLength={200}
-              rows={4}
+              rows={3}
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               placeholder="Describe the team's purpose and goals…"
@@ -214,7 +341,7 @@ export default function TeamsPage() {
           </div>
 
           <div className="space-y-1">
-            <Label>Category <span className="text-gray-400 text-xs">(max 15 chars)</span></Label>
+            <Label>Category <span className="text-gray-400 text-xs">(required)</span></Label>
             {categories.length > 0 && !form.categoryInput && (
               <Select
                 value={form.category}
@@ -231,12 +358,31 @@ export default function TeamsPage() {
               </Select>
             )}
             <Input
-              maxLength={15}
               value={form.categoryInput}
               onChange={(e) => setForm((f) => ({ ...f, categoryInput: e.target.value, category: "" }))}
               placeholder={categories.length > 0 ? "Or type a new category…" : "Type a category…"}
             />
           </div>
+
+          {myClubs.length > 0 && (
+            <div className="space-y-1">
+              <Label>Club <span className="text-gray-400 text-xs">(optional – limits member selection)</span></Label>
+              <Select
+                value={form.clubId || "__none__"}
+                onValueChange={(val) => setForm((f) => ({ ...f, clubId: val === "__none__" ? "" : val }))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All clubs (no restriction)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">All clubs (no restriction)</SelectItem>
+                  {myClubs.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {formError && <p className="text-sm text-red-600">{formError}</p>}
 
@@ -257,7 +403,7 @@ export default function TeamsPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
               <tr>
-                <th className="px-4 py-3 text-left">Name</th>
+                <th className="px-4 py-3 text-left">Team</th>
                 <th className="px-4 py-3 text-left">Category</th>
                 <th className="px-4 py-3 text-left">Description</th>
                 <th className="px-4 py-3 text-left">Members</th>
@@ -266,13 +412,22 @@ export default function TeamsPage() {
             </thead>
             <tbody className="divide-y">
               {teams.map((team) => {
-                const teamPlayerIds = new Set(team.members.map((m) => m.userId));
-                const availablePlayers = players.filter((p) => !teamPlayerIds.has(p.id));
+                const teamMemberIds = new Set(team.members.map((m) => m.userId));
+                const isAddingToThisTeam = addMemberTeamId === team.id;
+                const availablePlayers = (isAddingToThisTeam ? teamPlayers : allPlayers)
+                  .filter((p) => !teamMemberIds.has(p.id));
                 return (
                   <tr key={team.id} className="align-top">
-                    <td className="px-4 py-3 font-medium whitespace-nowrap">{team.shortName}</td>
+                    <td className="px-4 py-3 font-medium whitespace-nowrap">
+                      <span className="flex items-center gap-1.5">
+                        {team.icon && <TeamIcon icon={team.icon} size={18} />}
+                        {team.shortName}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 whitespace-nowrap text-gray-500">{team.category}</td>
-                    <td className="px-4 py-3 text-gray-600 max-w-xs">{team.description}</td>
+                    <td className="px-4 py-3 text-gray-600 max-w-xs">
+                      {team.description || <span className="text-gray-400 italic">—</span>}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap items-center gap-1">
                         {team.members.map((m) => (
@@ -290,39 +445,46 @@ export default function TeamsPage() {
                             </button>
                           </div>
                         ))}
-                        {availablePlayers.length > 0 && (
-                          addMemberTeamId === team.id ? (
-                            <div className="flex items-center gap-1">
+                        {isAddingToThisTeam ? (
+                          <div className="flex items-center gap-1">
+                            {teamPlayersLoading ? (
+                              <span className="text-xs text-gray-400">Loading…</span>
+                            ) : availablePlayers.length > 0 ? (
                               <Select onValueChange={(userId) => handleAddMember(team.id, userId)}>
-                                <SelectTrigger className="h-7 text-xs w-40">
-                                  <SelectValue placeholder="Select player…" />
+                                <SelectTrigger className="h-7 text-xs w-44">
+                                  <SelectValue placeholder="Select member…" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {availablePlayers.map((p) => (
                                     <SelectItem key={p.id} value={p.id}>
                                       {`${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.id}
+                                      {p.role && p.role !== "PLAYER" && (
+                                        <span className="ml-1 text-gray-400 text-xs">({p.role})</span>
+                                      )}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() => setAddMemberTeamId(null)}
-                              >
-                                <X size={12} />
-                              </Button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setAddMemberTeamId(team.id)}
-                              className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500"
-                              aria-label="Add member"
+                            ) : (
+                              <span className="text-xs text-gray-400">No available members</span>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => setAddMemberTeamId(null)}
                             >
-                              <UserPlus size={12} />
-                            </button>
-                          )
+                              <X size={12} />
+                            </Button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => openAddMember(team)}
+                            className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500"
+                            aria-label="Add member"
+                          >
+                            <UserPlus size={12} />
+                          </button>
                         )}
                       </div>
                     </td>

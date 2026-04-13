@@ -50,6 +50,7 @@ model Club {
   country   String?
   createdAt DateTime   @default(now())
   userClubs UserClub[]
+  teams     Team[]     @relation("TeamClub")
 
   @@map("clubs")
 }
@@ -68,11 +69,14 @@ model UserClub {
 
 model Team {
   id          String       @id @default(cuid())
+  icon        String?
   shortName   String
-  description String
+  description String?
   category    String
   coachId     String
+  clubId      String?
   coach       User         @relation("CoachTeams", fields: [coachId], references: [id], onDelete: Cascade)
+  club        Club?        @relation("TeamClub", fields: [clubId], references: [id])
   members     TeamMember[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt

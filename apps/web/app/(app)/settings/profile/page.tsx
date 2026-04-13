@@ -400,7 +400,11 @@ export default function ProfilePage() {
       </div>
 
       <div className="flex items-center gap-4">
-        <Button onClick={handleSave} disabled={saving}>
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          className="bg-green-600 hover:bg-green-700 text-white"
+        >
           {saving ? "Saving…" : "Save"}
         </Button>
         {savedMsg && <span className="text-sm text-green-600">{savedMsg}</span>}

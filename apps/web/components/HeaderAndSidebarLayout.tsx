@@ -26,7 +26,7 @@ export default function HeaderAndSidebarLayout({
    return () => document.removeEventListener('keydown', handleKeyDown);
  }, [expanded]);
 
- const navItems = role === 'COACH'
+ const navItems = (role === 'COACH' || role === 'ADMIN')
    ? [
        { href: '/', icon: Home, label: 'Dashboard' },
        { href: '/teams', icon: Users, label: 'Teams' },

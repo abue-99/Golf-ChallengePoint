@@ -22,6 +22,7 @@ async function getUserRole(): Promise<string> {
 export default async function SettingsPage() {
   const role = await getUserRole();
   const isSysAdmin = role === "SYSADMIN";
+  const isAdminOrSysAdmin = role === "ADMIN" || role === "SYSADMIN";
 
   const TILES: Tile[] = [
     {
@@ -42,10 +43,14 @@ export default async function SettingsPage() {
           },
         ]
       : []),
-    {
-      title: "Users & Authorizations",
-      links: [{ label: "Users", href: "/settings/users-auth" }],
-    },
+    ...(isAdminOrSysAdmin
+      ? [
+          {
+            title: "Users & Authorizations",
+            links: [{ label: "Users", href: "/settings/users-auth" }],
+          },
+        ]
+      : []),
   ];
 
   return (
