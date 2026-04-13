@@ -21,6 +21,52 @@ const TEAM_ICONS = [
   "🦁", "🚀", "🎖️", "🥇", "⚡", "🌊", "🏅", "🎽", "🧠", "💎",
 ];
 
+// Colored circle icons stored as "circle:#hex"
+const TEAM_COLOR_CIRCLES: { value: string; label: string }[] = [
+  { value: "circle:#ef4444", label: "Red" },
+  { value: "circle:#f97316", label: "Orange" },
+  { value: "circle:#f59e0b", label: "Amber" },
+  { value: "circle:#eab308", label: "Yellow" },
+  { value: "circle:#84cc16", label: "Lime" },
+  { value: "circle:#22c55e", label: "Green" },
+  { value: "circle:#10b981", label: "Emerald" },
+  { value: "circle:#14b8a6", label: "Teal" },
+  { value: "circle:#06b6d4", label: "Cyan" },
+  { value: "circle:#3b82f6", label: "Blue" },
+  { value: "circle:#6366f1", label: "Indigo" },
+  { value: "circle:#8b5cf6", label: "Violet" },
+  { value: "circle:#ec4899", label: "Pink" },
+  { value: "circle:#f43f5e", label: "Rose" },
+  { value: "circle:#64748b", label: "Slate" },
+];
+
+/** Renders a team icon – either a coloured circle SVG or an emoji string. */
+function TeamIcon({
+  icon,
+  size = 22,
+  className = "",
+}: {
+  icon: string;
+  size?: number;
+  className?: string;
+}) {
+  if (icon.startsWith("circle:")) {
+    const color = icon.slice(7);
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 22 22"
+        className={className}
+        aria-hidden="true"
+      >
+        <circle cx="11" cy="11" r="10" fill={color} />
+      </svg>
+    );
+  }
+  return <span className={`text-[${size}px] leading-none ${className}`}>{icon}</span>;
+}
+
 type ClubOption = { id: string; name: string };
 
 type Player = {
@@ -227,6 +273,7 @@ export default function TeamsPage() {
           {/* Icon picker */}
           <div className="space-y-1">
             <Label>Icon <span className="text-gray-400 text-xs">(optional)</span></Label>
+            {/* Emoji icons */}
             <div className="flex flex-wrap gap-1">
               {TEAM_ICONS.map((emoji) => (
                 <button
@@ -241,6 +288,25 @@ export default function TeamsPage() {
                   aria-label={`Select icon ${emoji}`}
                 >
                   {emoji}
+                </button>
+              ))}
+            </div>
+            {/* Colored circle icons */}
+            <div className="flex flex-wrap gap-1 pt-1">
+              {TEAM_COLOR_CIRCLES.map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, icon: f.icon === value ? "" : value }))}
+                  className={`p-1 rounded-full border transition-colors ${
+                    form.icon === value
+                      ? "border-blue-500 ring-2 ring-blue-300"
+                      : "border-transparent hover:border-gray-400"
+                  }`}
+                  aria-label={`Select ${label} circle`}
+                  title={label}
+                >
+                  <TeamIcon icon={value} size={22} />
                 </button>
               ))}
             </div>
@@ -354,7 +420,7 @@ export default function TeamsPage() {
                   <tr key={team.id} className="align-top">
                     <td className="px-4 py-3 font-medium whitespace-nowrap">
                       <span className="flex items-center gap-1.5">
-                        {team.icon && <span className="text-base">{team.icon}</span>}
+                        {team.icon && <TeamIcon icon={team.icon} size={18} />}
                         {team.shortName}
                       </span>
                     </td>
