@@ -44,7 +44,7 @@ type User = {
   role: Role;
   createdAt: string;
   lastLogin: string | null;
-  userClubs: { clubId: string; club: Club }[];
+  userClubs: { clubId: string; club: Club | null }[];
 };
 
 type NewUserForm = {
@@ -135,7 +135,7 @@ function ClubCell({
   const available = allClubs.filter((c) => !assignedIds.has(c.id));
 
   if (currentRole !== "SYSADMIN") {
-    const names = user.userClubs.map((uc) => uc.club.name);
+    const names = user.userClubs.map((uc) => uc.club?.name ?? "").filter(Boolean);
     return (
       <span className="text-gray-600 text-sm">
         {names.length > 0 ? names.join(", ") : "—"}
@@ -145,15 +145,15 @@ function ClubCell({
 
   return (
     <div className="flex flex-wrap items-center gap-1">
-      {user.userClubs.map((uc) => (
+      {user.userClubs.filter((uc) => uc.club).map((uc) => (
         <span
           key={uc.clubId}
           className="inline-flex items-center gap-1 rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800"
         >
-          {uc.club.name}
+          {uc.club!.name}
           <button
             type="button"
-            aria-label={`Remove ${uc.club.name}`}
+            aria-label={`Remove ${uc.club!.name}`}
             onClick={() => onRemoveClub(user.id, uc.clubId)}
             className="ml-0.5 hover:text-red-600"
           >
@@ -518,7 +518,8 @@ export default function UsersAuthPage() {
     try {
       const res = await fetchWithAuth("/api/users");
       if (res.ok) {
-        setUsers(await res.json());
+        const data = await res.json();
+        setUsers(Array.isArray(data) ? data.filter(Boolean) : []);
         setFetchError(null);
       } else {
         const data = await res.json().catch(() => ({}));
@@ -556,7 +557,7 @@ export default function UsersAuthPage() {
   const filtered = users.filter((u) => {
     const q = search.toLowerCase();
     const name = `${u.firstName ?? ""} ${u.lastName ?? ""}`.toLowerCase();
-    const clubs = u.userClubs.map((uc) => uc.club.name).join(", ").toLowerCase();
+    const clubs = u.userClubs.map((uc) => uc.club?.name ?? "").filter(Boolean).join(", ").toLowerCase();
     return (
       name.includes(q) ||
       u.email.toLowerCase().includes(q) ||

@@ -32,7 +32,7 @@ type Player = {
   timezone?: string | null;
   role?: string;
   lastLogin?: string | null;
-  userClubs?: { clubId: string; club: Club }[];
+  userClubs?: { clubId: string; club: Club | null }[];
 };
 
 function playerInitials(p: Player) {
@@ -102,7 +102,7 @@ function PlayerDetailDialog({
               <div className="flex justify-between gap-2">
                 <span className="font-medium text-gray-500 shrink-0">Clubs</span>
                 <span className="text-right">
-                  {player.userClubs.map((uc) => uc.club.name).join(", ")}
+                  {player.userClubs.map((uc) => uc.club?.name ?? "").filter(Boolean).join(", ")}
                 </span>
               </div>
             )}
@@ -254,7 +254,7 @@ export default function PlayersPage() {
       fetch("/api/teams/club-players").then((r) => r.ok ? r.json() : []),
       fetch("/api/clubs/my").then((r) => r.ok ? r.json() : []),
     ]).then(([p, clubs]) => {
-      setPlayers(Array.isArray(p) ? p : []);
+      setPlayers(Array.isArray(p) ? p.filter(Boolean) : []);
       if (Array.isArray(clubs)) {
         setMyClubs(clubs.map((uc: { club: Club }) => uc.club).filter(Boolean));
       }
@@ -286,7 +286,7 @@ export default function PlayersPage() {
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {players.map((player) => {
-            const clubs = player.userClubs?.map((uc) => uc.club.name) ?? [];
+            const clubs = player.userClubs?.map((uc) => uc.club?.name ?? "").filter(Boolean) ?? [];
                 const isInactive = !player.lastLogin;
 
             return (
