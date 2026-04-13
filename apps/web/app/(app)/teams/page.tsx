@@ -630,14 +630,14 @@ function EditTeamDialog({
 
   // Re-sync form when the team prop changes (e.g. after member add/remove)
   useEffect(() => {
-    setForm((f) => ({
-      ...f,
+    setForm({
       icon: team.icon ?? "",
       shortName: team.shortName,
       description: team.description ?? "",
       category: team.category,
+      categoryInput: "",
       clubId: team.clubId ?? "",
-    }));
+    });
   }, [team]);
 
   // Load club-filtered players when clubId changes
