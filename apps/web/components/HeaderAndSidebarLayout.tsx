@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Header from './header';
 import Sidebar from './sidebar';
+import { Home, Settings } from 'lucide-react';
 import { Users } from 'lucide-react';
 import type { ReactNode } from "react";
 import { defaultNavItems } from './sidebar';
@@ -26,7 +27,11 @@ export default function HeaderAndSidebarLayout({
  }, [expanded]);
 
  const navItems = role === 'COACH'
-   ? [...defaultNavItems, { href: '/teams', icon: Users, label: 'Teams' }]
+   ? [
+       { href: '/', icon: Home, label: 'Dashboard' },
+       { href: '/teams', icon: Users, label: 'Teams' },
+       { href: '/settings', icon: Settings, label: 'Settings' },
+     ]
    : defaultNavItems;
 
  return (

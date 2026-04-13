@@ -39,6 +39,7 @@ export class UsersService {
     return this.prisma.user.findMany({
       where: {
         userClubs: { some: { clubId: { in: clubIds } } },
+        role: { not: 'SYSADMIN' },
       },
       orderBy: { createdAt: 'asc' },
       select: this.userSelect,

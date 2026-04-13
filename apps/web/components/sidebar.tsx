@@ -1,7 +1,7 @@
 
 "use client";
 import Link from 'next/link';
-import { Home, Calendar, CheckSquare, BarChart, Settings } from 'lucide-react';
+import { Home, Settings } from 'lucide-react';
 import type { ElementType } from 'react';
 
 export type NavItem = {
@@ -12,9 +12,6 @@ export type NavItem = {
 
 export const defaultNavItems: NavItem[] = [
   { href: '/', icon: Home, label: 'Dashboard' },
-  { href: '/today', icon: Calendar, label: 'Today' },
-  { href: '/tasks', icon: CheckSquare, label: 'Tasks' },
-  { href: '/stats', icon: BarChart, label: 'Stats' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
