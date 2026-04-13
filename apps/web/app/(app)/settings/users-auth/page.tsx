@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { ChevronDown, ChevronRight, Plus, Trash2, Search, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Trash2, SquarePen, Search, X } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -390,6 +390,105 @@ function DeleteUserModal({
   );
 }
 
+// ── Edit user modal ───────────────────────────────────────────────────────────
+
+function EditUserModal({
+  open,
+  user,
+  onClose,
+  onSaved,
+}: {
+  open: boolean;
+  user: User;
+  onClose: () => void;
+  onSaved: (updated: User) => void;
+}) {
+  const [firstName, setFirstName] = useState(user.firstName ?? "");
+  const [lastName, setLastName] = useState(user.lastName ?? "");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setFirstName(user.firstName ?? "");
+      setLastName(user.lastName ?? "");
+      setError("");
+    }
+  }, [open, user]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await fetchWithAuth(`/api/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: firstName.trim() || null,
+          lastName: lastName.trim() || null,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data?.message ?? "Failed to save.");
+        return;
+      }
+      const updated: User = await res.json();
+      onSaved(updated);
+      onClose();
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit User</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="eu-firstname">First Name</Label>
+              <Input
+                id="eu-firstname"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                disabled={saving}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="eu-lastname">Last Name</Label>
+              <Input
+                id="eu-lastname"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                disabled={saving}
+              />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label>Email</Label>
+            <Input value={user.email} disabled />
+          </div>
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <div className="flex justify-end gap-2 pt-1">
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function UsersAuthPage() {
@@ -403,6 +502,10 @@ export default function UsersAuthPage() {
 
   // create modal
   const [createOpen, setCreateOpen] = useState(false);
+
+  // edit modal
+  const [editOpen, setEditOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<User | null>(null);
 
   // delete modal
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -493,6 +596,11 @@ export default function UsersAuthPage() {
     }
   }
 
+  function openEdit(user: User) {
+    setEditTarget(user);
+    setEditOpen(true);
+  }
+
   function openDelete(user: User) {
     setDeleteTarget(user);
     setDeleteOpen(true);
@@ -576,7 +684,7 @@ export default function UsersAuthPage() {
                       <TableHead className="font-semibold">Clubs</TableHead>
                       <TableHead className="font-semibold">Last Login</TableHead>
                       <TableHead className="font-semibold">Joined</TableHead>
-                      <TableHead className="w-12" />
+                      <TableHead className="w-20" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -654,15 +762,24 @@ export default function UsersAuthPage() {
                             {new Date(user.createdAt).toLocaleDateString()}
                           </TableCell>
 
-                          {/* Delete */}
+                          {/* Edit + Delete */}
                           <TableCell>
-                            <button
-                              onClick={() => openDelete(user)}
-                              aria-label={`Delete ${user.email}`}
-                              className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => openEdit(user)}
+                                aria-label={`Edit ${user.email}`}
+                                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                              >
+                                <SquarePen className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => openDelete(user)}
+                                aria-label={`Delete ${user.email}`}
+                                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -682,6 +799,18 @@ export default function UsersAuthPage() {
           onClose={() => setCreateOpen(false)}
           onCreated={fetchUsers}
           allClubs={allClubs}
+        />
+      )}
+
+      {/* Edit user modal */}
+      {editOpen && editTarget && (
+        <EditUserModal
+          open={true}
+          user={editTarget}
+          onClose={() => setEditOpen(false)}
+          onSaved={(updated) =>
+            setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)))
+          }
         />
       )}
 

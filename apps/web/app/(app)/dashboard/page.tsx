@@ -1,154 +1,96 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2, TrendingUp, Trophy } from "lucide-react";
+import { Users } from "lucide-react";
+
+type Team = {
+  id: string;
+  shortName: string;
+  updatedAt?: string;
+  createdAt?: string;
+};
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} minute${mins !== 1 ? "s" : ""} ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hour${hours !== 1 ? "s" : ""} ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Yesterday";
+  return `${days} days ago`;
+}
 
 export default function Dashboard() {
+  const [teams, setTeams] = useState<Team[]>([]);
+
+  useEffect(() => {
+    fetch("/api/teams")
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => setTeams(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
+  const recentActivity = [...teams]
+    .sort((a, b) => {
+      const ta = new Date(a.updatedAt ?? a.createdAt ?? 0).getTime();
+      const tb = new Date(b.updatedAt ?? b.createdAt ?? 0).getTime();
+      return tb - ta;
+    })
+    .slice(0, 3);
+
   return (
     <div className="space-y-8">
 
       {/* Header */}
-      <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-[var(--golf-heading)]">
-            Golf Challenge Point
-          </h1>
-          <p className="text-[var(--golf-muted-text)]">
-            Overview of your training, progress and performance
-          </p>
-        </div>
-
-        <Button 
-          className="gap-2 bg-[var(--golf-primary)] hover:bg-[var(--golf-primary-light)] text-white"
-        >
-          Go to Today
-          <ArrowRight className="h-4 w-4" />
-        </Button>
+      <header>
+        <h1 className="text-3xl font-semibold tracking-tight text-[var(--golf-heading)]">
+          Dashboard
+        </h1>
       </header>
 
-      {/* KPI Grid */}
+      {/* Players/Teams tile */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="shadow-sm hover:shadow-md transition-all border border-[var(--golf-muted)]">
           <CardHeader>
             <CardTitle className="text-sm text-[var(--golf-muted-text)]">
-              Completed Today
+              Players/Teams
             </CardTitle>
           </CardHeader>
           <CardContent className="text-3xl font-semibold flex items-center gap-2 text-[var(--golf-heading)]">
-            3 <CheckCircle2 className="h-6 w-6 text-[var(--golf-primary)]" />
+            {teams.length} <Users className="h-6 w-6 text-[var(--golf-primary)]" />
           </CardContent>
         </Card>
-
-        <Card className="shadow-sm hover:shadow-md transition-all border border-[var(--golf-muted)]">
-          <CardHeader>
-            <CardTitle className="text-sm text-[var(--golf-muted-text)]">
-              Weekly Sessions
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-3xl font-semibold flex items-center gap-2 text-[var(--golf-heading)]">
-            8 <TrendingUp className="h-6 w-6 text-[var(--golf-primary-light)]" />
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm hover:shadow-md transition-all border border-[var(--golf-muted)]">
-          <CardHeader>
-            <CardTitle className="text-sm text-[var(--golf-muted-text)]">
-              Average Score
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-3xl font-semibold text-[var(--golf-heading)]">
-            72.4
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm hover:shadow-md transition-all border border-[var(--golf-muted)]">
-          <CardHeader>
-            <CardTitle className="text-sm text-[var(--golf-muted-text)]">
-              Season Rank
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-3xl font-semibold flex items-center gap-2 text-[var(--golf-heading)]">
-            #12 <Trophy className="h-6 w-6 text-yellow-500" />
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* Today's Plan */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-[var(--golf-heading)]">
-            Today’s Plan
-          </h2>
-          <Button variant="ghost" size="sm" className="text-[var(--golf-primary)] hover:bg-[var(--golf-accent)]">
-            View all
-          </Button>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            { title: "Putting 3m drill", tag: "Putting" },
-            { title: "Approach Wedge", tag: "Wedge" },
-            { title: "Mindset Reflection", tag: "Mindset" }
-          ].map((t, i) => (
-            <Card 
-              key={i} 
-              className="shadow-sm hover:shadow-md transition-all border border-[var(--golf-muted)]"
-            >
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="font-medium text-[var(--golf-heading)]">
-                      {t.title}
-                    </div>
-
-                    <Badge 
-                      variant="outline" 
-                      className="mt-2 border-[var(--golf-primary)] text-[var(--golf-primary)]"
-                    >
-                      {t.tag}
-                    </Badge>
-                  </div>
-
-                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--golf-primary)] mt-1" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
       </section>
 
       {/* Recent Activity */}
       <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-[var(--golf-heading)]">
-            Recent Activity
-          </h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-[var(--golf-primary)] hover:bg-[var(--golf-accent)]"
-          >
-            See more
-          </Button>
-        </div>
+        <h2 className="text-xl font-semibold text-[var(--golf-heading)]">
+          Recent Activity
+        </h2>
 
         <Card className="shadow-sm border border-[var(--golf-muted)]">
           <CardContent className="divide-y p-0">
-            {[
-              { msg: "Completed Putting 3m drill", time: "2 hours ago" },
-              { msg: "Logged reflection", time: "5 hours ago" },
-              { msg: "Finished Approach Wedge", time: "Yesterday" }
-            ].map((a, i) => (
-              <div
-                key={i}
-                className="p-4 flex items-center justify-between text-[var(--golf-heading)]"
-              >
-                <span className="text-sm">{a.msg}</span>
-                <span className="text-xs text-[var(--golf-muted-text)]">{a.time}</span>
-              </div>
-            ))}
+            {recentActivity.length === 0 ? (
+              <div className="p-4 text-sm text-[var(--golf-muted-text)]">No recent activity.</div>
+            ) : (
+              recentActivity.map((t) => {
+                const ts = t.updatedAt ?? t.createdAt;
+                return (
+                  <div
+                    key={t.id}
+                    className="p-4 flex items-center justify-between text-[var(--golf-heading)]"
+                  >
+                    <span className="text-sm">Team &ldquo;{t.shortName}&rdquo; updated</span>
+                    <span className="text-xs text-[var(--golf-muted-text)]">
+                      {ts ? timeAgo(ts) : "—"}
+                    </span>
+                  </div>
+                );
+              })
+            )}
           </CardContent>
         </Card>
       </section>
