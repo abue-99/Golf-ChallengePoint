@@ -403,7 +403,7 @@ export default function ProfilePage() {
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="bg-green-600 hover:bg-green-700 text-white"
+          className="bg-green-800 hover:bg-green-600 text-white"
         >
           {saving ? "Saving…" : "Save"}
         </Button>

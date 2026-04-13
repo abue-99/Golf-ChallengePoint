@@ -21,11 +21,11 @@ import { UsersService } from './users.service';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
+  @Roles(Role.ADMIN)
   listAll(@CurrentUser() caller: AuthenticatedUser) {
     if (caller.role === 'ADMIN') {
       return this.usersService.listForAdmin(caller.id);
@@ -34,6 +34,7 @@ export class UsersController {
   }
 
   @Patch(':id/role')
+  @Roles(Role.ADMIN)
   updateRole(
     @Param('id') id: string,
     @Body() body: { role: 'PLAYER' | 'COACH' | 'ADMIN' | 'SYSADMIN' },
@@ -69,8 +70,61 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   deleteUser(@Param('id') id: string) {
     return this.usersService.deleteUser(id);
+  }
+
+  /** Invite a new player (COACH or ADMIN only). */
+  @Post('invite')
+  @Roles(Role.COACH)
+  @HttpCode(HttpStatus.CREATED)
+  invitePlayer(
+    @CurrentUser() caller: AuthenticatedUser,
+    @Body()
+    body: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      clubId: string;
+    },
+  ) {
+    return this.usersService.invitePlayer({
+      ...body,
+      coachId: caller.id,
+    });
+  }
+
+  /** Get coaches available to the current user (from shared clubs). */
+  @Get('me/available-coaches')
+  getAvailableCoaches(@CurrentUser() caller: AuthenticatedUser) {
+    return this.usersService.getCoachesForUser(caller.id);
+  }
+
+  /** Get coaches currently linked to the current user. */
+  @Get('me/coaches')
+  getMyCoaches(@CurrentUser() caller: AuthenticatedUser) {
+    return this.usersService.getPlayerCoaches(caller.id);
+  }
+
+  /** Link a coach to the current user. */
+  @Post('me/coaches/:coachId')
+  @HttpCode(HttpStatus.OK)
+  addMyCoach(
+    @CurrentUser() caller: AuthenticatedUser,
+    @Param('coachId') coachId: string,
+  ) {
+    return this.usersService.addPlayerCoach(caller.id, coachId);
+  }
+
+  /** Unlink a coach from the current user. */
+  @Delete('me/coaches/:coachId')
+  @HttpCode(HttpStatus.OK)
+  removeMyCoach(
+    @CurrentUser() caller: AuthenticatedUser,
+    @Param('coachId') coachId: string,
+  ) {
+    return this.usersService.removePlayerCoach(caller.id, coachId);
   }
 }

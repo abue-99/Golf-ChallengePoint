@@ -587,7 +587,7 @@ function ProfileSection() {
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="bg-green-600 hover:bg-green-700 text-white"
+          className="bg-green-800 hover:bg-green-600 text-white"
         >
           {saving ? "Saving…" : "Save"}
         </Button>
@@ -621,6 +621,144 @@ function NotificationsSection() {
   );
 }
 
+type CoachUser = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  profileImage: string | null;
+  email: string;
+  userClubs?: { clubId: string; club: { id: string; name: string } }[];
+};
+
+function coachDisplayName(c: CoachUser) {
+  return [c.firstName, c.lastName].filter(Boolean).join(" ") || c.email;
+}
+
+function coachInitials(c: CoachUser) {
+  return `${c.firstName?.[0] ?? ""}${c.lastName?.[0] ?? ""}`.toUpperCase() || "?";
+}
+
+function MyCoachesSection() {
+  const [availableCoaches, setAvailableCoaches] = useState<CoachUser[]>([]);
+  const [myCoaches, setMyCoaches] = useState<CoachUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/players/coaches").then((r) => r.ok ? r.json() : []),
+      fetch("/api/players/coaches/linked").then((r) => r.ok ? r.json() : []),
+    ]).then(([available, my]) => {
+      setAvailableCoaches(Array.isArray(available) ? available : []);
+      setMyCoaches(Array.isArray(my) ? my : []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  async function handleAddCoach(coachId: string) {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/players/coaches", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ coachId }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setMyCoaches(Array.isArray(updated) ? updated : []);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRemoveCoach(coachId: string) {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/players/coaches/${coachId}`, { method: "DELETE" });
+      if (res.ok) {
+        const updated = await res.json();
+        setMyCoaches(Array.isArray(updated) ? updated : []);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <div className="text-sm text-gray-500">Loading…</div>;
+
+  const myCoachIds = new Set(myCoaches.map((c) => c.id));
+  const selectableCoaches = availableCoaches.filter((c) => !myCoachIds.has(c.id));
+
+  return (
+    <div className="space-y-4 max-w-lg">
+      {myCoaches.length > 0 && (
+        <div className="flex flex-wrap gap-3">
+          {myCoaches.map((coach) => (
+            <div
+              key={coach.id}
+              className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2 shadow-sm"
+            >
+              <Avatar className="h-8 w-8">
+                {coach.profileImage && (
+                  <AvatarImage src={coach.profileImage} alt={coachDisplayName(coach)} />
+                )}
+                <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
+                  {coachInitials(coach)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="text-sm">
+                <div className="font-medium leading-tight">{coachDisplayName(coach)}</div>
+                {coach.userClubs && coach.userClubs.length > 0 && (
+                  <div className="text-xs text-gray-500 leading-tight">
+                    {coach.userClubs.map((uc) => uc.club.name).join(", ")}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                aria-label={`Remove ${coachDisplayName(coach)}`}
+                onClick={() => handleRemoveCoach(coach.id)}
+                disabled={saving}
+                className="ml-1 hover:text-red-600 text-gray-400"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {selectableCoaches.length > 0 && (
+        <Select
+          value=""
+          onValueChange={(val) => val && handleAddCoach(val)}
+          disabled={saving}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Add a coach…" />
+          </SelectTrigger>
+          <SelectContent>
+            {selectableCoaches.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {coachDisplayName(c)}
+                {c.userClubs && c.userClubs.length > 0 &&
+                  ` (${c.userClubs.map((uc) => uc.club.name).join(", ")})`}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+
+      {myCoaches.length === 0 && selectableCoaches.length === 0 && (
+        <p className="text-xs text-gray-500">
+          No coaches available. Join a club to see coaches.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function PersonalPage() {
   const searchParams = useSearchParams();
   const section = searchParams.get("section");
@@ -634,6 +772,10 @@ export default function PersonalPage() {
 
       <CollapsibleSection title="Profile" defaultOpen={profileDefaultOpen}>
         <ProfileSection />
+      </CollapsibleSection>
+
+      <CollapsibleSection title="My Coaches" defaultOpen={section === "coaches"}>
+        <MyCoachesSection />
       </CollapsibleSection>
 
       <CollapsibleSection title="Notifications" defaultOpen={section === "notifications"}>
