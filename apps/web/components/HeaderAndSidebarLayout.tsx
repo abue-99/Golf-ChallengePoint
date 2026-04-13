@@ -29,7 +29,7 @@ export default function HeaderAndSidebarLayout({
  const navItems = (role === 'COACH' || role === 'ADMIN')
    ? [
        { href: '/', icon: Home, label: 'Dashboard' },
-       { href: '/teams', icon: Users, label: 'Teams' },
+       { href: '/teams', icon: Users, label: 'Players & Teams' },
        { href: '/settings', icon: Settings, label: 'Settings' },
      ]
    : defaultNavItems;
