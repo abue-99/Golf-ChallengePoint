@@ -236,7 +236,7 @@ export class UsersService {
       distinct: ['userId'],
     });
 
-    return coachUserClubs.map((uc) => uc.user);
+    return coachUserClubs.map((uc) => uc.user).filter(Boolean);
   }
 
   /** Players currently linked to the given coach. */

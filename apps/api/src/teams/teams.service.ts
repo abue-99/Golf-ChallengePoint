@@ -64,7 +64,7 @@ export class TeamsService {
         },
         distinct: ['userId'],
       });
-      return members.map((m) => m.user);
+      return members.map((m) => m.user).filter(Boolean);
     }
 
     // No club specified: return all users from all clubs the coach belongs to
@@ -82,7 +82,7 @@ export class TeamsService {
       distinct: ['userId'],
     });
 
-    return members.map((m) => m.user);
+    return members.map((m) => m.user).filter(Boolean);
   }
 
   // Keep backward-compat alias
