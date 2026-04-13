@@ -133,4 +133,12 @@ export class UsersController {
   ) {
     return this.usersService.removePlayerCoach(caller.id, coachId);
   }
+
+  /** Resend the invitation email to a user who has not yet logged in. */
+  @Post(':id/resend-invite')
+  @Roles(Role.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  resendInvite(@Param('id') id: string) {
+    return this.usersService.resendInvite(id);
+  }
 }

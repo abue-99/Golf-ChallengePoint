@@ -265,7 +265,7 @@ export class UsersService {
         },
       },
     });
-    return links.map((l) => l.player);
+    return links.map((l) => l.player).filter(Boolean);
   }
 
   /** Coaches currently linked to the given player. */
@@ -285,7 +285,7 @@ export class UsersService {
         },
       },
     });
-    return links.map((l) => l.coach);
+    return links.map((l) => l.coach).filter(Boolean);
   }
 
   async addPlayerCoach(playerId: string, coachId: string) {
@@ -301,5 +301,40 @@ export class UsersService {
   async removePlayerCoach(playerId: string, coachId: string) {
     await this.prisma.coachPlayerLink.deleteMany({ where: { coachId, playerId } });
     return this.getPlayerCoaches(playerId);
+  }
+
+  /** Resend the invitation email to a user who has not yet logged in. */
+  async resendInvite(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found.');
+
+    const chars =
+      'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+    let tempPassword = '';
+    const bytes = crypto.randomBytes(14);
+    for (const byte of bytes) {
+      tempPassword += chars[byte % chars.length];
+    }
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    const appUrl =
+      process.env.APP_URL ??
+      process.env.NEXT_PUBLIC_APP_URL ??
+      'http://localhost:3000';
+    const loginUrl = `${appUrl}/login`;
+
+    await this.sendInviteEmail({
+      to: user.email,
+      tempPassword,
+      loginUrl,
+      firstName: user.firstName ?? '',
+    });
+
+    return { success: true };
   }
 }
