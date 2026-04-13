@@ -165,8 +165,8 @@ export default function TeamsPage() {
     ]).then(([t, c, p, clubs, myP]) => {
       setTeams(Array.isArray(t) ? t : []);
       setCategories(Array.isArray(c) ? c : []);
-      setAllPlayers(Array.isArray(p) ? p : []);
-      setMyPlayers(Array.isArray(myP) ? myP : []);
+      setAllPlayers(Array.isArray(p) ? p.filter(Boolean) : []);
+      setMyPlayers(Array.isArray(myP) ? myP.filter(Boolean) : []);
       // clubs/my returns UserClub[] with club embedded
       if (Array.isArray(clubs)) {
         setMyClubs(clubs.map((uc: { club: ClubOption }) => uc.club).filter(Boolean));
@@ -234,7 +234,7 @@ export default function TeamsPage() {
         : "/api/teams/club-players";
       const res = await fetch(url);
       const data = await res.json();
-      setTeamPlayers(Array.isArray(data) ? data : []);
+      setTeamPlayers(Array.isArray(data) ? data.filter(Boolean) : []);
     } finally {
       setTeamPlayersLoading(false);
     }
@@ -680,7 +680,7 @@ function EditTeamDialog({
     setEditPlayersLoading(true);
     fetch(`/api/teams/club-players?clubId=${encodeURIComponent(team.clubId)}`)
       .then((r) => r.json())
-      .then((data) => setEditPlayers(Array.isArray(data) ? data : []))
+      .then((data) => setEditPlayers(Array.isArray(data) ? data.filter(Boolean) : []))
       .catch(() => setEditPlayers(allPlayers))
       .finally(() => setEditPlayersLoading(false));
   }, [team.clubId, allPlayers]);
