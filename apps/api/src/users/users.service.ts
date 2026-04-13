@@ -154,7 +154,7 @@ export class UsersService {
     });
   }
 
-  /** Coaches (COACH role) who share at least one club with the given user. */
+  /** Coaches and Admins who share at least one club with the given user. */
   async getCoachesForUser(userId: string) {
     const userClubs = await this.prisma.userClub.findMany({
       where: { userId },
@@ -166,7 +166,7 @@ export class UsersService {
     const coachUserClubs = await this.prisma.userClub.findMany({
       where: {
         clubId: { in: clubIds },
-        user: { role: 'COACH' },
+        user: { role: { in: ['COACH', 'ADMIN'] } },
       },
       select: {
         user: {
