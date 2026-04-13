@@ -153,15 +153,6 @@ export default function Dashboard() {
         </Card>
       </section>
 
-      {/* Charts */}
-      <section className="space-y-3">
-        <h2 className="text-xl font-semibold text-[var(--golf-heading)]">Performance</h2>
-
-        <Card className="h-64 flex items-center justify-center border-dashed border-[var(--golf-muted)] text-[var(--golf-muted-text)]">
-          Chart placeholder (Recharts / Your choice)
-        </Card>
-      </section>
-
     </div>
   );
 }

@@ -1,7 +1,7 @@
 
 "use client";
 import Link from 'next/link';
-import { Home, Calendar, CheckSquare, BarChart, Settings } from 'lucide-react';
+import { Home, Settings } from 'lucide-react';
 import type { ElementType } from 'react';
 
 export type NavItem = {
@@ -12,9 +12,6 @@ export type NavItem = {
 
 export const defaultNavItems: NavItem[] = [
   { href: '/', icon: Home, label: 'Dashboard' },
-  { href: '/today', icon: Calendar, label: 'Today' },
-  { href: '/tasks', icon: CheckSquare, label: 'Tasks' },
-  { href: '/stats', icon: BarChart, label: 'Stats' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -28,7 +25,7 @@ export default function Sidebar({
 }) {
   const itemClass = `flex items-center py-2 hover:bg-green-100 whitespace-nowrap ${expanded ? 'gap-3 px-4' : 'justify-center px-0'}`;
   return (
-    <aside className={`bg-green-50 overflow-hidden flex-shrink-0 transition-all duration-300 ease-in-out ${expanded ? 'w-64' : 'w-12'}`}>
+    <aside className={`bg-green-50 overflow-hidden flex-shrink-0 transition-all duration-300 ease-in-out ${expanded ? 'w-44' : 'w-12'}`}>
       <nav className='flex flex-col py-4'>
         {navItems.map(({ href, icon: Icon, label }) => (
           <Link key={label} href={href} className={itemClass} title={label}>

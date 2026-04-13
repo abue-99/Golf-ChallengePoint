@@ -27,8 +27,7 @@ export default async function SettingsPage() {
     {
       title: "Personal",
       links: [
-        { label: "Profile", href: "/settings/profile" },
-        { label: "Notifications", href: "/settings/notifications" },
+        { label: "Profile & Notifications", href: "/settings/personal" },
       ],
     },
     {
