@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2, Plus, UserPlus, X, Search } from "lucide-react";
+import { Trash2, SquarePen, Plus, UserPlus, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -299,7 +299,7 @@ export default function TeamsPage() {
   if (loading) return <div className="p-6">Loading…</div>;
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl">
+    <div className="p-6 space-y-6 max-w-6xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Players &amp; Teams</h1>
         <Button
@@ -318,7 +318,7 @@ export default function TeamsPage() {
           {/* Icon picker */}
           <div className="space-y-1">
             <Label>Icon <span className="text-gray-400 text-xs">(optional)</span></Label>
-            {/* Emoji icons */}
+            {/* Emoji icons + colored circles in one row */}
             <div className="flex flex-wrap gap-1">
               {TEAM_ICONS.map((emoji) => (
                 <button
@@ -335,9 +335,6 @@ export default function TeamsPage() {
                   {emoji}
                 </button>
               ))}
-            </div>
-            {/* Colored circle icons */}
-            <div className="flex flex-wrap gap-1 mt-3 pt-2 border-t border-gray-200">
               {TEAM_COLOR_CIRCLES.map(({ value, label }) => (
                 <button
                   key={value}
@@ -462,9 +459,9 @@ export default function TeamsPage() {
             <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
               <tr>
                 <th className="px-4 py-3 text-left">Team</th>
+                <th className="px-4 py-3 text-left">Description</th>
                 <th className="px-4 py-3 text-left">Category</th>
                 <th className="px-4 py-3 text-left">Club</th>
-                <th className="px-4 py-3 text-left">Description</th>
                 <th className="px-4 py-3 text-left">Members</th>
                 <th className="px-4 py-3 text-right"></th>
               </tr>
@@ -489,14 +486,14 @@ export default function TeamsPage() {
                         {team.shortName}
                       </span>
                     </td>
+                    <td className="px-4 py-3 text-gray-600 max-w-xs">
+                      {team.description || <span className="text-gray-400 italic">—</span>}
+                    </td>
                     <td className="px-4 py-3 whitespace-nowrap text-gray-500">{team.category}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-gray-500">
                       {clubName ?? <span className="text-gray-400 italic">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 max-w-xs">
-                      {team.description || <span className="text-gray-400 italic">—</span>}
-                    </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 min-w-[160px]">
                       <div className="flex flex-wrap items-center gap-1">
                         {team.members.map((m) => (
                           <div key={m.userId} className="relative group">
@@ -557,6 +554,15 @@ export default function TeamsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-gray-500 hover:text-blue-600"
+                        onClick={(e) => { e.stopPropagation(); setEditingTeam(team); }}
+                        aria-label="Edit team"
+                      >
+                        <SquarePen size={16} />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -709,8 +715,6 @@ function EditTeamDialog({
                   {emoji}
                 </button>
               ))}
-            </div>
-            <div className="flex flex-wrap gap-1 mt-3 pt-2 border-t border-gray-200">
               {TEAM_COLOR_CIRCLES.map(({ value, label }) => (
                 <button
                   key={value}

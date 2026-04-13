@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { ChevronDown, ChevronRight, Plus, Trash2, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Trash2, SquarePen, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -477,7 +477,7 @@ export default function GeneralDataPage() {
                       <TableHead className="font-semibold">Long Name</TableHead>
                       <TableHead className="font-semibold">City</TableHead>
                       <TableHead className="font-semibold">Country</TableHead>
-                      {isSysAdmin && <TableHead className="w-12" />}
+                      {isSysAdmin && <TableHead className="w-24" />}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -500,16 +500,28 @@ export default function GeneralDataPage() {
                         </TableCell>
                         {isSysAdmin && (
                           <TableCell>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openDelete(club);
-                              }}
-                              aria-label={`Delete ${club.name}`}
-                              className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEdit(club);
+                                }}
+                                aria-label={`Edit ${club.name}`}
+                                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                              >
+                                <SquarePen className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openDelete(club);
+                                }}
+                                aria-label={`Delete ${club.name}`}
+                                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           </TableCell>
                         )}
                       </TableRow>
