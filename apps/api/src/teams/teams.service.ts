@@ -37,20 +37,30 @@ export class TeamsService {
   }
 
   async getClubUsers(coachId: string, clubId?: string) {
+    const userSelect = {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      profileImage: true,
+      role: true,
+      phoneNumber: true,
+      timezone: true,
+      lastLogin: true,
+      userClubs: {
+        select: {
+          clubId: true,
+          club: { select: { id: true, name: true } },
+        },
+      },
+    } as const;
+
     if (clubId) {
       // Return all users (any role) from the specified club
       const members = await this.prisma.userClub.findMany({
         where: { clubId },
         include: {
-          user: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              profileImage: true,
-              role: true,
-            },
-          },
+          user: { select: userSelect },
         },
         distinct: ['userId'],
       });
@@ -67,15 +77,7 @@ export class TeamsService {
     const members = await this.prisma.userClub.findMany({
       where: { clubId: { in: clubIds } },
       include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            profileImage: true,
-            role: true,
-          },
-        },
+        user: { select: userSelect },
       },
       distinct: ['userId'],
     });

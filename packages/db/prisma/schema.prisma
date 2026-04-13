@@ -125,6 +125,7 @@ model CoachPlayerLink {
   playerId  String
   createdAt DateTime @default(now())
 
+  @@unique([coachId, playerId])
   @@map("coach_player_links")
 }
 
