@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
+  private readonly resend = new Resend(process.env.RESEND_API_KEY);
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -104,9 +105,8 @@ export class UsersService {
     loginUrl: string;
     firstName: string;
   }): Promise<void> {
-    const resend = new Resend(process.env.RESEND_API_KEY);
     try {
-      await resend.emails.send({
+      await this.resend.emails.send({
         from: 'noreply@golf-challengepoint.com',
         to,
         subject: 'Your Golf Challenge Point Invitation',
@@ -122,6 +122,7 @@ export class UsersService {
       this.logger.log(`Invite email sent to ${to}`);
     } catch (err) {
       this.logger.error(`Failed to send invite email to ${to}: ${err}`);
+      throw err;
     }
   }
 
