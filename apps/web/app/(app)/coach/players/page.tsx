@@ -135,7 +135,7 @@ function InvitePlayerDialog({
     setErrorMsg("");
     if (!firstName.trim()) { setErrorMsg("First name is required."); return; }
     if (!lastName.trim()) { setErrorMsg("Last name is required."); return; }
-    if (!email.trim() || !email.includes("@")) { setErrorMsg("A valid email is required."); return; }
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setErrorMsg("A valid email is required."); return; }
     if (!clubId) { setErrorMsg("Please select a club."); return; }
 
     setSaving(true);
@@ -287,7 +287,7 @@ export default function PlayersPage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {players.map((player) => {
             const clubs = player.userClubs?.map((uc) => uc.club.name) ?? [];
-            const isInactive = player.lastLogin === null || player.lastLogin === undefined;
+                const isInactive = !player.lastLogin;
 
             return (
               <div

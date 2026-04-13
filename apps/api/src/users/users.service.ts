@@ -103,7 +103,13 @@ export class UsersService {
     let user = await this.prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      const tempPassword = crypto.randomBytes(9).toString('base64').slice(0, 12);
+      const chars =
+        'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+      let tempPassword = '';
+      const bytes = crypto.randomBytes(14);
+      for (const byte of bytes) {
+        tempPassword += chars[byte % chars.length];
+      }
       const passwordHash = await bcrypt.hash(tempPassword, 10);
 
       user = await this.prisma.user.create({
@@ -117,7 +123,7 @@ export class UsersService {
       });
 
       // Log invite info (no mail service configured yet)
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+      const appUrl = process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
       console.log(
         `[INVITE] New player ${email} created. ` +
           `Temp password: ${tempPassword}. ` +
