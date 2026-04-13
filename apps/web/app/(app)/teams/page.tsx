@@ -176,7 +176,6 @@ export default function TeamsPage() {
     if (form.shortName.trim().length > 20) { setFormError("Short name must be ≤ 20 characters."); return false; }
     if (form.description.trim().length > 200) { setFormError("Description must be ≤ 200 characters."); return false; }
     const cat = resolvedCategory();
-    if (!cat) { setFormError("Category is required."); return false; }
     if (cat.length > 50) { setFormError("Category must be ≤ 50 characters."); return false; }
     setFormError("");
     return true;
@@ -210,6 +209,7 @@ export default function TeamsPage() {
   }
 
   async function handleDelete(teamId: string) {
+    if (!window.confirm("Are you sure you want to delete this team? This action cannot be undone.")) return;
     const res = await fetch(`/api/teams/${teamId}`, { method: "DELETE" });
     if (res.ok) {
       setTeams((prev) => prev.filter((t) => t.id !== teamId));
@@ -247,6 +247,7 @@ export default function TeamsPage() {
   }
 
   async function handleRemoveMember(teamId: string, userId: string) {
+    if (!window.confirm("Remove this member from the team?")) return;
     const res = await fetch(`/api/teams/${teamId}/members/${userId}`, {
       method: "DELETE",
     });
@@ -383,7 +384,7 @@ export default function TeamsPage() {
           </div>
 
           <div className="space-y-1">
-            <Label>Category <span className="text-gray-400 text-xs">(required)</span></Label>
+            <Label>Category <span className="text-gray-400 text-xs">(optional)</span></Label>
             {categories.length > 0 && !form.categoryInput && (
               <Select
                 value={form.category}
@@ -676,7 +677,6 @@ function EditTeamDialog({
     if (form.shortName.trim().length > 20) { setFormError("Short name must be ≤ 20 characters."); return; }
     if (form.description.trim().length > 200) { setFormError("Description must be ≤ 200 characters."); return; }
     const cat = resolvedCategory();
-    if (!cat) { setFormError("Category is required."); return; }
     setFormError("");
     setSaving(true);
     const ok = await onUpdate(team.id, { ...form, category: cat, categoryInput: "" });
@@ -768,7 +768,7 @@ function EditTeamDialog({
 
           {/* Category */}
           <div className="space-y-1">
-            <Label>Category <span className="text-gray-400 text-xs">(required)</span></Label>
+            <Label>Category <span className="text-gray-400 text-xs">(optional)</span></Label>
             {categories.length > 0 && !form.categoryInput && (
               <Select
                 value={form.category}

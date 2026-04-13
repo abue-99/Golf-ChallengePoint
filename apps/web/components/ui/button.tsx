@@ -16,7 +16,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "default", size = "default", ...props }, ref) => {
 
     const variants = {
-      default: "bg-primary text-primary-foreground hover:bg-primary/90",
+      default: "bg-green-700 text-white hover:bg-green-600",
       ghost: "hover:bg-accent hover:text-accent-foreground",
       outline:
         "border border-input bg-background hover:bg-accent hover:text-accent-foreground",

@@ -59,7 +59,7 @@ export class TeamsController {
       icon?: string;
       shortName: string;
       description?: string;
-      category: string;
+      category?: string;
       clubId?: string;
     },
   ) {

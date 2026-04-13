@@ -25,11 +25,11 @@ export default function Sidebar({
 }) {
   const itemClass = `flex items-center py-2 hover:bg-green-100 whitespace-nowrap ${expanded ? 'gap-3 px-4' : 'justify-center px-0'}`;
   return (
-    <aside className={`bg-green-50 overflow-hidden flex-shrink-0 transition-all duration-300 ease-in-out ${expanded ? 'w-44' : 'w-12'}`}>
+    <aside className={`bg-green-50 overflow-hidden flex-shrink-0 transition-all duration-300 ease-in-out ${expanded ? 'w-52' : 'w-12'}`}>
       <nav className='flex flex-col py-4'>
         {navItems.map(({ href, icon: Icon, label }) => (
           <Link key={label} href={href} className={itemClass} title={label}>
-            <Icon size={expanded ? 19 : 24} className="text-gray-700" />
+            <Icon size={20} className="text-gray-700 flex-shrink-0" />
             {expanded && <span>{label}</span>}
           </Link>
         ))}
