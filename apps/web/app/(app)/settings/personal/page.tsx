@@ -296,10 +296,6 @@ function ProfileSection() {
   const [fileSizeError, setFileSizeError] = useState("");
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
-  const [allClubs, setAllClubs] = useState<Club[]>([]);
-  const [myClubs, setMyClubs] = useState<UserClub[]>([]);
-  const [clubsLoading, setClubsLoading] = useState(false);
-
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => {
@@ -320,14 +316,6 @@ function ProfileSection() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-
-    Promise.all([
-      fetch("/api/clubs").then((r) => r.json()),
-      fetch("/api/clubs/my").then((r) => r.json()),
-    ]).then(([clubs, myClubsData]) => {
-      setAllClubs(Array.isArray(clubs) ? clubs : []);
-      setMyClubs(Array.isArray(myClubsData) ? myClubsData : []);
-    });
   }, []);
 
   function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -378,41 +366,8 @@ function ProfileSection() {
     }
   }
 
-  async function handleAddClub(clubId: string) {
-    setClubsLoading(true);
-    try {
-      const res = await fetch("/api/clubs/my", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId }),
-      });
-      if (res.ok) {
-        const updated = await res.json();
-        setMyClubs(Array.isArray(updated) ? updated : []);
-      }
-    } finally {
-      setClubsLoading(false);
-    }
-  }
-
-  async function handleRemoveClub(clubId: string) {
-    setClubsLoading(true);
-    try {
-      const res = await fetch(`/api/clubs/my/${clubId}`, { method: "DELETE" });
-      if (res.ok) {
-        const updated = await res.json();
-        setMyClubs(Array.isArray(updated) ? updated : []);
-      }
-    } finally {
-      setClubsLoading(false);
-    }
-  }
-
   const initials =
     `${profile.firstName?.[0] ?? ""}${profile.lastName?.[0] ?? ""}`.toUpperCase() || "?";
-
-  const myClubIds = new Set(myClubs.map((uc) => uc.clubId));
-  const availableClubs = allClubs.filter((c) => !myClubIds.has(c.id));
 
   if (loading) return <div>Loading...</div>;
 
@@ -536,53 +491,6 @@ function ProfileSection() {
         </Select>
       </div>
 
-      {/* Clubs & Academies */}
-      <div className="space-y-2">
-        <Label>Clubs &amp; Academies</Label>
-        {myClubs.length > 0 && (
-          <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-gray-50">
-            {myClubs.map((uc) => (
-              <span
-                key={uc.clubId}
-                className="inline-flex items-center gap-1 rounded bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-800"
-              >
-                {uc.club.name}
-                <button
-                  type="button"
-                  aria-label={`Remove ${uc.club.name}`}
-                  onClick={() => handleRemoveClub(uc.clubId)}
-                  disabled={clubsLoading}
-                  className="ml-0.5 hover:text-red-600"
-                >
-                  <X size={12} />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-        {availableClubs.length > 0 && (
-          <Select
-            value=""
-            onValueChange={(val) => val && handleAddClub(val)}
-            disabled={clubsLoading}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Add a Club or Academy…" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableClubs.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-        {myClubs.length === 0 && availableClubs.length === 0 && (
-          <p className="text-xs text-gray-500">No clubs available.</p>
-        )}
-      </div>
-
       <div className="flex items-center gap-4">
         <Button
           onClick={handleSave}
@@ -638,19 +546,27 @@ function coachInitials(c: CoachUser) {
   return `${c.firstName?.[0] ?? ""}${c.lastName?.[0] ?? ""}`.toUpperCase() || "?";
 }
 
-function MyCoachesSection() {
+function MyClubsAndCoachesSection() {
   const [availableCoaches, setAvailableCoaches] = useState<CoachUser[]>([]);
   const [myCoaches, setMyCoaches] = useState<CoachUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const [allClubs, setAllClubs] = useState<Club[]>([]);
+  const [myClubs, setMyClubs] = useState<UserClub[]>([]);
+  const [clubsLoading, setClubsLoading] = useState(false);
+
   useEffect(() => {
     Promise.all([
       fetch("/api/players/coaches").then((r) => r.ok ? r.json() : []),
       fetch("/api/players/coaches/linked").then((r) => r.ok ? r.json() : []),
-    ]).then(([available, my]) => {
+      fetch("/api/clubs").then((r) => r.json()),
+      fetch("/api/clubs/my").then((r) => r.json()),
+    ]).then(([available, my, clubs, myClubsData]) => {
       setAvailableCoaches(Array.isArray(available) ? available : []);
       setMyCoaches(Array.isArray(my) ? my : []);
+      setAllClubs(Array.isArray(clubs) ? clubs : []);
+      setMyClubs(Array.isArray(myClubsData) ? myClubsData : []);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -685,76 +601,160 @@ function MyCoachesSection() {
     }
   }
 
+  async function handleAddClub(clubId: string) {
+    setClubsLoading(true);
+    try {
+      const res = await fetch("/api/clubs/my", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clubId }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setMyClubs(Array.isArray(updated) ? updated : []);
+      }
+    } finally {
+      setClubsLoading(false);
+    }
+  }
+
+  async function handleRemoveClub(clubId: string) {
+    setClubsLoading(true);
+    try {
+      const res = await fetch(`/api/clubs/my/${clubId}`, { method: "DELETE" });
+      if (res.ok) {
+        const updated = await res.json();
+        setMyClubs(Array.isArray(updated) ? updated : []);
+      }
+    } finally {
+      setClubsLoading(false);
+    }
+  }
+
   if (loading) return <div className="text-sm text-gray-500">Loading…</div>;
 
   const myCoachIds = new Set(myCoaches.map((c) => c.id));
   const selectableCoaches = availableCoaches.filter((c) => !myCoachIds.has(c.id));
 
+  const myClubIds = new Set(myClubs.map((uc) => uc.clubId));
+  const availableClubs = allClubs.filter((c) => !myClubIds.has(c.id));
+
   return (
-    <div className="space-y-4 max-w-lg">
-      {myCoaches.length > 0 && (
-        <div className="flex flex-wrap gap-3">
-          {myCoaches.map((coach) => (
-            <div
-              key={coach.id}
-              className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2 shadow-sm"
-            >
-              <Avatar className="h-8 w-8">
-                {coach.profileImage && (
-                  <AvatarImage src={coach.profileImage} alt={coachDisplayName(coach)} />
-                )}
-                <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
-                  {coachInitials(coach)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-sm">
-                <div className="font-medium leading-tight">{coachDisplayName(coach)}</div>
-                {coach.userClubs && coach.userClubs.length > 0 && (
-                  <div className="text-xs text-gray-500 leading-tight">
-                    {coach.userClubs.map((uc) => uc.club.name).join(", ")}
-                  </div>
-                )}
-              </div>
-              <button
-                type="button"
-                aria-label={`Remove ${coachDisplayName(coach)}`}
-                onClick={() => handleRemoveCoach(coach.id)}
-                disabled={saving}
-                className="ml-1 hover:text-red-600 text-gray-400"
+    <div className="space-y-6 max-w-lg">
+      {/* Clubs & Academies */}
+      <div className="space-y-2">
+        <Label>Clubs &amp; Academies</Label>
+        {myClubs.length > 0 && (
+          <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-gray-50">
+            {myClubs.map((uc) => (
+              <span
+                key={uc.clubId}
+                className="inline-flex items-center gap-1 rounded bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-800"
               >
-                <X size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {selectableCoaches.length > 0 && (
-        <Select
-          value=""
-          onValueChange={(val) => val && handleAddCoach(val)}
-          disabled={saving}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Add a coach…" />
-          </SelectTrigger>
-          <SelectContent>
-            {selectableCoaches.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {coachDisplayName(c)}
-                {c.userClubs && c.userClubs.length > 0 &&
-                  ` (${c.userClubs.map((uc) => uc.club.name).join(", ")})`}
-              </SelectItem>
+                {uc.club.name}
+                <button
+                  type="button"
+                  aria-label={`Remove ${uc.club.name}`}
+                  onClick={() => handleRemoveClub(uc.clubId)}
+                  disabled={clubsLoading}
+                  className="ml-0.5 hover:text-red-600"
+                >
+                  <X size={12} />
+                </button>
+              </span>
             ))}
-          </SelectContent>
-        </Select>
-      )}
+          </div>
+        )}
+        {availableClubs.length > 0 && (
+          <Select
+            value=""
+            onValueChange={(val) => val && handleAddClub(val)}
+            disabled={clubsLoading}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Add a Club or Academy…" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableClubs.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        {myClubs.length === 0 && availableClubs.length === 0 && (
+          <p className="text-xs text-gray-500">No clubs available.</p>
+        )}
+      </div>
 
-      {myCoaches.length === 0 && selectableCoaches.length === 0 && (
-        <p className="text-xs text-gray-500">
-          No coaches available. Join a club to see coaches.
-        </p>
-      )}
+      {/* Coaches */}
+      <div className="space-y-2">
+        <Label>Coaches</Label>
+        {myCoaches.length > 0 && (
+          <div className="flex flex-wrap gap-3">
+            {myCoaches.map((coach) => (
+              <div
+                key={coach.id}
+                className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2 shadow-sm"
+              >
+                <Avatar className="h-8 w-8">
+                  {coach.profileImage && (
+                    <AvatarImage src={coach.profileImage} alt={coachDisplayName(coach)} />
+                  )}
+                  <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
+                    {coachInitials(coach)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="text-sm">
+                  <div className="font-medium leading-tight">{coachDisplayName(coach)}</div>
+                  {coach.userClubs && coach.userClubs.length > 0 && (
+                    <div className="text-xs text-gray-500 leading-tight">
+                      {coach.userClubs.map((uc) => uc.club.name).join(", ")}
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  aria-label={`Remove ${coachDisplayName(coach)}`}
+                  onClick={() => handleRemoveCoach(coach.id)}
+                  disabled={saving}
+                  className="ml-1 hover:text-red-600 text-gray-400"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {selectableCoaches.length > 0 && (
+          <Select
+            value=""
+            onValueChange={(val) => val && handleAddCoach(val)}
+            disabled={saving}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Add a coach…" />
+            </SelectTrigger>
+            <SelectContent>
+              {selectableCoaches.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {coachDisplayName(c)}
+                  {c.userClubs && c.userClubs.length > 0 &&
+                    ` (${c.userClubs.map((uc) => uc.club.name).join(", ")})`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {myCoaches.length === 0 && selectableCoaches.length === 0 && (
+          <p className="text-xs text-gray-500">
+            No coaches available. Join a club to see coaches.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -774,8 +774,8 @@ export default function PersonalPage() {
         <ProfileSection />
       </CollapsibleSection>
 
-      <CollapsibleSection title="My Coaches" defaultOpen={section === "coaches"}>
-        <MyCoachesSection />
+      <CollapsibleSection title="My Club(s) and Coaches" defaultOpen={section === "coaches"}>
+        <MyClubsAndCoachesSection />
       </CollapsibleSection>
 
       <CollapsibleSection title="Notifications" defaultOpen={section === "notifications"}>

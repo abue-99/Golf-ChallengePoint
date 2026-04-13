@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Trash2, X } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -92,9 +92,6 @@ type UserProfile = {
   timezone: string | null;
 };
 
-type Club = { id: string; name: string };
-type UserClub = { id: string; clubId: string; club: Club };
-
 export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -111,10 +108,6 @@ export default function ProfilePage() {
   const [savedMsg, setSavedMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [fileSizeError, setFileSizeError] = useState("");
-
-  const [allClubs, setAllClubs] = useState<Club[]>([]);
-  const [myClubs, setMyClubs] = useState<UserClub[]>([]);
-  const [clubsLoading, setClubsLoading] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -136,14 +129,6 @@ export default function ProfilePage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-
-    Promise.all([
-      fetch("/api/clubs").then((r) => r.json()),
-      fetch("/api/clubs/my").then((r) => r.json()),
-    ]).then(([clubs, myClubsData]) => {
-      setAllClubs(Array.isArray(clubs) ? clubs : []);
-      setMyClubs(Array.isArray(myClubsData) ? myClubsData : []);
-    });
   }, []);
 
   function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -194,41 +179,8 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleAddClub(clubId: string) {
-    setClubsLoading(true);
-    try {
-      const res = await fetch("/api/clubs/my", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId }),
-      });
-      if (res.ok) {
-        const updated = await res.json();
-        setMyClubs(Array.isArray(updated) ? updated : []);
-      }
-    } finally {
-      setClubsLoading(false);
-    }
-  }
-
-  async function handleRemoveClub(clubId: string) {
-    setClubsLoading(true);
-    try {
-      const res = await fetch(`/api/clubs/my/${clubId}`, { method: "DELETE" });
-      if (res.ok) {
-        const updated = await res.json();
-        setMyClubs(Array.isArray(updated) ? updated : []);
-      }
-    } finally {
-      setClubsLoading(false);
-    }
-  }
-
   const initials =
     `${profile.firstName?.[0] ?? ""}${profile.lastName?.[0] ?? ""}`.toUpperCase() || "?";
-
-  const myClubIds = new Set(myClubs.map((uc) => uc.clubId));
-  const availableClubs = allClubs.filter((c) => !myClubIds.has(c.id));
 
   if (loading) return <div className="p-6">Loading...</div>;
 
@@ -350,53 +302,6 @@ export default function ProfilePage() {
             ))}
           </SelectContent>
         </Select>
-      </div>
-
-      {/* Clubs & Academies */}
-      <div className="space-y-2">
-        <Label>Clubs &amp; Academies</Label>
-        {myClubs.length > 0 && (
-          <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-gray-50">
-            {myClubs.map((uc) => (
-              <span
-                key={uc.clubId}
-                className="inline-flex items-center gap-1 rounded bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-800"
-              >
-                {uc.club.name}
-                <button
-                  type="button"
-                  aria-label={`Remove ${uc.club.name}`}
-                  onClick={() => handleRemoveClub(uc.clubId)}
-                  disabled={clubsLoading}
-                  className="ml-0.5 hover:text-red-600"
-                >
-                  <X size={12} />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-        {availableClubs.length > 0 && (
-          <Select
-            value=""
-            onValueChange={(val) => val && handleAddClub(val)}
-            disabled={clubsLoading}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Add a Club or Academy…" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableClubs.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-        {myClubs.length === 0 && availableClubs.length === 0 && (
-          <p className="text-xs text-gray-500">No clubs available.</p>
-        )}
       </div>
 
       <div className="flex items-center gap-4">
