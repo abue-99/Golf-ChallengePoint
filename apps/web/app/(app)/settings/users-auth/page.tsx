@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { ChevronDown, ChevronRight, Plus, Trash2, SquarePen, Search, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Trash2, SquarePen, Search, X, Hourglass, Send } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -511,6 +511,9 @@ export default function UsersAuthPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
 
+  // resend invite
+  const [resendingId, setResendingId] = useState<string | null>(null);
+
   const fetchUsers = useCallback(async () => {
     try {
       const res = await fetchWithAuth("/api/users");
@@ -614,6 +617,15 @@ export default function UsersAuthPage() {
       throw new Error(data?.message ?? "Failed to delete user.");
     }
     await fetchUsers();
+  }
+
+  async function handleResendInvite(userId: string) {
+    setResendingId(userId);
+    try {
+      await fetchWithAuth(`/api/users/${userId}/resend-invite`, { method: "POST" });
+    } finally {
+      setResendingId(null);
+    }
   }
 
   // Role options available to the current admin in the table row dropdown
@@ -752,9 +764,18 @@ export default function UsersAuthPage() {
 
                           {/* Last Login */}
                           <TableCell className="text-gray-500 text-sm">
-                            {user.lastLogin
-                              ? new Date(user.lastLogin).toLocaleDateString()
-                              : "—"}
+                            <span className="inline-flex items-center gap-1.5">
+                              {user.lastLogin
+                                ? new Date(user.lastLogin).toLocaleDateString()
+                                : "—"}
+                              {!user.lastLogin && (
+                                <Hourglass
+                                  className="h-3.5 w-3.5 text-amber-500 shrink-0"
+                                  aria-label="Invitation pending"
+                                  title="Invitation pending – user has not logged in yet"
+                                />
+                              )}
+                            </span>
                           </TableCell>
 
                           {/* Joined */}
@@ -765,6 +786,17 @@ export default function UsersAuthPage() {
                           {/* Edit + Delete */}
                           <TableCell>
                             <div className="flex items-center gap-1">
+                              {!user.lastLogin && (
+                                <button
+                                  onClick={() => handleResendInvite(user.id)}
+                                  disabled={resendingId === user.id}
+                                  aria-label={`Resend invitation to ${user.email}`}
+                                  title="Resend invitation email"
+                                  className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-amber-50 hover:text-amber-600 transition-colors disabled:opacity-50"
+                                >
+                                  <Send className="h-4 w-4" />
+                                </button>
+                              )}
                               <button
                                 onClick={() => openEdit(user)}
                                 aria-label={`Edit ${user.email}`}
