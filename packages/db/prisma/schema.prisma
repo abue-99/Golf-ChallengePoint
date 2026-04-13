@@ -35,6 +35,7 @@ model User {
 
   playerProfile    PlayerProfile?
   coachPlayerLinks CoachPlayerLink[] @relation("CoachToPlayer")
+  playerCoachLinks CoachPlayerLink[] @relation("PlayerToCoach")
   userClubs        UserClub[]
   coachTeams       Team[]            @relation("CoachTeams")
   teamMemberships  TeamMember[]
@@ -123,6 +124,7 @@ model CoachPlayerLink {
   coachId   String
   coach     User     @relation("CoachToPlayer", fields: [coachId], references: [id], onDelete: Cascade)
   playerId  String
+  player    User     @relation("PlayerToCoach", fields: [playerId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
   @@unique([coachId, playerId])
