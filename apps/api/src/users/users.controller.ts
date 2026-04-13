@@ -96,6 +96,12 @@ export class UsersController {
     });
   }
 
+  /** Get players linked to the current coach/admin. */
+  @Get('me/players')
+  getMyPlayers(@CurrentUser() caller: AuthenticatedUser) {
+    return this.usersService.getCoachPlayers(caller.id);
+  }
+
   /** Get coaches available to the current user (from shared clubs). */
   @Get('me/available-coaches')
   getAvailableCoaches(@CurrentUser() caller: AuthenticatedUser) {

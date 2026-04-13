@@ -191,6 +191,35 @@ export class UsersService {
     return coachUserClubs.map((uc) => uc.user);
   }
 
+  /** Players currently linked to the given coach. */
+  async getCoachPlayers(coachId: string) {
+    const links = await this.prisma.coachPlayerLink.findMany({
+      where: { coachId },
+      select: {
+        playerId: true,
+        player: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profileImage: true,
+            email: true,
+            phoneNumber: true,
+            timezone: true,
+            lastLogin: true,
+            userClubs: {
+              select: {
+                clubId: true,
+                club: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+    return links.map((l) => l.player);
+  }
+
   /** Coaches currently linked to the given player. */
   async getPlayerCoaches(playerId: string) {
     const links = await this.prisma.coachPlayerLink.findMany({
