@@ -1,10 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
+import { Resend } from 'resend';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   private readonly userSelect = {
@@ -89,6 +92,39 @@ export class UsersService {
     return { success: true };
   }
 
+  /** Send an invitation email to a newly created player via Resend. */
+  private async sendInviteEmail({
+    to,
+    tempPassword,
+    loginUrl,
+    firstName,
+  }: {
+    to: string;
+    tempPassword: string;
+    loginUrl: string;
+    firstName: string;
+  }): Promise<void> {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    try {
+      await resend.emails.send({
+        from: 'noreply@golf-challengepoint.com',
+        to,
+        subject: 'Your Golf Challenge Point Invitation',
+        html: `
+          <p>Hello${firstName ? ` ${firstName}` : ''},</p>
+          <p>You have been invited to <strong>Golf Challenge Point</strong>.</p>
+          <p>Use the temporary password below to log in for the first time:</p>
+          <p><strong>${tempPassword}</strong></p>
+          <p><a href="${loginUrl}">Log in here: ${loginUrl}</a></p>
+          <p>Please change your password after your first login.</p>
+        `,
+      });
+      this.logger.log(`Invite email sent to ${to}`);
+    } catch (err) {
+      this.logger.error(`Failed to send invite email to ${to}: ${err}`);
+    }
+  }
+
   /** Create a new PLAYER and assign them to a club and coach. */
   async invitePlayer(dto: {
     firstName: string;
@@ -122,13 +158,24 @@ export class UsersService {
         },
       });
 
-      // Log invite info (no mail service configured yet)
-      const appUrl = process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-      console.log(
-        `[INVITE] New player ${email} created. ` +
-          `Temp password: ${tempPassword}. ` +
-          `Login link: ${appUrl}/login`,
+      const appUrl =
+        process.env.APP_URL ??
+        process.env.NEXT_PUBLIC_APP_URL ??
+        'http://localhost:3000';
+      const loginUrl = `${appUrl}/login`;
+
+      this.logger.log(
+        `[INVITE] New player ${email} created. Login link: ${loginUrl}`,
       );
+
+      await this.sendInviteEmail({
+        to: email,
+        tempPassword,
+        loginUrl,
+        firstName: dto.firstName,
+      });
+    } else {
+      this.logger.log(`User ${email} already exists, invite email not sent.`);
     }
 
     // Assign to club
