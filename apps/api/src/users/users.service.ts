@@ -268,11 +268,33 @@ export class UsersService {
                 club: { select: { id: true, name: true } },
               },
             },
+            playerCoachLinks: {
+              select: {
+                coach: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    profileImage: true,
+                    email: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
     });
-    return links.map((l) => l.player).filter(Boolean);
+    return links
+      .map((l) => {
+        if (!l.player) return null;
+        const { playerCoachLinks, ...rest } = l.player;
+        return {
+          ...rest,
+          coaches: playerCoachLinks.map((pcl) => pcl.coach).filter(Boolean),
+        };
+      })
+      .filter(Boolean);
   }
 
   /** Coaches currently linked to the given player. */

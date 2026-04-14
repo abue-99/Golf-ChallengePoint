@@ -86,6 +86,7 @@ type Player = {
   lastLogin?: string | null;
   role?: string;
   userClubs?: { clubId: string; club: { id: string; name: string } | null }[];
+  coaches?: { id: string; firstName: string | null; lastName: string | null; profileImage: string | null; email?: string }[];
 };
 
 type TeamMember = {
@@ -308,7 +309,7 @@ export default function TeamsPage() {
   if (loading) return <div className="p-6">Loading…</div>;
 
   return (
-    <div className="p-6 space-y-6 max-w-6xl">
+    <div className="p-6 space-y-3 max-w-6xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Teams</h1>
         <Button
@@ -656,7 +657,6 @@ function EditTeamDialog({
   });
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [savedMsg, setSavedMsg] = useState("");
 
   const [editPlayersLoading, setEditPlayersLoading] = useState(false);
   const [editPlayers, setEditPlayers] = useState<Player[]>(allPlayers);
@@ -701,8 +701,7 @@ function EditTeamDialog({
     const ok = await onUpdate(team.id, { ...form, category: cat, categoryInput: "" });
     setSaving(false);
     if (ok) {
-      setSavedMsg("Saved.");
-      setTimeout(() => setSavedMsg(""), 2000);
+      onClose();
     } else {
       setFormError("Failed to save.");
     }
@@ -882,7 +881,6 @@ function EditTeamDialog({
           </div>
 
           {formError && <p className="text-sm text-red-600">{formError}</p>}
-          {savedMsg && <p className="text-sm text-green-600">{savedMsg}</p>}
 
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose}>Close</Button>
@@ -959,6 +957,17 @@ function PlayerDetailDialog({
                 <span className="font-medium text-gray-500 shrink-0">Clubs</span>
                 <span className="text-right">
                   {player.userClubs.map((uc) => uc.club?.name ?? "").filter(Boolean).join(", ")}
+                </span>
+              </div>
+            )}
+            {player.coaches && player.coaches.length > 0 && (
+              <div className="flex justify-between gap-2">
+                <span className="font-medium text-gray-500 shrink-0">Coaches</span>
+                <span className="text-right">
+                  {player.coaches
+                    .map((c) => `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || c.email || "")
+                    .filter(Boolean)
+                    .join(", ")}
                 </span>
               </div>
             )}
@@ -1231,7 +1240,6 @@ function AddPlayerDialog({
                     </div>
                     <Button
                       size="sm"
-                      variant="outline"
                       disabled={linking}
                       onClick={() => handleLink(p)}
                     >
@@ -1248,7 +1256,6 @@ function AddPlayerDialog({
 
           <div className="flex items-center justify-between pt-1 border-t">
             <Button
-              variant="ghost"
               size="sm"
               onClick={() => setMode("invite")}
             >
@@ -1283,7 +1290,7 @@ function PlayersSection({
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Players</h2>
         <Button size="sm" onClick={() => setShowAddPlayer(true)} className="gap-2">
