@@ -288,9 +288,9 @@ export class UsersService {
     return links
       .map((l) => {
         if (!l.player) return null;
-        const { playerCoachLinks, ...rest } = l.player;
+        const { playerCoachLinks, ...playerData } = l.player;
         return {
-          ...rest,
+          ...playerData,
           coaches: playerCoachLinks.map((pcl) => pcl.coach).filter(Boolean),
         };
       })
