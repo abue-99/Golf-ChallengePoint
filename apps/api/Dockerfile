@@ -52,4 +52,4 @@ COPY --from=builder /app/packages/db/node_modules ./packages/db/node_modules
 ENV NODE_ENV=production
 EXPOSE 4000
 
-CMD ["sh", "-c", "pnpm --filter @challengepoint/db run migrate:deploy && node apps/api/dist/main.js"]
+CMD ["sh", "-c", "cd /app/packages/db && node_modules/.bin/prisma migrate resolve --rolled-back 20260413100000_fix_coach_player_links_cascade 2>/dev/null || true && cd /app && pnpm --filter @challengepoint/db run migrate:deploy && node apps/api/dist/main.js"]
