@@ -152,4 +152,15 @@ export class UsersController {
   ) {
     return this.usersService.addPlayerToCoach(caller.id, playerId);
   }
+
+  /** Unlink a player from the current coach. */
+  @Delete('me/players/:playerId')
+  @Roles(Role.COACH)
+  @HttpCode(HttpStatus.OK)
+  removeMyPlayer(
+    @CurrentUser() caller: AuthenticatedUser,
+    @Param('playerId') playerId: string,
+  ) {
+    return this.usersService.removePlayerFromCoach(caller.id, playerId);
+  }
 }
