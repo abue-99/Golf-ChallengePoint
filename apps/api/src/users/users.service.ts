@@ -114,7 +114,7 @@ export class UsersService {
 
     try {
       await this.resend.emails.send({
-        from: 'noreply@golf-challengepoint.com',
+        from: 'noreply@contact.golf-challengepoint.com',
         to,
         subject: 'Your Golf Challenge Point Invitation',
         html: `

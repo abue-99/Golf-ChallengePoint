@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   try {
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "noreply@golf-challengepoint.com",
+      from: process.env.RESEND_FROM_EMAIL || "noreply@contact.golf-challengepoint.com",
       to: normalised,
       subject: "Reset your Golf Challenge Point password",
       html: `
