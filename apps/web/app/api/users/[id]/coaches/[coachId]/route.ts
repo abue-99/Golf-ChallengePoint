@@ -19,7 +19,7 @@ export async function POST(
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });
-  const data = await res.json().catch(() => []);
+  const data = await res.json().catch(() => ({}));
   return NextResponse.json(data, { status: res.status });
 }
 
@@ -34,6 +34,6 @@ export async function DELETE(
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
-  const data = await res.json().catch(() => []);
+  const data = await res.json().catch(() => ({}));
   return NextResponse.json(data, { status: res.status });
 }

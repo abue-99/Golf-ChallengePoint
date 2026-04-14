@@ -18,6 +18,6 @@ export async function GET(
   const res = await fetch(`${API_URL}/users/${id}/coaches`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  const data = await res.json().catch(() => []);
+  const data = await res.json().catch(() => ({}));
   return NextResponse.json(data, { status: res.status });
 }

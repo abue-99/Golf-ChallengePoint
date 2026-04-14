@@ -494,6 +494,10 @@ function EditUserModal({
       if (res.ok) {
         const updated: CoachUser[] = await res.json();
         setCoaches(Array.isArray(updated) ? updated.filter(Boolean) : []);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        const msg = Array.isArray(data.message) ? data.message.join(", ") : data.message || data.error || "Failed to add coach.";
+        alert(msg);
       }
     } finally {
       setCoachSaving(false);
@@ -507,6 +511,10 @@ function EditUserModal({
       if (res.ok) {
         const updated: CoachUser[] = await res.json();
         setCoaches(Array.isArray(updated) ? updated.filter(Boolean) : []);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        const msg = Array.isArray(data.message) ? data.message.join(", ") : data.message || data.error || "Failed to remove coach.";
+        alert(msg);
       }
     } finally {
       setCoachSaving(false);
