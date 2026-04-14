@@ -310,15 +310,7 @@ export default function TeamsPage() {
 
   return (
     <div className="p-6 space-y-3 max-w-6xl">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Teams</h1>
-        <Button
-          size="sm"
-          onClick={() => { setShowForm((v) => !v); setForm(EMPTY_FORM); setFormError(""); }}
-        >
-          <Plus size={16} className="mr-1" /> New Team
-        </Button>
-      </div>
+      <h1 className="text-2xl font-bold">Teams</h1>
 
       {/* New Team Form */}
       {showForm && (
@@ -448,15 +440,23 @@ export default function TeamsPage() {
       )}
 
       {/* Teams Table */}
-      {/* Search bar */}
-      <div className="relative w-full max-w-xs">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-        <Input
-          className="pl-8"
-          placeholder="Search teams…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      {/* Search bar + New Team button in one row directly above the table */}
+      <div className="flex items-center gap-2">
+        <div className="relative w-full max-w-xs">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+          <Input
+            className="pl-8"
+            placeholder="Search teams…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <Button
+          size="sm"
+          onClick={() => { setShowForm((v) => !v); setForm(EMPTY_FORM); setFormError(""); }}
+        >
+          <Plus size={16} className="mr-1" /> New Team
+        </Button>
       </div>
 
       {teams.length === 0 ? (
@@ -612,6 +612,7 @@ export default function TeamsPage() {
       )}
 
       {/* ── Players Section ── */}
+      <div className="mt-10">
       <PlayersSection
         players={myPlayers}
         myClubs={myClubs}
@@ -621,7 +622,11 @@ export default function TeamsPage() {
             return exists ? prev : [...prev, newPlayer];
           })
         }
+        onPlayerRemoved={(playerId) =>
+          setMyPlayers((prev) => prev.filter((p) => p.id !== playerId))
+        }
       />
+      </div>
     </div>
   );
 }
@@ -1274,10 +1279,12 @@ function PlayersSection({
   players,
   myClubs,
   onPlayerInvited,
+  onPlayerRemoved,
 }: {
   players: Player[];
   myClubs: ClubOption[];
   onPlayerInvited: (player: Player) => void;
+  onPlayerRemoved: (playerId: string) => void;
 }) {
   const [search, setSearch] = useState("");
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
@@ -1289,24 +1296,37 @@ function PlayersSection({
     return name.includes(q) || p.id.toLowerCase().includes(q);
   });
 
+  async function handleRemovePlayer(playerId: string, playerName: string) {
+    if (!window.confirm(`Remove "${playerName}" from your players list?`)) return;
+    const res = await fetch(`/api/players/my/${encodeURIComponent(playerId)}`, {
+      method: "DELETE",
+    });
+    if (res.ok) {
+      onPlayerRemoved(playerId);
+    } else {
+      alert("Failed to remove player. Please try again.");
+    }
+  }
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Players</h2>
+      <h2 className="text-2xl font-bold">Players</h2>
+
+      {/* Search bar + Add Player button in one row directly above the grid */}
+      <div className="flex items-center gap-2">
+        <div className="relative w-full max-w-xs">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+          <Input
+            className="pl-8"
+            placeholder="Search players…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
         <Button size="sm" onClick={() => setShowAddPlayer(true)} className="gap-2">
           <UserPlus size={16} />
           Add Player
         </Button>
-      </div>
-
-      <div className="relative w-full max-w-xs">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-        <Input
-          className="pl-8"
-          placeholder="Search players…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
       </div>
 
       {players.length === 0 ? (
@@ -1323,10 +1343,18 @@ function PlayersSection({
             return (
               <div
                 key={p.id}
-                className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-all cursor-pointer select-none"
+                className="relative flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-all cursor-pointer select-none group"
                 onDoubleClick={() => setSelectedPlayer(p)}
                 title="Double-click to view details"
               >
+                <button
+                 onClick={(e) => { e.stopPropagation(); handleRemovePlayer(p.id, name); }}
+                  className="absolute top-1 right-1 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                  aria-label="Remove player"
+                  title="Remove player"
+                >
+                  <X size={10} />
+                </button>
                 <div className="relative">
                   <Avatar className="h-16 w-16">
                     {p.profileImage && (
