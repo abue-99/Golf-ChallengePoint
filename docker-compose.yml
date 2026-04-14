@@ -19,8 +19,8 @@ services:
       ACCESS_TOKEN_EXPIRY: 15m
       REFRESH_TOKEN_EXPIRY: 7d
       FRONTEND_URL: ${FRONTEND_URL:-http://178.104.48.239}
-      # Required for sending invitation emails via Resend
-      RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY must be set}
+      # Required for sending invitation emails via Resend (leave empty to skip email sending)
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
       # Public app URL embedded in invite email login links
       APP_URL: ${NEXT_PUBLIC_APP_URL:-http://178.104.48.239}
     restart: unless-stopped
@@ -41,6 +41,8 @@ services:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
       # Set to "true" only when the site is served over HTTPS
       SECURE_COOKIES: ${SECURE_COOKIES:-false}
+      # Required for sending password-reset emails via Resend (leave empty to skip email sending)
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
     depends_on:
       - api
     restart: unless-stopped
