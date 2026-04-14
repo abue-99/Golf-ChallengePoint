@@ -149,6 +149,8 @@ export default function TeamsPage() {
   const [teamPlayers, setTeamPlayers] = useState<Player[]>([]);
   const [teamPlayersLoading, setTeamPlayersLoading] = useState(false);
 
+  const [selectedMemberPlayer, setSelectedMemberPlayer] = useState<Player | null>(null);
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
@@ -511,7 +513,11 @@ export default function TeamsPage() {
                       <div className="flex flex-wrap items-center gap-1">
                         {team.members.map((m) => (
                           <div key={m.userId} className="relative group">
-                            <Avatar className="h-7 w-7 text-xs" title={`${m.user?.firstName ?? ""} ${m.user?.lastName ?? ""}`.trim()}>
+                            <Avatar
+                              className="h-7 w-7 text-xs cursor-pointer"
+                              title={`${m.user?.firstName ?? ""} ${m.user?.lastName ?? ""}`.trim()}
+                              onClick={(e) => { e.stopPropagation(); if (m.user) setSelectedMemberPlayer(m.user); }}
+                            >
                               {m.user?.profileImage && <AvatarImage src={m.user.profileImage} alt={initials(m.user)} />}
                               <AvatarFallback className="bg-blue-100 text-blue-700">{m.user ? initials(m.user) : "?"}</AvatarFallback>
                             </Avatar>
@@ -608,6 +614,14 @@ export default function TeamsPage() {
           onUpdate={handleUpdate}
           onAddMember={handleAddMember}
           onRemoveMember={handleRemoveMember}
+        />
+      )}
+
+      {/* Member Detail Dialog */}
+      {selectedMemberPlayer && (
+        <PlayerDetailDialog
+          player={selectedMemberPlayer}
+          onClose={() => setSelectedMemberPlayer(null)}
         />
       )}
 
@@ -1344,8 +1358,8 @@ function PlayersSection({
               <div
                 key={p.id}
                 className="relative flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-all cursor-pointer select-none group"
-                onDoubleClick={() => setSelectedPlayer(p)}
-                title="Double-click to view details"
+                onClick={() => setSelectedPlayer(p)}
+                title="Click to view details"
               >
                 <button
                  onClick={(e) => { e.stopPropagation(); handleRemovePlayer(p.id, name); }}

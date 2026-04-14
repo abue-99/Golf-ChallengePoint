@@ -8,20 +8,16 @@ async function getToken() {
   return cookieStore.get("token")?.value;
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+export async function POST(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string; coachId: string }> }
 ) {
   const token = await getToken();
   if (!token) return NextResponse.json(null, { status: 401 });
-  const { id } = await params;
-  const body = await req.json();
-  // Route to the correct backend endpoint based on the request body
-  const endpoint = "role" in body ? `${API_URL}/users/${id}/role` : `${API_URL}/users/${id}/profile`;
-  const res = await fetch(endpoint, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(body),
+  const { id, coachId } = await params;
+  const res = await fetch(`${API_URL}/users/${id}/coaches/${coachId}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
   });
   const data = await res.json().catch(() => ({}));
   return NextResponse.json(data, { status: res.status });
@@ -29,15 +25,15 @@ export async function PATCH(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string; coachId: string }> }
 ) {
   const token = await getToken();
   if (!token) return NextResponse.json(null, { status: 401 });
-  const { id } = await params;
-  const res = await fetch(`${API_URL}/users/${id}`, {
+  const { id, coachId } = await params;
+  const res = await fetch(`${API_URL}/users/${id}/coaches/${coachId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
-  const data = await res.json().catch(() => ({ success: true }));
+  const data = await res.json().catch(() => ({}));
   return NextResponse.json(data, { status: res.status });
 }

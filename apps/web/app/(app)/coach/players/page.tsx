@@ -43,7 +43,7 @@ function playerName(p: Player) {
   return [p.firstName, p.lastName].filter(Boolean).join(" ") || p.email || "—";
 }
 
-/** Modal shown when double-clicking a player card. */
+/** Modal shown when clicking a player card. */
 function PlayerDetailDialog({
   player,
   onClose,
@@ -292,8 +292,8 @@ export default function PlayersPage() {
               <div
                 key={player.id}
                 className="flex flex-col items-center gap-2 rounded-xl border border-[var(--golf-muted)] bg-white p-4 shadow-sm hover:shadow-md transition-all cursor-pointer select-none"
-                onDoubleClick={() => setSelectedPlayer(player)}
-                title="Double-click to view details"
+                onClick={() => setSelectedPlayer(player)}
+                title="Click to view details"
               >
                 <div className="relative">
                   <Avatar className="h-16 w-16">

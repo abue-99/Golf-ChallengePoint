@@ -62,6 +62,22 @@ export class UsersService {
     });
   }
 
+  async updateProfile(
+    id: string,
+    dto: { firstName?: string | null; lastName?: string | null },
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('User not found.');
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        ...(dto.firstName !== undefined ? { firstName: dto.firstName } : {}),
+        ...(dto.lastName !== undefined ? { lastName: dto.lastName } : {}),
+      },
+      select: this.userSelect,
+    });
+  }
+
   async addUserClub(userId: string, clubId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found.');
