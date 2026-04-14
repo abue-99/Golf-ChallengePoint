@@ -334,7 +334,7 @@ export default function TeamsPage() {
                   key={emoji}
                   type="button"
                   onClick={() => setForm((f) => ({ ...f, icon: f.icon === emoji ? "" : emoji }))}
-                  className={`text-xl p-1 rounded border transition-colors ${
+                  className={`text-base p-1 rounded border transition-colors ${
                     form.icon === emoji
                       ? "border-blue-500 bg-blue-50"
                       : "border-transparent hover:border-gray-300"
@@ -357,7 +357,7 @@ export default function TeamsPage() {
                   aria-label={`Select ${label} circle`}
                   title={label}
                 >
-                  <TeamIcon icon={value} size={22} />
+                  <TeamIcon icon={value} size={18} />
                 </button>
               ))}
             </div>
@@ -493,7 +493,7 @@ export default function TeamsPage() {
                   >
                     <td className="px-4 py-1.5 font-medium whitespace-nowrap">
                       <span className="flex items-center gap-1.5">
-                        {team.icon && <TeamIcon icon={team.icon} size={18} />}
+                        {team.icon && <TeamIcon icon={team.icon} size={14} />}
                         {team.shortName}
                       </span>
                     </td>
@@ -728,7 +728,7 @@ function EditTeamDialog({
                   key={emoji}
                   type="button"
                   onClick={() => setForm((f) => ({ ...f, icon: f.icon === emoji ? "" : emoji }))}
-                  className={`text-xl p-1 rounded border transition-colors ${
+                  className={`text-base p-1 rounded border transition-colors ${
                     form.icon === emoji
                       ? "border-blue-500 bg-blue-50"
                       : "border-transparent hover:border-gray-300"
@@ -751,7 +751,7 @@ function EditTeamDialog({
                   aria-label={`Select ${label} circle`}
                   title={label}
                 >
-                  <TeamIcon icon={value} size={22} />
+                  <TeamIcon icon={value} size={18} />
                 </button>
               ))}
             </div>
@@ -1139,7 +1139,6 @@ function PlayersSection({
             const name = `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.email || "—";
             const playerInitials = `${p.firstName?.[0] ?? ""}${p.lastName?.[0] ?? ""}`.toUpperCase() || "?";
             const isInactive = !p.lastLogin;
-            const clubs = p.userClubs?.map((uc) => uc.club?.name ?? "").filter(Boolean) ?? [];
 
             return (
               <div
@@ -1167,11 +1166,6 @@ function PlayersSection({
                 <span className="text-sm font-medium text-center text-gray-800 leading-snug">
                   {name}
                 </span>
-                {clubs.length > 0 && (
-                  <span className="text-xs text-center text-gray-500 leading-snug">
-                    {clubs.join(", ")}
-                  </span>
-                )}
               </div>
             );
           })}
