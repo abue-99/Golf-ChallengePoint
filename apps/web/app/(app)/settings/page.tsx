@@ -28,7 +28,9 @@ export default async function SettingsPage() {
     {
       title: "Personal",
       links: [
-        { label: "Profile & Notifications", href: "/settings/personal" },
+        { label: "Profile", href: "/settings/personal?section=profile" },
+        { label: "My Clubs & Coaches", href: "/settings/personal?section=coaches" },
+        { label: "Notifications", href: "/settings/personal?section=notifications" },
       ],
     },
     {

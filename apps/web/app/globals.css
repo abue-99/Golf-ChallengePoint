@@ -85,6 +85,38 @@
   --ring: oklch(0.556 0 0);
 }
 
+/* Global 20% size reduction for text, spacing, and headings */
+html {
+  font-size: 80%;
+}
+
+/* Keep avatar/image sizes at their original pixel values (not scaled down) */
+[data-slot="avatar"].h-24,
+[data-slot="avatar"].w-24 {
+  width: 96px !important;
+  height: 96px !important;
+}
+[data-slot="avatar"].h-16,
+[data-slot="avatar"].w-16 {
+  width: 64px !important;
+  height: 64px !important;
+}
+[data-slot="avatar"].h-8,
+[data-slot="avatar"].w-8 {
+  width: 32px !important;
+  height: 32px !important;
+}
+[data-slot="avatar"].h-7,
+[data-slot="avatar"].w-7 {
+  width: 28px !important;
+  height: 28px !important;
+}
+[data-slot="avatar"].h-4,
+[data-slot="avatar"].w-4 {
+  width: 16px !important;
+  height: 16px !important;
+}
+
 /* FullCalendar helper */
 .fc {
   --fc-border-color: var(--color-slate-200);
