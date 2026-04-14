@@ -141,4 +141,15 @@ export class UsersController {
   resendInvite(@Param('id') id: string) {
     return this.usersService.resendInvite(id);
   }
+
+  /** Link an existing player to the current coach. */
+  @Post('me/players/:playerId')
+  @Roles(Role.COACH)
+  @HttpCode(HttpStatus.OK)
+  addMyPlayer(
+    @CurrentUser() caller: AuthenticatedUser,
+    @Param('playerId') playerId: string,
+  ) {
+    return this.usersService.addPlayerToCoach(caller.id, playerId);
+  }
 }

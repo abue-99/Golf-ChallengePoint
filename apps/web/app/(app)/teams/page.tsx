@@ -1026,7 +1026,7 @@ function InvitePlayerDialog({
     <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Add Player</DialogTitle>
+          <DialogTitle>Invite New Player</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           <div className="space-y-1">
@@ -1090,6 +1090,179 @@ function InvitePlayerDialog({
   );
 }
 
+function AddPlayerDialog({
+  clubs,
+  myPlayers,
+  onClose,
+  onPlayerAdded,
+}: {
+  clubs: ClubOption[];
+  myPlayers: Player[];
+  onClose: () => void;
+  onPlayerAdded: (player: Player) => void;
+}) {
+  const [mode, setMode] = useState<"existing" | "invite">("existing");
+  const [clubId, setClubId] = useState(clubs[0]?.id ?? "");
+  const [clubPlayers, setClubPlayers] = useState<Player[]>([]);
+  const [loadingClubPlayers, setLoadingClubPlayers] = useState(false);
+  const [search, setSearch] = useState("");
+  const [linking, setLinking] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const myPlayerIds = new Set(myPlayers.map((p) => p.id));
+
+  useEffect(() => {
+    if (!clubId) return;
+    setLoadingClubPlayers(true);
+    fetch(`/api/teams/club-players?clubId=${encodeURIComponent(clubId)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const players = Array.isArray(data)
+          ? data.filter(Boolean).filter((p: Player) => p.role === "PLAYER")
+          : [];
+        setClubPlayers(players);
+      })
+      .catch(() => setClubPlayers([]))
+      .finally(() => setLoadingClubPlayers(false));
+  }, [clubId]);
+
+  const availablePlayers = clubPlayers.filter((p) => !myPlayerIds.has(p.id));
+  const filteredPlayers = availablePlayers.filter((p) => {
+    const q = search.toLowerCase();
+    if (!q) return true;
+    const name = `${p.firstName ?? ""} ${p.lastName ?? ""}`.toLowerCase();
+    return name.includes(q) || (p.email ?? "").toLowerCase().includes(q);
+  });
+
+  async function handleLink(player: Player) {
+    setLinking(true);
+    setErrorMsg("");
+    try {
+      const res = await fetch("/api/players/my", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerId: player.id }),
+      });
+      if (res.ok) {
+        onPlayerAdded(player);
+        onClose();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setErrorMsg(data?.message ?? "Failed to add player.");
+      }
+    } catch {
+      setErrorMsg("Network error. Please try again.");
+    } finally {
+      setLinking(false);
+    }
+  }
+
+  if (mode === "invite") {
+    return (
+      <InvitePlayerDialog
+        clubs={clubs}
+        onClose={onClose}
+        onInvited={onPlayerAdded}
+      />
+    );
+  }
+
+  return (
+    <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add Player</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          {clubs.length > 1 && (
+            <div className="space-y-1">
+              <Label>Filter by Club</Label>
+              <Select value={clubId} onValueChange={setClubId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a club…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clubs.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <Label>Search existing players</Label>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+              <Input
+                className="pl-8"
+                placeholder="Search by name or email…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {loadingClubPlayers ? (
+            <p className="text-sm text-gray-400">Loading players…</p>
+          ) : filteredPlayers.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              {availablePlayers.length === 0
+                ? "No unlinked players found in this club."
+                : "No matching players found."}
+            </p>
+          ) : (
+            <div className="max-h-60 overflow-y-auto space-y-1 border rounded-md p-2">
+              {filteredPlayers.map((p) => {
+                const name = `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.email || "—";
+                const playerInitials = `${p.firstName?.[0] ?? ""}${p.lastName?.[0] ?? ""}`.toUpperCase() || "?";
+                return (
+                  <div
+                    key={p.id}
+                    className="flex items-center gap-3 p-2 rounded hover:bg-gray-50"
+                  >
+                    <Avatar className="h-8 w-8 shrink-0">
+                      {p.profileImage && <AvatarImage src={p.profileImage} alt={name} />}
+                      <AvatarFallback className="text-xs bg-gray-200 text-gray-600">{playerInitials}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{name}</div>
+                      {p.email && <div className="text-xs text-gray-400 truncate">{p.email}</div>}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={linking}
+                      onClick={() => handleLink(p)}
+                    >
+                      <Plus size={12} className="mr-1" />
+                      Add
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {errorMsg && <p className="text-sm text-red-600">{errorMsg}</p>}
+
+          <div className="flex items-center justify-between pt-1 border-t">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setMode("invite")}
+            >
+              <UserPlus size={14} className="mr-1" />
+              Invite New Player
+            </Button>
+            <Button variant="outline" onClick={onClose}>Close</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function PlayersSection({
   players,
   myClubs,
@@ -1101,7 +1274,7 @@ function PlayersSection({
 }) {
   const [search, setSearch] = useState("");
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
-  const [showInvite, setShowInvite] = useState(false);
+  const [showAddPlayer, setShowAddPlayer] = useState(false);
 
   const filtered = players.filter((p) => {
     const q = search.toLowerCase();
@@ -1113,9 +1286,9 @@ function PlayersSection({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Players</h2>
-        <Button size="sm" onClick={() => setShowInvite(true)} className="gap-2">
+        <Button size="sm" onClick={() => setShowAddPlayer(true)} className="gap-2">
           <UserPlus size={16} />
-          New Player
+          Add Player
         </Button>
       </div>
 
@@ -1179,11 +1352,12 @@ function PlayersSection({
         />
       )}
 
-      {showInvite && (
-        <InvitePlayerDialog
+      {showAddPlayer && (
+        <AddPlayerDialog
           clubs={myClubs}
-          onClose={() => setShowInvite(false)}
-          onInvited={(newPlayer) => {
+          myPlayers={players}
+          onClose={() => setShowAddPlayer(false)}
+          onPlayerAdded={(newPlayer) => {
             onPlayerInvited(newPlayer);
           }}
         />
