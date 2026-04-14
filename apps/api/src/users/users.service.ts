@@ -337,6 +337,12 @@ export class UsersService {
     return this.getCoachPlayers(coachId);
   }
 
+  /** Unlink a player from the given coach. */
+  async removePlayerFromCoach(coachId: string, playerId: string) {
+    await this.prisma.coachPlayerLink.deleteMany({ where: { coachId, playerId } });
+    return this.getCoachPlayers(coachId);
+  }
+
   async removePlayerCoach(playerId: string, coachId: string) {
     await this.prisma.coachPlayerLink.deleteMany({ where: { coachId, playerId } });
     return this.getPlayerCoaches(playerId);

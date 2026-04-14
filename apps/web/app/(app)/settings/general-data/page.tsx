@@ -441,7 +441,7 @@ export default function GeneralDataPage() {
         {sectionOpen && (
           <div className="px-5 pb-5 space-y-4 border-t">
             {/* Toolbar */}
-            <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 pt-4">
               {/* Search */}
               <div className="relative w-full max-w-xs">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />

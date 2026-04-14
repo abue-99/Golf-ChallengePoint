@@ -131,6 +131,7 @@ function ClubCell({
   onAddClub: (userId: string, clubId: string) => Promise<void>;
   onRemoveClub: (userId: string, clubId: string) => Promise<void>;
 }) {
+  const [selectKey, setSelectKey] = useState(0);
   const assignedIds = new Set(user.userClubs.map((uc) => uc.clubId));
   const available = allClubs.filter((c) => !assignedIds.has(c.id));
 
@@ -163,8 +164,13 @@ function ClubCell({
       ))}
       {available.length > 0 && (
         <Select
-          value=""
-          onValueChange={(val) => val && onAddClub(user.id, val)}
+          key={selectKey}
+          onValueChange={(val) => {
+            if (val) {
+              setSelectKey((k) => k + 1);
+              onAddClub(user.id, val);
+            }
+          }}
         >
           <SelectTrigger className="h-6 w-6 p-0 border-dashed rounded shrink-0" aria-label="Add club">
             <Plus className="h-3 w-3 mx-auto" />
@@ -588,6 +594,12 @@ export default function UsersAuthPage() {
     if (res.ok) {
       const updated: User = await res.json();
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+    } else {
+      const data = await res.json().catch(() => ({}));
+      const msg = Array.isArray(data.message)
+        ? data.message.join(", ")
+        : data.message || data.error || "Failed to add club.";
+      alert(msg);
     }
   }
 
@@ -598,6 +610,12 @@ export default function UsersAuthPage() {
     if (res.ok) {
       const updated: User = await res.json();
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+    } else {
+      const data = await res.json().catch(() => ({}));
+      const msg = Array.isArray(data.message)
+        ? data.message.join(", ")
+        : data.message || data.error || "Failed to remove club.";
+      alert(msg);
     }
   }
 
@@ -671,7 +689,7 @@ export default function UsersAuthPage() {
         {sectionOpen && (
           <div className="px-5 pb-5 space-y-4 border-t">
             {/* Toolbar */}
-            <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 pt-4">
               <div className="relative w-full max-w-xs">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
                 <Input
