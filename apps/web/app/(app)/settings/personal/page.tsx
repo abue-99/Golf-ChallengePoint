@@ -251,19 +251,19 @@ function ChangePasswordDialog({
 
 function CollapsibleSection({
   title,
-  defaultOpen = false,
+  open,
+  onToggle,
   children,
 }: {
   title: string;
-  defaultOpen?: boolean;
+  open: boolean;
+  onToggle: () => void;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
-
   return (
     <div className="rounded-xl border bg-white shadow-sm">
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={onToggle}
         className="flex w-full items-center justify-between px-5 py-4 text-left"
       >
         <span className="text-base font-semibold text-gray-800">{title}</span>
@@ -280,6 +280,7 @@ function CollapsibleSection({
 
 function ProfileSection() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [profile, setProfile] = useState<UserProfile>({
     firstName: "",
@@ -318,6 +319,45 @@ function ProfileSection() {
       .catch(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, []);
+
+  function scheduleAutoSave(updated: UserProfile) {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(async () => {
+      setSaving(true);
+      setSavedMsg("");
+      setErrorMsg("");
+      try {
+        const res = await fetch("/api/auth/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updated),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setErrorMsg(data?.message ?? "Failed to save profile. Please try again.");
+        } else {
+          setSavedMsg("Profile saved.");
+          setTimeout(() => setSavedMsg(""), 3000);
+        }
+      } catch {
+        setErrorMsg("Failed to save profile. Please try again.");
+      } finally {
+        setSaving(false);
+      }
+    }, 800);
+  }
+
+  function updateProfile(patch: Partial<UserProfile>) {
+    const updated = { ...profile, ...patch };
+    setProfile(updated);
+    scheduleAutoSave(updated);
+  }
+
   function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -332,38 +372,14 @@ function ProfileSection() {
 
     const reader = new FileReader();
     reader.onload = (ev) => {
-      setProfile((p) => ({ ...p, profileImage: ev.target?.result as string }));
+      updateProfile({ profileImage: ev.target?.result as string });
     };
     reader.readAsDataURL(file);
   }
 
   function handleDeleteAvatar() {
-    setProfile((p) => ({ ...p, profileImage: null }));
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }
-
-  async function handleSave() {
-    setSaving(true);
-    setSavedMsg("");
-    setErrorMsg("");
-    try {
-      const res = await fetch("/api/auth/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profile),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setErrorMsg(data?.message ?? "Failed to save profile. Please try again.");
-      } else {
-        setSavedMsg("Profile saved.");
-        setTimeout(() => setSavedMsg(""), 3000);
-      }
-    } catch {
-      setErrorMsg("Failed to save profile. Please try again.");
-    } finally {
-      setSaving(false);
-    }
+    updateProfile({ profileImage: null });
   }
 
   const initials =
@@ -373,6 +389,23 @@ function ProfileSection() {
 
   return (
     <div className="space-y-5 max-w-lg">
+      {/* Change Password + status */}
+      <div className="flex items-center gap-4">
+        <Button
+          variant="outline"
+          onClick={() => setChangePasswordOpen(true)}
+          className="gap-2"
+        >
+          <KeyRound size={15} />
+          Change Password
+        </Button>
+        {saving && <span className="text-sm text-gray-400">Saving…</span>}
+        {savedMsg && <span className="text-sm text-green-600">{savedMsg}</span>}
+        {errorMsg && (
+          <span className="text-sm text-red-600">{errorMsg}</span>
+        )}
+      </div>
+
       {/* Avatar row */}
       <div className="flex items-center gap-5">
         <div className="relative shrink-0">
@@ -418,7 +451,7 @@ function ProfileSection() {
         <Input
           id="firstName"
           value={profile.firstName}
-          onChange={(e) => setProfile((p) => ({ ...p, firstName: e.target.value }))}
+          onChange={(e) => updateProfile({ firstName: e.target.value })}
           placeholder="First Name"
         />
       </div>
@@ -429,7 +462,7 @@ function ProfileSection() {
         <Input
           id="lastName"
           value={profile.lastName}
-          onChange={(e) => setProfile((p) => ({ ...p, lastName: e.target.value }))}
+          onChange={(e) => updateProfile({ lastName: e.target.value })}
           placeholder="Last Name"
         />
       </div>
@@ -440,7 +473,7 @@ function ProfileSection() {
         <Select
           value={profile.gender ?? "__unset__"}
           onValueChange={(val) =>
-            setProfile((p) => ({ ...p, gender: val === "__unset__" ? null : val }))
+            updateProfile({ gender: val === "__unset__" ? null : val })
           }
         >
           <SelectTrigger className="w-full">
@@ -462,7 +495,7 @@ function ProfileSection() {
           type="tel"
           value={profile.phoneNumber ?? ""}
           onChange={(e) =>
-            setProfile((p) => ({ ...p, phoneNumber: e.target.value || null }))
+            updateProfile({ phoneNumber: e.target.value || null })
           }
           placeholder="+1 555 000 0000"
         />
@@ -474,7 +507,7 @@ function ProfileSection() {
         <Select
           value={profile.timezone ?? "__unset__"}
           onValueChange={(val) =>
-            setProfile((p) => ({ ...p, timezone: val === "__unset__" ? null : val }))
+            updateProfile({ timezone: val === "__unset__" ? null : val })
           }
         >
           <SelectTrigger className="w-full">
@@ -489,28 +522,6 @@ function ProfileSection() {
             ))}
           </SelectContent>
         </Select>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <Button
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-green-800 hover:bg-green-600 text-white"
-        >
-          {saving ? "Saving…" : "Save"}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => setChangePasswordOpen(true)}
-          className="gap-2 ml-4"
-        >
-          <KeyRound size={15} />
-          Change Password
-        </Button>
-        {savedMsg && <span className="text-sm text-green-600">{savedMsg}</span>}
-        {errorMsg && (
-          <span className="text-sm text-red-600">{errorMsg}</span>
-        )}
       </div>
 
       <ChangePasswordDialog
@@ -763,22 +774,36 @@ export default function PersonalPage() {
   const searchParams = useSearchParams();
   const section = searchParams.get("section");
 
-  // Open the profile section by default unless a specific other section is requested.
-  const profileDefaultOpen = section === null || section === "profile";
+  // Determine which section to open initially:
+  // - "profile" or no section param (e.g. navigated from header avatar) → open profile
+  // - "coaches" → open coaches
+  // - "notifications" → open notifications
+  // - any other value → all collapsed
+  const initialOpen =
+    section === "coaches" ? "coaches"
+    : section === "notifications" ? "notifications"
+    : (section === null || section === "profile") ? "profile"
+    : null;
+
+  const [openSection, setOpenSection] = useState<string | null>(initialOpen);
+
+  function toggleSection(name: string) {
+    setOpenSection((prev) => (prev === name ? null : name));
+  }
 
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-3xl font-semibold">Personal</h1>
 
-      <CollapsibleSection title="Profile" defaultOpen={profileDefaultOpen}>
+      <CollapsibleSection title="Profile" open={openSection === "profile"} onToggle={() => toggleSection("profile")}>
         <ProfileSection />
       </CollapsibleSection>
 
-      <CollapsibleSection title="My Club(s) and Coaches" defaultOpen={section === "coaches"}>
+      <CollapsibleSection title="My Club & Coaches" open={openSection === "coaches"} onToggle={() => toggleSection("coaches")}>
         <MyClubsAndCoachesSection />
       </CollapsibleSection>
 
-      <CollapsibleSection title="Notifications" defaultOpen={section === "notifications"}>
+      <CollapsibleSection title="Notifications" open={openSection === "notifications"} onToggle={() => toggleSection("notifications")}>
         <NotificationsSection />
       </CollapsibleSection>
     </div>
