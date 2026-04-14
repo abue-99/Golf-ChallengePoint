@@ -513,6 +513,7 @@ export default function UsersAuthPage() {
 
   // resend invite
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [resendMsg, setResendMsg] = useState<{ id: string; ok: boolean; text: string } | null>(null);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -622,8 +623,18 @@ export default function UsersAuthPage() {
 
   async function handleResendInvite(userId: string) {
     setResendingId(userId);
+    setResendMsg(null);
     try {
-      await fetchWithAuth(`/api/users/${userId}/resend-invite`, { method: "POST" });
+      const res = await fetchWithAuth(`/api/users/${userId}/resend-invite`, { method: "POST" });
+      if (res.ok) {
+        setResendMsg({ id: userId, ok: true, text: "Invitation sent." });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        const msg = Array.isArray(data.message) ? data.message.join(", ") : data.message || data.error || "Failed to resend invitation.";
+        setResendMsg({ id: userId, ok: false, text: msg });
+      }
+    } catch {
+      setResendMsg({ id: userId, ok: false, text: "Network error. Please try again." });
     } finally {
       setResendingId(null);
     }
@@ -787,34 +798,41 @@ export default function UsersAuthPage() {
 
                           {/* Edit + Delete */}
                           <TableCell>
-                            <div className="flex items-center gap-1">
-                              {!user.lastLogin && (
+                            <div className="flex flex-col gap-0.5">
+                              <div className="flex items-center gap-1">
+                                {!user.lastLogin && (
+                                  <button
+                                    onClick={() => handleResendInvite(user.id)}
+                                    disabled={resendingId === user.id}
+                                    aria-label={`Resend invitation to ${user.email}`}
+                                    title="Resend invitation email"
+                                    className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-amber-50 hover:text-amber-600 transition-colors disabled:opacity-50"
+                                  >
+                                    <Send className="h-4 w-4" />
+                                  </button>
+                                )}
                                 <button
-                                  onClick={() => handleResendInvite(user.id)}
-                                  disabled={resendingId === user.id}
-                                  aria-label={`Resend invitation to ${user.email}`}
-                                  title="Resend invitation email"
-                                  className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-amber-50 hover:text-amber-600 transition-colors disabled:opacity-50"
+                                  onClick={() => openEdit(user)}
+                                  aria-label={`Edit ${user.email}`}
+                                  title="Edit user"
+                                  className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                                 >
-                                  <Send className="h-4 w-4" />
+                                  <SquarePen className="h-4 w-4" />
                                 </button>
+                                <button
+                                  onClick={() => openDelete(user)}
+                                  aria-label={`Delete ${user.email}`}
+                                  title="Delete user"
+                                  className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                              {resendMsg?.id === user.id && (
+                                <span className={`text-xs ${resendMsg.ok ? "text-green-600" : "text-red-600"}`}>
+                                  {resendMsg.text}
+                                </span>
                               )}
-                              <button
-                                onClick={() => openEdit(user)}
-                                aria-label={`Edit ${user.email}`}
-                                title="Edit user"
-                                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                              >
-                                <SquarePen className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => openDelete(user)}
-                                aria-label={`Delete ${user.email}`}
-                                title="Delete user"
-                                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
                             </div>
                           </TableCell>
                         </TableRow>

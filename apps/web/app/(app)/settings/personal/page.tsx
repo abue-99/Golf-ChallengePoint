@@ -389,16 +389,8 @@ function ProfileSection() {
 
   return (
     <div className="space-y-5 max-w-lg">
-      {/* Change Password + status */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="outline"
-          onClick={() => setChangePasswordOpen(true)}
-          className="gap-2"
-        >
-          <KeyRound size={15} />
-          Change Password
-        </Button>
+      {/* status messages */}
+      <div className="flex items-center gap-4 min-h-[1.25rem]">
         {saving && <span className="text-sm text-gray-400">Saving…</span>}
         {savedMsg && <span className="text-sm text-green-600">{savedMsg}</span>}
         {errorMsg && (
@@ -522,6 +514,18 @@ function ProfileSection() {
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Change Password */}
+      <div>
+        <Button
+          variant="outline"
+          onClick={() => setChangePasswordOpen(true)}
+          className="gap-2"
+        >
+          <KeyRound size={15} />
+          Change Password
+        </Button>
       </div>
 
       <ChangePasswordDialog

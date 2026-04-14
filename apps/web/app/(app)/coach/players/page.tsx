@@ -286,7 +286,6 @@ export default function PlayersPage() {
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {players.map((player) => {
-            const clubs = player.userClubs?.map((uc) => uc.club?.name ?? "").filter(Boolean) ?? [];
                 const isInactive = !player.lastLogin;
 
             return (
@@ -315,11 +314,6 @@ export default function PlayersPage() {
                 <span className="text-sm font-medium text-center text-[var(--golf-heading)] leading-snug">
                   {playerName(player)}
                 </span>
-                {clubs.length > 0 && (
-                  <span className="text-xs text-center text-[var(--golf-muted-text)] leading-snug">
-                    {clubs.join(", ")}
-                  </span>
-                )}
               </div>
             );
           })}
