@@ -319,6 +319,12 @@ function ProfileSection() {
       .catch(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, []);
+
   function scheduleAutoSave(updated: UserProfile) {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(async () => {
@@ -793,7 +799,7 @@ export default function PersonalPage() {
         <ProfileSection />
       </CollapsibleSection>
 
-      <CollapsibleSection title="My Club &amp; Coaches" open={openSection === "coaches"} onToggle={() => toggleSection("coaches")}>
+      <CollapsibleSection title="My Club & Coaches" open={openSection === "coaches"} onToggle={() => toggleSection("coaches")}>
         <MyClubsAndCoachesSection />
       </CollapsibleSection>
 
