@@ -16,12 +16,14 @@ export async function PATCH(
   if (!token) return NextResponse.json(null, { status: 401 });
   const { id } = await params;
   const body = await req.json();
-  const res = await fetch(`${API_URL}/users/${id}/role`, {
+  // Route to the correct backend endpoint based on the request body
+  const endpoint = "role" in body ? `${API_URL}/users/${id}/role` : `${API_URL}/users/${id}/profile`;
+  const res = await fetch(endpoint, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
   });
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
   return NextResponse.json(data, { status: res.status });
 }
 

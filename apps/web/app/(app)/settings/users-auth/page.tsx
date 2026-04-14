@@ -27,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { fetchWithAuth } from "@/lib/api";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -34,6 +35,15 @@ import { fetchWithAuth } from "@/lib/api";
 type Role = "PLAYER" | "COACH" | "ADMIN" | "SYSADMIN";
 
 type Club = { id: string; name: string };
+
+type CoachUser = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  profileImage: string | null;
+  email: string;
+  userClubs?: { clubId: string; club: { id: string; name: string } | null }[];
+};
 
 type User = {
   id: string;
@@ -403,16 +413,32 @@ function EditUserModal({
   user,
   onClose,
   onSaved,
+  currentRole,
+  allClubs,
+  onAddClub,
+  onRemoveClub,
 }: {
   open: boolean;
   user: User;
   onClose: () => void;
   onSaved: (updated: User) => void;
+  currentRole: Role | null;
+  allClubs: Club[];
+  onAddClub: (userId: string, clubId: string) => Promise<void>;
+  onRemoveClub: (userId: string, clubId: string) => Promise<void>;
 }) {
+  const isSysadmin = currentRole === "SYSADMIN";
+
   const [firstName, setFirstName] = useState(user.firstName ?? "");
   const [lastName, setLastName] = useState(user.lastName ?? "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Coaches state (SYSADMIN only)
+  const [coaches, setCoaches] = useState<CoachUser[]>([]);
+  const [availableCoaches, setAvailableCoaches] = useState<CoachUser[]>([]);
+  const [coachesLoading, setCoachesLoading] = useState(false);
+  const [coachSaving, setCoachSaving] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -421,6 +447,18 @@ function EditUserModal({
       setError("");
     }
   }, [open, user]);
+
+  useEffect(() => {
+    if (!open || !isSysadmin) return;
+    setCoachesLoading(true);
+    Promise.all([
+      fetchWithAuth(`/api/users/${user.id}/coaches`).then((r) => r.ok ? r.json() : []),
+      fetchWithAuth(`/api/users/${user.id}/available-coaches`).then((r) => r.ok ? r.json() : []),
+    ]).then(([linked, available]) => {
+      setCoaches(Array.isArray(linked) ? linked.filter(Boolean) : []);
+      setAvailableCoaches(Array.isArray(available) ? available.filter(Boolean) : []);
+    }).catch(() => {}).finally(() => setCoachesLoading(false));
+  }, [open, isSysadmin, user.id]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -449,9 +487,44 @@ function EditUserModal({
     }
   }
 
+  async function handleAddCoach(coachId: string) {
+    setCoachSaving(true);
+    try {
+      const res = await fetchWithAuth(`/api/users/${user.id}/coaches/${coachId}`, { method: "POST" });
+      if (res.ok) {
+        const updated: CoachUser[] = await res.json();
+        setCoaches(Array.isArray(updated) ? updated.filter(Boolean) : []);
+      }
+    } finally {
+      setCoachSaving(false);
+    }
+  }
+
+  async function handleRemoveCoach(coachId: string) {
+    setCoachSaving(true);
+    try {
+      const res = await fetchWithAuth(`/api/users/${user.id}/coaches/${coachId}`, { method: "DELETE" });
+      if (res.ok) {
+        const updated: CoachUser[] = await res.json();
+        setCoaches(Array.isArray(updated) ? updated.filter(Boolean) : []);
+      }
+    } finally {
+      setCoachSaving(false);
+    }
+  }
+
+  const assignedClubIds = new Set(user.userClubs.map((uc) => uc.clubId));
+  const availableClubs = allClubs.filter((c) => !assignedClubIds.has(c.id));
+  const linkedCoachIds = new Set(coaches.map((c) => c.id));
+  const selectableCoaches = availableCoaches.filter((c) => !linkedCoachIds.has(c.id));
+
+  function coachName(c: CoachUser) {
+    return [c.firstName, c.lastName].filter(Boolean).join(" ") || c.email;
+  }
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className={isSysadmin ? "max-w-lg max-h-[90vh] overflow-y-auto" : "max-w-md"}>
         <DialogHeader>
           <DialogTitle>Edit User</DialogTitle>
         </DialogHeader>
@@ -490,6 +563,119 @@ function EditUserModal({
             </Button>
           </div>
         </form>
+
+        {/* Clubs & Coaches management for SYSADMIN */}
+        {isSysadmin && (
+          <div className="space-y-5 border-t pt-4 mt-2">
+            {/* Clubs */}
+            <div className="space-y-2">
+              <Label>Clubs &amp; Academies</Label>
+              {user.userClubs.filter((uc) => uc.club).length > 0 && (
+                <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-gray-50">
+                  {user.userClubs.filter((uc) => uc.club).map((uc) => (
+                    <span
+                      key={uc.clubId}
+                      className="inline-flex items-center gap-1 rounded bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-800"
+                    >
+                      {uc.club!.name}
+                      <button
+                        type="button"
+                        aria-label={`Remove ${uc.club!.name}`}
+                        onClick={() => onRemoveClub(user.id, uc.clubId)}
+                        className="ml-0.5 hover:text-red-600"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {availableClubs.length > 0 && (
+                <Select
+                  value=""
+                  onValueChange={(val) => val && onAddClub(user.id, val)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Add a Club or Academy…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableClubs.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {user.userClubs.length === 0 && availableClubs.length === 0 && (
+                <p className="text-xs text-gray-500">No clubs available.</p>
+              )}
+            </div>
+
+            {/* Coaches */}
+            <div className="space-y-2">
+              <Label>Coaches</Label>
+              {coachesLoading ? (
+                <p className="text-xs text-gray-400">Loading…</p>
+              ) : (
+                <>
+                  {coaches.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {coaches.map((coach) => (
+                        <div
+                          key={coach.id}
+                          className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2 shadow-sm"
+                        >
+                          <Avatar className="h-7 w-7">
+                            {coach.profileImage && (
+                              <AvatarImage src={coach.profileImage} alt={coachName(coach)} />
+                            )}
+                            <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
+                              {`${coach.firstName?.[0] ?? ""}${coach.lastName?.[0] ?? ""}`.toUpperCase() || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-medium">{coachName(coach)}</span>
+                          <button
+                            type="button"
+                            aria-label={`Remove ${coachName(coach)}`}
+                            onClick={() => handleRemoveCoach(coach.id)}
+                            disabled={coachSaving}
+                            className="ml-1 hover:text-red-600 text-gray-400"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {selectableCoaches.length > 0 && (
+                    <Select
+                      value=""
+                      onValueChange={(val) => val && handleAddCoach(val)}
+                      disabled={coachSaving}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Add a coach…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectableCoaches.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {coachName(c)}
+                            {c.userClubs && c.userClubs.length > 0 &&
+                              ` (${c.userClubs.map((uc) => uc.club?.name ?? "").filter(Boolean).join(", ")})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {coaches.length === 0 && selectableCoaches.length === 0 && (
+                    <p className="text-xs text-gray-500">
+                      No coaches available. Add the user to a club to see coaches.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -594,6 +780,7 @@ export default function UsersAuthPage() {
     if (res.ok) {
       const updated: User = await res.json();
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+      setEditTarget((prev) => (prev?.id === updated.id ? updated : prev));
     } else {
       const data = await res.json().catch(() => ({}));
       const msg = Array.isArray(data.message)
@@ -610,6 +797,7 @@ export default function UsersAuthPage() {
     if (res.ok) {
       const updated: User = await res.json();
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+      setEditTarget((prev) => (prev?.id === updated.id ? updated : prev));
     } else {
       const data = await res.json().catch(() => ({}));
       const msg = Array.isArray(data.message)
@@ -880,9 +1068,14 @@ export default function UsersAuthPage() {
           open={true}
           user={editTarget}
           onClose={() => setEditOpen(false)}
-          onSaved={(updated) =>
-            setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)))
-          }
+          onSaved={(updated) => {
+            setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+            setEditTarget(updated);
+          }}
+          currentRole={currentRole}
+          allClubs={allClubs}
+          onAddClub={handleAddUserClub}
+          onRemoveClub={handleRemoveUserClub}
         />
       )}
 

@@ -50,6 +50,15 @@ export class UsersController {
     return this.usersService.updateRole(id, body.role);
   }
 
+  @Patch(':id/profile')
+  @Roles(Role.ADMIN)
+  updateProfile(
+    @Param('id') id: string,
+    @Body() body: { firstName?: string | null; lastName?: string | null },
+  ) {
+    return this.usersService.updateProfile(id, body);
+  }
+
   @Post(':id/clubs')
   @Roles(Role.SYSADMIN)
   addUserClub(
@@ -67,6 +76,38 @@ export class UsersController {
     @Param('clubId') clubId: string,
   ) {
     return this.usersService.removeUserClub(id, clubId);
+  }
+
+  @Get(':id/coaches')
+  @Roles(Role.SYSADMIN)
+  getUserCoaches(@Param('id') id: string) {
+    return this.usersService.getPlayerCoaches(id);
+  }
+
+  @Get(':id/available-coaches')
+  @Roles(Role.SYSADMIN)
+  getAvailableCoachesForUser(@Param('id') id: string) {
+    return this.usersService.getCoachesForUser(id);
+  }
+
+  @Post(':id/coaches/:coachId')
+  @Roles(Role.SYSADMIN)
+  @HttpCode(HttpStatus.OK)
+  addCoachToUser(
+    @Param('id') id: string,
+    @Param('coachId') coachId: string,
+  ) {
+    return this.usersService.addPlayerCoach(id, coachId);
+  }
+
+  @Delete(':id/coaches/:coachId')
+  @Roles(Role.SYSADMIN)
+  @HttpCode(HttpStatus.OK)
+  removeCoachFromUser(
+    @Param('id') id: string,
+    @Param('coachId') coachId: string,
+  ) {
+    return this.usersService.removePlayerCoach(id, coachId);
   }
 
   @Delete(':id')
