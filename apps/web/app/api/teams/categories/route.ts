@@ -11,9 +11,14 @@ async function getToken() {
 export async function GET() {
   const token = await getToken();
   if (!token) return NextResponse.json(null, { status: 401 });
-  const res = await fetch(`${API_URL}/teams/categories`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+  try {
+    const res = await fetch(`${API_URL}/teams/categories`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    return NextResponse.json(data, { status: res.status });
+  } catch (err) {
+    console.error("[/api/teams/categories GET]", err);
+    return NextResponse.json([], { status: 500 });
+  }
 }

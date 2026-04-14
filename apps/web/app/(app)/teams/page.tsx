@@ -157,10 +157,10 @@ export default function TeamsPage() {
   useEffect(() => {
     if (role !== "COACH" && role !== "ADMIN") return;
     Promise.all([
-      fetch("/api/teams").then((r) => r.json()),
-      fetch("/api/teams/categories").then((r) => r.json()),
-      fetch("/api/teams/club-players").then((r) => r.json()),
-      fetch("/api/clubs/my").then((r) => r.json()),
+      fetch("/api/teams").then((r) => r.ok ? r.json() : []),
+      fetch("/api/teams/categories").then((r) => r.ok ? r.json() : []),
+      fetch("/api/teams/club-players").then((r) => r.ok ? r.json() : []),
+      fetch("/api/clubs/my").then((r) => r.ok ? r.json() : []),
       fetch("/api/players/my").then((r) => r.ok ? r.json() : []),
     ]).then(([t, c, p, clubs, myP]) => {
       setTeams(Array.isArray(t) ? t : []);
@@ -172,7 +172,7 @@ export default function TeamsPage() {
         setMyClubs(clubs.map((uc: { club: ClubOption }) => uc.club).filter(Boolean));
       }
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, [role]);
 
   function resolvedCategory() {

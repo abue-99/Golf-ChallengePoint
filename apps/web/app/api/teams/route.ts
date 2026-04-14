@@ -11,22 +11,32 @@ async function getToken() {
 export async function GET() {
   const token = await getToken();
   if (!token) return NextResponse.json(null, { status: 401 });
-  const res = await fetch(`${API_URL}/teams`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+  try {
+    const res = await fetch(`${API_URL}/teams`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    return NextResponse.json(data, { status: res.status });
+  } catch (err) {
+    console.error("[/api/teams GET]", err);
+    return NextResponse.json([], { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
   const token = await getToken();
   if (!token) return NextResponse.json(null, { status: 401 });
-  const body = await req.json();
-  const res = await fetch(`${API_URL}/teams`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+  try {
+    const body = await req.json();
+    const res = await fetch(`${API_URL}/teams`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    return NextResponse.json(data, { status: res.status });
+  } catch (err) {
+    console.error("[/api/teams POST]", err);
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+  }
 }

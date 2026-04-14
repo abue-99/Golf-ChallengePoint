@@ -105,9 +105,16 @@ export class UsersService {
     loginUrl: string;
     firstName: string;
   }): Promise<void> {
+    if (!process.env.RESEND_API_KEY) {
+      this.logger.warn(
+        `[INVITE] RESEND_API_KEY not set – skipping invite email to ${to}`,
+      );
+      return;
+    }
+
     try {
       await this.resend.emails.send({
-        from: 'noreply@golf-challengepoint.com',
+        from: 'noreply@contact.golf-challengepoint.com',
         to,
         subject: 'Your Golf Challenge Point Invitation',
         html: `
