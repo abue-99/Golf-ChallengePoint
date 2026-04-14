@@ -307,12 +307,11 @@ export class UsersService {
 
   /** Link an existing player to the given coach. */
   async addPlayerToCoach(coachId: string, playerId: string) {
-    const existing = await this.prisma.coachPlayerLink.findFirst({
-      where: { coachId, playerId },
+    await this.prisma.coachPlayerLink.upsert({
+      where: { coachId_playerId: { coachId, playerId } },
+      update: {},
+      create: { coachId, playerId },
     });
-    if (!existing) {
-      await this.prisma.coachPlayerLink.create({ data: { coachId, playerId } });
-    }
     return this.getCoachPlayers(coachId);
   }
 
