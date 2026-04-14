@@ -15,9 +15,14 @@ export async function GET(req: NextRequest) {
   const url = clubId
     ? `${API_URL}/teams/club-players?clubId=${encodeURIComponent(clubId)}`
     : `${API_URL}/teams/club-players`;
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    return NextResponse.json(data, { status: res.status });
+  } catch (err) {
+    console.error("[/api/teams/club-players GET]", err);
+    return NextResponse.json([], { status: 500 });
+  }
 }
