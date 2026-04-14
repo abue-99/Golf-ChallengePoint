@@ -802,6 +802,7 @@ export default function UsersAuthPage() {
                               <button
                                 onClick={() => openEdit(user)}
                                 aria-label={`Edit ${user.email}`}
+                                title="Edit user"
                                 className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                               >
                                 <SquarePen className="h-4 w-4" />
@@ -809,6 +810,7 @@ export default function UsersAuthPage() {
                               <button
                                 onClick={() => openDelete(user)}
                                 aria-label={`Delete ${user.email}`}
+                                title="Delete user"
                                 className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                               >
                                 <Trash2 className="h-4 w-4" />

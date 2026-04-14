@@ -573,6 +573,7 @@ export default function TeamsPage() {
                         className="text-gray-500 hover:text-blue-600"
                         onClick={(e) => { e.stopPropagation(); setEditingTeam(team); }}
                         aria-label="Edit team"
+                        title="Edit team"
                       >
                         <SquarePen size={16} />
                       </Button>
@@ -582,6 +583,7 @@ export default function TeamsPage() {
                         className="text-gray-400 hover:text-gray-600"
                         onClick={(e) => { e.stopPropagation(); handleDelete(team.id); }}
                         aria-label="Delete team"
+                        title="Delete team"
                       >
                         <Trash2 size={16} />
                       </Button>

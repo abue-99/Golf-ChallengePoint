@@ -507,6 +507,7 @@ export default function GeneralDataPage() {
                                   openEdit(club);
                                 }}
                                 aria-label={`Edit ${club.name}`}
+                                title="Edit club/academy"
                                 className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                               >
                                 <SquarePen className="h-4 w-4" />
@@ -517,6 +518,7 @@ export default function GeneralDataPage() {
                                   openDelete(club);
                                 }}
                                 aria-label={`Delete ${club.name}`}
+                                title="Delete club/academy"
                                 className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                               >
                                 <Trash2 className="h-4 w-4" />
