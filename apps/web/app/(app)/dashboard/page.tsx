@@ -41,7 +41,7 @@ export default function Dashboard() {
     if (role === "COACH" || role === "ADMIN") {
       Promise.all([
         fetch("/api/teams").then((r) => r.ok ? r.json() : []),
-        fetch("/api/teams/club-players").then((r) => r.ok ? r.json() : []),
+        fetch("/api/players/my").then((r) => r.ok ? r.json() : []),
       ]).then(([t, p]) => {
         setTeams(Array.isArray(t) ? t : []);
         setPlayerCount(Array.isArray(p) ? p.length : 0);
