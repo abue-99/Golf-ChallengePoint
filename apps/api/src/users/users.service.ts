@@ -305,6 +305,16 @@ export class UsersService {
     return this.getPlayerCoaches(playerId);
   }
 
+  /** Link an existing player to the given coach. */
+  async addPlayerToCoach(coachId: string, playerId: string) {
+    await this.prisma.coachPlayerLink.upsert({
+      where: { coachId_playerId: { coachId, playerId } },
+      update: {},
+      create: { coachId, playerId },
+    });
+    return this.getCoachPlayers(coachId);
+  }
+
   async removePlayerCoach(playerId: string, coachId: string) {
     await this.prisma.coachPlayerLink.deleteMany({ where: { coachId, playerId } });
     return this.getPlayerCoaches(playerId);

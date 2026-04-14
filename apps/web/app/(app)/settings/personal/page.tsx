@@ -627,6 +627,12 @@ function MyClubsAndCoachesSection() {
       if (res.ok) {
         const updated = await res.json();
         setMyClubs(Array.isArray(updated) ? updated : []);
+        // Re-fetch coaches now that club membership has changed
+        const coachesRes = await fetch("/api/players/coaches");
+        if (coachesRes.ok) {
+          const coaches = await coachesRes.json();
+          setAvailableCoaches(Array.isArray(coaches) ? coaches.filter(Boolean) : []);
+        }
       }
     } finally {
       setClubsLoading(false);
@@ -640,6 +646,12 @@ function MyClubsAndCoachesSection() {
       if (res.ok) {
         const updated = await res.json();
         setMyClubs(Array.isArray(updated) ? updated : []);
+        // Re-fetch coaches as the available coaches may have changed
+        const coachesRes = await fetch("/api/players/coaches");
+        if (coachesRes.ok) {
+          const coaches = await coachesRes.json();
+          setAvailableCoaches(Array.isArray(coaches) ? coaches.filter(Boolean) : []);
+        }
       }
     } finally {
       setClubsLoading(false);
