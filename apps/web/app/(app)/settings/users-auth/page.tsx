@@ -770,11 +770,12 @@ export default function UsersAuthPage() {
                                 ? new Date(user.lastLogin).toLocaleDateString()
                                 : "—"}
                               {!user.lastLogin && (
-                                <Hourglass
-                                  className="h-3.5 w-3.5 text-amber-500 shrink-0"
-                                  aria-label="Invitation pending"
-                                  title="Invitation pending – user has not logged in yet"
-                                />
+                                <span title="Invitation pending – user has not logged in yet">
+                                  <Hourglass
+                                    className="h-3.5 w-3.5 text-amber-500 shrink-0"
+                                    aria-label="Invitation pending"
+                                  />
+                                </span>
                               )}
                             </span>
                           </TableCell>
