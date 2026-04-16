@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-interface SlotOccurrence {
+export interface SlotOccurrence {
   start: Date;
   end: Date;
 }
