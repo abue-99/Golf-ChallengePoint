@@ -47,7 +47,7 @@ function toLocalDate(iso: string) {
   return iso.slice(0, 10);
 }
 
-function toLocalTime(iso: string) {
+function toUTCTime(iso: string) {
   const d = new Date(iso);
   const hh = String(d.getUTCHours()).padStart(2, "0");
   const mm = String(d.getUTCMinutes()).padStart(2, "0");
@@ -81,7 +81,7 @@ export default function AssignTaskDialog({ open, onClose, onSubmit, slot }: Prop
         description: "",
         durationMinutes: 30,
         scheduledDate: toLocalDate(slot.occurrenceStart),
-        scheduledTime: toLocalTime(slot.occurrenceStart),
+        scheduledTime: toUTCTime(slot.occurrenceStart),
         isRecurring: false,
         recurrenceCount: 4,
         recurrenceWeeks: 4,

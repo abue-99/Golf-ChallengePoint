@@ -51,7 +51,7 @@ function toLocalDate(iso: string) {
   return d.toISOString().slice(0, 10);
 }
 
-function toLocalTime(iso: string) {
+function toUTCTime(iso: string) {
   const d = new Date(iso);
   const hh = String(d.getUTCHours()).padStart(2, "0");
   const mm = String(d.getUTCMinutes()).padStart(2, "0");
@@ -90,8 +90,8 @@ export default function PracticeSlotDialog({
       reset({
         title: defaultValues.title,
         date: toLocalDate(defaultValues.startTime),
-        startTime: toLocalTime(defaultValues.startTime),
-        endTime: toLocalTime(defaultValues.endTime),
+        startTime: toUTCTime(defaultValues.startTime),
+        endTime: toUTCTime(defaultValues.endTime),
         recurrence: (defaultValues.recurrence as FormValues["recurrence"]) ?? "NONE",
         recurrenceEndDate: defaultValues.recurrenceEndDate
           ? toLocalDate(defaultValues.recurrenceEndDate)

@@ -32,6 +32,7 @@ type SlotData = {
 type EditTarget = {
   slot: SlotData;
   occurrenceStart: string;
+  occurrenceEnd: string;
 };
 
 type Props = {
@@ -119,12 +120,12 @@ export default function PlayerCalendarView({ userId, country }: Props) {
 
   const handleEventClick = useCallback(
     (arg: EventClickArg) => {
-      const { type, slotId, occurrenceStart } = arg.event.extendedProps as any;
+      const { type, slotId, occurrenceStart, occurrenceEnd } = arg.event.extendedProps as any;
 
       if (type === "slot") {
         const slot = slots.find((s) => s.id === slotId);
         if (!slot) return;
-        setEditTarget({ slot, occurrenceStart });
+        setEditTarget({ slot, occurrenceStart, occurrenceEnd });
         setSelectedDate(undefined);
         setDialogOpen(true);
         return;
@@ -226,7 +227,7 @@ export default function PlayerCalendarView({ userId, country }: Props) {
             ? {
                 title: editTarget.slot.title,
                 startTime: editTarget.slot.occurrences[0]?.start ?? editTarget.occurrenceStart,
-                endTime: editTarget.slot.occurrences[0]?.end ?? editTarget.occurrenceStart,
+                endTime: editTarget.slot.occurrences[0]?.end ?? editTarget.occurrenceEnd,
                 recurrence: editTarget.slot.recurrence,
                 recurrenceEndDate: editTarget.slot.recurrenceEndDate,
               }
