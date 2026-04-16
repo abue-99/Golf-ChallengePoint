@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { UserPlus, X } from "lucide-react";
+import Link from "next/link";
+import { CalendarDays, UserPlus, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,6 +108,13 @@ function PlayerDetailDialog({
               </div>
             )}
           </div>
+
+          <Button asChild variant="outline" className="w-full gap-2 mt-2">
+            <Link href={`/coach/players/${player.id}/calendar`}>
+              <CalendarDays size={16} />
+              View Calendar
+            </Link>
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

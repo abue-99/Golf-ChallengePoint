@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2, SquarePen, Plus, UserPlus, X, Search } from "lucide-react";
+import Link from "next/link";
+import { Trash2, SquarePen, Plus, UserPlus, X, Search, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -991,6 +992,13 @@ function PlayerDetailDialog({
               </div>
             )}
           </div>
+
+          <Button asChild variant="outline" className="w-full gap-2 mt-2">
+            <Link href={`/coach/players/${player.id}/calendar`}>
+              <CalendarDays size={16} />
+              View Calendar
+            </Link>
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
