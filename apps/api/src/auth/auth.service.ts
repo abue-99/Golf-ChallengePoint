@@ -156,6 +156,7 @@ export class AuthService {
         gender: true,
         phoneNumber: true,
         timezone: true,
+        country: true,
         createdAt: true,
         lastLogin: true,
       },
@@ -202,6 +203,7 @@ export class AuthService {
       gender?: string | null;
       phoneNumber?: string | null;
       timezone?: string | null;
+      country?: string | null;
       role?: string | null;
     },
   ) {
@@ -212,6 +214,7 @@ export class AuthService {
     if (data.gender !== undefined) updateData.gender = data.gender;
     if (data.phoneNumber !== undefined) updateData.phoneNumber = data.phoneNumber;
     if (data.timezone !== undefined) updateData.timezone = data.timezone;
+    if (data.country !== undefined) updateData.country = data.country;
 
     return this.prisma.user.update({
       where: { id: userId },
@@ -226,6 +229,7 @@ export class AuthService {
         gender: true,
         phoneNumber: true,
         timezone: true,
+        country: true,
       },
     });
   }

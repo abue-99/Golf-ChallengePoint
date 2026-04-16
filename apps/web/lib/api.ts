@@ -12,6 +12,30 @@ export const api = {
   createEvent: (payload: any) => req("/calendar/events", { method: "POST", body: JSON.stringify(payload) }),
   updateEvent: (id: string, payload: any) => req(`/calendar/events/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
   createLog: (payload: any) => req("/task-logs", { method: "POST", body: JSON.stringify(payload) }),
+
+  // Calendar – practice slots
+  listPracticeSlots: (playerId?: string) =>
+    fetch(`/api/calendar/slots${playerId ? `?playerId=${encodeURIComponent(playerId)}` : ""}`, { cache: "no-store" }).then((r) => r.json()),
+  createPracticeSlot: (payload: any) =>
+    fetch("/api/calendar/slots", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
+  updatePracticeSlot: (id: string, payload: any) =>
+    fetch(`/api/calendar/slots/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
+  deletePracticeSlot: (id: string) =>
+    fetch(`/api/calendar/slots/${id}`, { method: "DELETE" }).then((r) => r.json()),
+
+  // Calendar – slot tasks
+  listSlotTasks: (slotId: string) =>
+    fetch(`/api/calendar/slots/${slotId}/tasks`, { cache: "no-store" }).then((r) => r.json()),
+  assignTask: (slotId: string, payload: any) =>
+    fetch(`/api/calendar/slots/${slotId}/tasks`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
+  updateTask: (id: string, payload: any) =>
+    fetch(`/api/calendar/tasks/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
+  deleteTask: (id: string) =>
+    fetch(`/api/calendar/tasks/${id}`, { method: "DELETE" }).then((r) => r.json()),
+
+  // Calendar – full player calendar view
+  getPlayerCalendar: (playerId: string) =>
+    fetch(`/api/calendar/player/${playerId}`, { cache: "no-store" }).then((r) => r.json()),
 };
 
 /**

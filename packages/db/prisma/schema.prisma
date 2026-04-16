@@ -17,6 +17,13 @@ enum Role {
   SYSADMIN
 }
 
+enum Recurrence {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -28,6 +35,7 @@ model User {
   gender       String?
   phoneNumber  String?
   timezone     String?
+  country      String?
   role         Role      @default(PLAYER)
   lastLogin    DateTime?
   createdAt    DateTime  @default(now())
@@ -39,6 +47,8 @@ model User {
   userClubs        UserClub[]
   coachTeams       Team[]            @relation("CoachTeams")
   teamMemberships  TeamMember[]
+  practiceSlots    PracticeSlot[]    @relation("PlayerSlots")
+  coachTasks       CalendarTask[]    @relation("CoachTasks")
 
   @@map("users")
 }
@@ -148,4 +158,36 @@ model Challenge {
   updatedAt DateTime  @updatedAt
 
   @@map("challenges")
+}
+
+model PracticeSlot {
+  id                String       @id @default(cuid())
+  playerId          String
+  player            User         @relation("PlayerSlots", fields: [playerId], references: [id], onDelete: Cascade)
+  title             String
+  startTime         DateTime
+  endTime           DateTime
+  recurrence        Recurrence   @default(NONE)
+  recurrenceEndDate DateTime?
+  tasks             CalendarTask[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@map("practice_slots")
+}
+
+model CalendarTask {
+  id              String       @id @default(cuid())
+  practiceSlotId  String
+  practiceSlot    PracticeSlot @relation(fields: [practiceSlotId], references: [id], onDelete: Cascade)
+  coachId         String
+  coach           User         @relation("CoachTasks", fields: [coachId], references: [id], onDelete: Cascade)
+  title           String
+  description     String
+  durationMinutes Int
+  scheduledDate   DateTime
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("calendar_tasks")
 }

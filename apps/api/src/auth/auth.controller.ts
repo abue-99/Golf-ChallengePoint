@@ -194,6 +194,7 @@ export class AuthController {
       gender?: string | null;
       phoneNumber?: string | null;
       timezone?: string | null;
+      country?: string | null;
       role?: string | null;
     },
   ) {

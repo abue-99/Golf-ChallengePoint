@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Header from './header';
 import Sidebar from './sidebar';
-import { Home, Settings } from 'lucide-react';
+import { Home, Settings, CalendarDays } from 'lucide-react';
 import { Users } from 'lucide-react';
 import type { ReactNode } from "react";
 import { defaultNavItems } from './sidebar';
@@ -30,6 +30,12 @@ export default function HeaderAndSidebarLayout({
    ? [
        { href: '/', icon: Home, label: 'Dashboard' },
        { href: '/teams', icon: Users, label: 'Teams/Players' },
+       { href: '/settings', icon: Settings, label: 'Settings' },
+     ]
+   : role === 'PLAYER'
+   ? [
+       { href: '/', icon: Home, label: 'Dashboard' },
+       { href: '/calendar', icon: CalendarDays, label: 'Calendar' },
        { href: '/settings', icon: Settings, label: 'Settings' },
      ]
    : defaultNavItems;
