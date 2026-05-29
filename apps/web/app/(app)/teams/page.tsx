@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Trash2, SquarePen, Plus, UserPlus, X, Search, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -472,11 +472,11 @@ export default function TeamsPage() {
             <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
               <tr>
                 <th className="px-4 py-2 text-left">Team</th>
-                <th className="px-4 py-2 text-left">Description</th>
-                <th className="px-4 py-2 text-left">Category</th>
-                <th className="px-4 py-2 text-left">Club</th>
-                <th className="px-4 py-2 text-left">Members</th>
-                <th className="px-4 py-2 text-right"></th>
+                <th className="hidden sm:table-cell px-4 py-2 text-left">Description</th>
+                <th className="hidden sm:table-cell px-4 py-2 text-left">Category</th>
+                <th className="hidden sm:table-cell px-4 py-2 text-left">Club</th>
+                <th className="hidden sm:table-cell px-4 py-2 text-left">Members</th>
+                <th className="hidden sm:table-cell px-4 py-2 text-right"></th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -488,115 +488,136 @@ export default function TeamsPage() {
                 const club = myClubs.find((c) => c.id === team.clubId);
                 const clubDisplayName = club ? (club.shortId || club.name) : null;
                 const clubFullName = club?.name;
-                return (
-                  <tr
-                    key={team.id}
-                    className="align-top cursor-pointer hover:bg-gray-50"
-                    onDoubleClick={() => setEditingTeam(team)}
-                    title="Double-click to edit"
-                  >
-                    <td className="px-4 py-1.5 font-medium whitespace-nowrap">
-                      <span className="flex items-center gap-1.5">
-                        {team.icon && <TeamIcon icon={team.icon} size={14} />}
-                        {team.shortName}
-                      </span>
-                    </td>
-                    <td className="px-4 py-1.5 text-gray-600 max-w-xs">
-                      {team.description || <span className="text-gray-400 italic">—</span>}
-                    </td>
-                    <td className="px-4 py-1.5 whitespace-nowrap text-gray-500">{team.category}</td>
-                    <td className="px-4 py-1.5 whitespace-nowrap text-gray-500">
-                      {clubDisplayName
-                        ? <span title={clubFullName}>{clubDisplayName}</span>
-                        : <span className="text-gray-400 italic">—</span>}
-                    </td>
-                    <td className="px-4 py-1.5 min-w-[160px]">
-                      <div className="flex flex-wrap items-center gap-1">
-                        {team.members.map((m) => (
-                          <div key={m.userId} className="relative group">
-                            <Avatar
-                              className="h-7 w-7 text-xs cursor-pointer"
-                              title={`${m.user?.firstName ?? ""} ${m.user?.lastName ?? ""}`.trim()}
-                              onClick={(e) => { e.stopPropagation(); if (m.user) setSelectedMemberPlayer(m.user); }}
-                            >
-                              {m.user?.profileImage && <AvatarImage src={m.user.profileImage} alt={initials(m.user)} />}
-                              <AvatarFallback className="bg-blue-100 text-blue-700">{m.user ? initials(m.user) : "?"}</AvatarFallback>
-                            </Avatar>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleRemoveMember(team.id, m.userId); }}
-                              className="absolute -top-1 -right-1 hidden group-hover:flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white"
-                              aria-label="Remove member"
-                            >
-                              <X size={8} />
-                            </button>
-                          </div>
-                        ))}
-                        {isAddingToThisTeam ? (
-                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                            {teamPlayersLoading ? (
-                              <span className="text-xs text-gray-400">Loading…</span>
-                            ) : availablePlayers.length > 0 ? (
-                              <Select onValueChange={(userId) => handleAddMember(team.id, userId)}>
-                                <SelectTrigger className="h-7 text-xs w-44">
-                                  <SelectValue placeholder="Select member…" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {availablePlayers.map((p) => (
-                                    <SelectItem key={p.id} value={p.id}>
-                                      {`${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.id}
-                                      {p.role && p.role !== "PLAYER" && (
-                                        <span className="ml-1 text-gray-400 text-xs">({p.role})</span>
-                                      )}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <span className="text-xs text-gray-400">No available members</span>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={(e) => { e.stopPropagation(); setAddMemberTeamId(null); }}
-                            >
-                              <X size={12} />
-                            </Button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); openAddMember(team); }}
-                            className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500"
-                            aria-label="Add member"
-                          >
-                            <UserPlus size={12} />
-                          </button>
-                        )}
+
+                const membersContent = (
+                  <div className="flex flex-wrap items-center gap-1">
+                    {team.members.map((m) => (
+                      <div key={m.userId} className="relative group">
+                        <Avatar
+                          className="h-7 w-7 text-xs cursor-pointer"
+                          title={`${m.user?.firstName ?? ""} ${m.user?.lastName ?? ""}`.trim()}
+                          onClick={(e) => { e.stopPropagation(); if (m.user) setSelectedMemberPlayer(m.user); }}
+                        >
+                          {m.user?.profileImage && <AvatarImage src={m.user.profileImage} alt={initials(m.user)} />}
+                          <AvatarFallback className="bg-blue-100 text-blue-700">{m.user ? initials(m.user) : "?"}</AvatarFallback>
+                        </Avatar>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRemoveMember(team.id, m.userId); }}
+                          className="absolute -top-1 -right-1 hidden group-hover:flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white"
+                          aria-label="Remove member"
+                        >
+                          <X size={8} />
+                        </button>
                       </div>
-                    </td>
-                    <td className="px-4 py-1.5 text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-gray-500 hover:text-blue-600"
-                        onClick={(e) => { e.stopPropagation(); setEditingTeam(team); }}
-                        aria-label="Edit team"
-                        title="Edit team"
+                    ))}
+                    {isAddingToThisTeam ? (
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        {teamPlayersLoading ? (
+                          <span className="text-xs text-gray-400">Loading…</span>
+                        ) : availablePlayers.length > 0 ? (
+                          <Select onValueChange={(userId) => handleAddMember(team.id, userId)}>
+                            <SelectTrigger className="h-7 text-xs w-44">
+                              <SelectValue placeholder="Select member…" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availablePlayers.map((p) => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  {`${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.id}
+                                  {p.role && p.role !== "PLAYER" && (
+                                    <span className="ml-1 text-gray-400 text-xs">({p.role})</span>
+                                  )}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className="text-xs text-gray-400">No available members</span>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={(e) => { e.stopPropagation(); setAddMemberTeamId(null); }}
+                        >
+                          <X size={12} />
+                        </Button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openAddMember(team); }}
+                        className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500"
+                        aria-label="Add member"
                       >
-                        <SquarePen size={16} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-gray-400 hover:text-gray-600"
-                        onClick={(e) => { e.stopPropagation(); handleDelete(team.id); }}
-                        aria-label="Delete team"
-                        title="Delete team"
-                      >
-                        <Trash2 size={16} />
-                      </Button>
-                    </td>
-                  </tr>
+                        <UserPlus size={12} />
+                      </button>
+                    )}
+                  </div>
+                );
+
+                const actionsContent = (
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-gray-500 hover:text-blue-600"
+                      onClick={(e) => { e.stopPropagation(); setEditingTeam(team); }}
+                      aria-label="Edit team"
+                      title="Edit team"
+                    >
+                      <SquarePen size={16} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-gray-400 hover:text-gray-600"
+                      onClick={(e) => { e.stopPropagation(); handleDelete(team.id); }}
+                      aria-label="Delete team"
+                      title="Delete team"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  </div>
+                );
+
+                return (
+                  <React.Fragment key={team.id}>
+                    <tr
+                      className="align-top cursor-pointer hover:bg-gray-50"
+                      onDoubleClick={() => setEditingTeam(team)}
+                      title="Double-click to edit"
+                    >
+                      <td className="px-4 py-1.5 font-medium whitespace-nowrap">
+                        <span className="flex items-center gap-1.5">
+                          {team.icon && <TeamIcon icon={team.icon} size={14} />}
+                          {team.shortName}
+                        </span>
+                      </td>
+                      <td className="hidden sm:table-cell px-4 py-1.5 text-gray-600 max-w-xs">
+                        {team.description || <span className="text-gray-400 italic">—</span>}
+                      </td>
+                      <td className="hidden sm:table-cell px-4 py-1.5 whitespace-nowrap text-gray-500">{team.category}</td>
+                      <td className="hidden sm:table-cell px-4 py-1.5 whitespace-nowrap text-gray-500">
+                        {clubDisplayName
+                          ? <span title={clubFullName}>{clubDisplayName}</span>
+                          : <span className="text-gray-400 italic">—</span>}
+                      </td>
+                      <td className="hidden sm:table-cell px-4 py-1.5 min-w-[160px]">
+                        {membersContent}
+                      </td>
+                      <td className="hidden sm:table-cell px-4 py-1.5 text-right">
+                        {actionsContent}
+                      </td>
+                    </tr>
+                    {/* Mobile-only second row: members + action buttons */}
+                    <tr className="sm:hidden !border-t-0">
+                      <td colSpan={1} className="px-4 pb-2">
+                        <div className="flex items-center justify-between gap-2">
+                          {membersContent}
+                          {actionsContent}
+                        </div>
+                      </td>
+                    </tr>
+                  </React.Fragment>
                 );
               })}
             </tbody>
@@ -919,13 +940,29 @@ function EditTeamDialog({
 function PlayerDetailDialog({
   player,
   onClose,
+  onRemove,
 }: {
   player: Player;
   onClose: () => void;
+  onRemove?: (playerId: string) => void;
 }) {
   const isInactive = !player.lastLogin;
   const name = `${player.firstName ?? ""} ${player.lastName ?? ""}`.trim() || player.email || "—";
   const playerInitials = `${player.firstName?.[0] ?? ""}${player.lastName?.[0] ?? ""}`.toUpperCase() || "?";
+  const [removing, setRemoving] = useState(false);
+
+  async function handleRemove() {
+    if (!window.confirm(`Remove "${name}" from your players list?`)) return;
+    setRemoving(true);
+    const res = await fetch(`/api/players/my/${encodeURIComponent(player.id)}`, { method: "DELETE" });
+    setRemoving(false);
+    if (res.ok) {
+      onRemove?.(player.id);
+      onClose();
+    } else {
+      alert("Failed to remove player. Please try again.");
+    }
+  }
 
   return (
     <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
@@ -993,12 +1030,24 @@ function PlayerDetailDialog({
             )}
           </div>
 
-          <Button asChild variant="outline" className="w-full gap-2 mt-2">
-            <Link href={`/coach/players/${player.id}/calendar`}>
+          <Button asChild variant="outline" className="w-full mt-2">
+            <Link href={`/coach/players/${player.id}/calendar`} className="flex items-center justify-center gap-2">
               <CalendarDays size={16} />
               View Calendar
             </Link>
           </Button>
+
+          {onRemove && (
+            <Button
+              variant="destructive"
+              className="w-full gap-2"
+              onClick={handleRemove}
+              disabled={removing}
+            >
+              <Trash2 size={16} />
+              {removing ? "Removing…" : "Delete Player"}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -1406,6 +1455,10 @@ function PlayersSection({
         <PlayerDetailDialog
           player={selectedPlayer}
           onClose={() => setSelectedPlayer(null)}
+          onRemove={(playerId) => {
+            onPlayerRemoved(playerId);
+            setSelectedPlayer(null);
+          }}
         />
       )}
 
