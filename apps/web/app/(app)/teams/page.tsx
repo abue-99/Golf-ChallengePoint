@@ -609,8 +609,8 @@ export default function TeamsPage() {
                       </td>
                     </tr>
                     {/* Mobile-only second row: members + action buttons */}
-                    <tr className="sm:hidden" style={{ borderTop: "none" }}>
-                      <td colSpan={6} className="px-4 pb-2">
+                    <tr className="sm:hidden !border-t-0">
+                      <td colSpan={1} className="px-4 pb-2">
                         <div className="flex items-center justify-between gap-2">
                           {membersContent}
                           {actionsContent}
