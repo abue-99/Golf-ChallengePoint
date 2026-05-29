@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, Trash2, UserPlus } from "lucide-react";
+import { ExternalLink, Trash2, UserPlus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,7 +75,7 @@ function PlayerDetailDialog({
     <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Player Details</DialogTitle>
+          <DialogTitle>Player Overview</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 pt-2 lg:grid-cols-2">
           <div className="flex flex-col items-center gap-4">
@@ -128,14 +128,14 @@ function PlayerDetailDialog({
             </div>
           </div>
 
-          <PlayerCapabilitiesRadarCard playerId={player.id} title="Player Capabilities" />
+          <PlayerCapabilitiesRadarCard playerId={player.id} title="Spider Overview" />
         </div>
 
         <div className="mt-4 flex flex-col gap-2">
           <Button asChild variant="outline" className="w-full">
-            <Link href={`/coach/players/${player.id}/calendar`} className="flex items-center justify-center gap-2">
-              <CalendarDays size={16} />
-              View Calendar
+            <Link href={`/coach/players/${player.id}`} className="flex items-center justify-center gap-2">
+              <ExternalLink size={16} />
+              Goto/Open Player
             </Link>
           </Button>
 

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Trash2, SquarePen, Plus, UserPlus, X, Search, CalendarDays } from "lucide-react";
+import { Trash2, SquarePen, Plus, UserPlus, X, Search, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PlayerCapabilitiesRadarCard } from "@/components/player-capabilities-widget";
 
 // Common icons represented as emoji for team assignment
 const TEAM_ICONS = [
@@ -597,7 +598,7 @@ export default function TeamsPage() {
                               )}
                               {team.description && (
                                 <span className="text-xs font-normal text-gray-400 truncate max-w-[100px]">
-                                  · {team.description.slice(0, 20)}{team.description.length > 20 ? "…" : ""}
+                                  · {team.description.slice(0, 50)}{team.description.length > 50 ? "…" : ""}
                                 </span>
                               )}
                             </span>
@@ -605,7 +606,9 @@ export default function TeamsPage() {
                         </div>
                       </td>
                       <td className="hidden sm:table-cell px-4 py-1.5 text-gray-600 max-w-xs">
-                        {team.description || <span className="text-gray-400 italic">—</span>}
+                       {team.description
+                         ? `${team.description.slice(0, 50)}${team.description.length > 50 ? "…" : ""}`
+                         : <span className="text-gray-400 italic">—</span>}
                       </td>
                       <td className="hidden sm:table-cell px-4 py-1.5 whitespace-nowrap text-gray-500">{team.category}</td>
                       <td className="hidden sm:table-cell px-4 py-1.5 whitespace-nowrap text-gray-500">
@@ -978,88 +981,94 @@ function PlayerDetailDialog({
 
   return (
     <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Player Details</DialogTitle>
+          <DialogTitle>Player Overview</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col items-center gap-4 pt-2">
-          <Avatar className="h-24 w-24">
-            {player.profileImage && (
-              <AvatarImage src={player.profileImage} alt={name} />
+        <div className="grid gap-4 pt-2 lg:grid-cols-2">
+          <div className="flex flex-col items-center gap-4">
+            <Avatar className="h-24 w-24">
+              {player.profileImage && (
+                <AvatarImage src={player.profileImage} alt={name} />
+              )}
+              <AvatarFallback className="text-2xl bg-gray-200 text-gray-600">
+                {playerInitials}
+              </AvatarFallback>
+            </Avatar>
+
+            {isInactive && (
+              <span className="rounded-full bg-amber-100 px-3 py-0.5 text-xs font-semibold text-amber-700">
+                Inactive (pending activation)
+              </span>
             )}
-            <AvatarFallback className="text-2xl bg-gray-200 text-gray-600">
-              {playerInitials}
-            </AvatarFallback>
-          </Avatar>
 
-          {isInactive && (
-            <span className="rounded-full bg-amber-100 px-3 py-0.5 text-xs font-semibold text-amber-700">
-              Inactive (pending activation)
-            </span>
-          )}
-
-          <div className="w-full space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="font-medium text-gray-500">Name</span>
-              <span>{name}</span>
+            <div className="w-full space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="font-medium text-gray-500">Name</span>
+                <span>{name}</span>
+              </div>
+              {player.email && (
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-500">Email</span>
+                  <span className="break-all">{player.email}</span>
+                </div>
+              )}
+              {player.phoneNumber && (
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-500">Phone</span>
+                  <span>{player.phoneNumber}</span>
+                </div>
+              )}
+              {player.timezone && (
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-500">Timezone</span>
+                  <span>{player.timezone.replace(/_/g, " ")}</span>
+                </div>
+              )}
+              {player.userClubs && player.userClubs.length > 0 && (
+                <div className="flex justify-between gap-2">
+                  <span className="font-medium text-gray-500 shrink-0">Clubs</span>
+                  <span className="text-right">
+                    {player.userClubs.map((uc) => uc.club?.name ?? "").filter(Boolean).join(", ")}
+                  </span>
+                </div>
+              )}
+              {player.coaches && player.coaches.length > 0 && (
+                <div className="flex justify-between gap-2">
+                  <span className="font-medium text-gray-500 shrink-0">Coaches</span>
+                  <span className="text-right">
+                    {player.coaches
+                      .map((c) => `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || c.email || "")
+                      .filter(Boolean)
+                      .join(", ")}
+                  </span>
+                </div>
+              )}
             </div>
-            {player.email && (
-              <div className="flex justify-between">
-                <span className="font-medium text-gray-500">Email</span>
-                <span className="break-all">{player.email}</span>
-              </div>
-            )}
-            {player.phoneNumber && (
-              <div className="flex justify-between">
-                <span className="font-medium text-gray-500">Phone</span>
-                <span>{player.phoneNumber}</span>
-              </div>
-            )}
-            {player.timezone && (
-              <div className="flex justify-between">
-                <span className="font-medium text-gray-500">Timezone</span>
-                <span>{player.timezone.replace(/_/g, " ")}</span>
-              </div>
-            )}
-            {player.userClubs && player.userClubs.length > 0 && (
-              <div className="flex justify-between gap-2">
-                <span className="font-medium text-gray-500 shrink-0">Clubs</span>
-                <span className="text-right">
-                  {player.userClubs.map((uc) => uc.club?.name ?? "").filter(Boolean).join(", ")}
-                </span>
-              </div>
-            )}
-            {player.coaches && player.coaches.length > 0 && (
-              <div className="flex justify-between gap-2">
-                <span className="font-medium text-gray-500 shrink-0">Coaches</span>
-                <span className="text-right">
-                  {player.coaches
-                    .map((c) => `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || c.email || "")
-                    .filter(Boolean)
-                    .join(", ")}
-                </span>
-              </div>
+
+            <Button asChild variant="outline" className="w-full mt-2">
+              <Link href={`/coach/players/${player.id}`} className="flex items-center justify-center gap-2">
+                <ExternalLink size={16} />
+                Goto/Open Player
+              </Link>
+            </Button>
+
+            {onRemove && (
+              <Button
+                variant="destructive"
+                className="w-full gap-2"
+                onClick={handleRemove}
+                disabled={removing}
+              >
+                <Trash2 size={16} />
+                {removing ? "Removing…" : "Delete Player"}
+              </Button>
             )}
           </div>
 
-          <Button asChild variant="outline" className="w-full mt-2">
-            <Link href={`/coach/players/${player.id}/calendar`} className="flex items-center justify-center gap-2">
-              <CalendarDays size={16} />
-              View Calendar
-            </Link>
-          </Button>
-
-          {onRemove && (
-            <Button
-              variant="destructive"
-              className="w-full gap-2"
-              onClick={handleRemove}
-              disabled={removing}
-            >
-              <Trash2 size={16} />
-              {removing ? "Removing…" : "Delete Player"}
-            </Button>
-          )}
+          <div>
+            <PlayerCapabilitiesRadarCard playerId={player.id} title="Spider Overview" />
+          </div>
         </div>
       </DialogContent>
     </Dialog>
