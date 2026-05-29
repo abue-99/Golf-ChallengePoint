@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Users } from "lucide-react";
+import { PlayerCapabilitiesWidget } from "@/components/player-capabilities-widget";
 
 type Team = {
   id: string;
@@ -27,13 +28,17 @@ function timeAgo(dateStr: string): string {
 export default function Dashboard() {
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
+  const [playerId, setPlayerId] = useState<string>("local-player");
   const [teams, setTeams] = useState<Team[]>([]);
   const [playerCount, setPlayerCount] = useState<number>(0);
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.ok ? r.json() : null)
-      .then((me) => { if (me?.role) setRole(me.role); });
+      .then((me) => {
+        if (me?.role) setRole(me.role);
+        if (me?.id) setPlayerId(String(me.id));
+      });
   }, []);
 
   useEffect(() => {
@@ -132,10 +137,11 @@ export default function Dashboard() {
 
       {/* Player dashboard */}
       {role === "PLAYER" && (
-        <section className="space-y-3">
+        <section className="space-y-6">
           <p className="text-sm text-[var(--golf-muted-text)]">
             Welcome! Use the navigation to manage your challenges and training sessions.
           </p>
+          <PlayerCapabilitiesWidget playerId={playerId} />
         </section>
       )}
 

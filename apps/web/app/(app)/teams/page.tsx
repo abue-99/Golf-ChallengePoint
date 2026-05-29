@@ -479,7 +479,7 @@ export default function TeamsPage() {
                 <th className="hidden sm:table-cell px-4 py-2 text-right"></th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody>
               {filtered.map((team) => {
                 const teamMemberIds = new Set(team.members.map((m) => m.userId));
                 const isAddingToThisTeam = addMemberTeamId === team.id;
@@ -582,15 +582,27 @@ export default function TeamsPage() {
                 return (
                   <React.Fragment key={team.id}>
                     <tr
-                      className="align-top cursor-pointer hover:bg-gray-50"
+                      className="align-top cursor-pointer hover:bg-gray-50 sm:border-b sm:border-gray-200"
                       onDoubleClick={() => setEditingTeam(team)}
                       title="Double-click to edit"
                     >
-                      <td className="px-4 py-1.5 font-medium whitespace-nowrap">
-                        <span className="flex items-center gap-1.5">
+                      <td className="px-4 py-1.5 font-medium">
+                        <div className="flex items-center gap-1.5">
                           {team.icon && <TeamIcon icon={team.icon} size={14} />}
-                          {team.shortName}
-                        </span>
+                          <span className="whitespace-nowrap">{team.shortName}</span>
+                          {(team.category || team.description) && (
+                            <span className="sm:hidden flex items-center gap-1 min-w-0">
+                              {team.category && (
+                                <span className="text-xs font-normal text-gray-500 whitespace-nowrap">· {team.category}</span>
+                              )}
+                              {team.description && (
+                                <span className="text-xs font-normal text-gray-400 truncate max-w-[100px]">
+                                  · {team.description.slice(0, 20)}{team.description.length > 20 ? "…" : ""}
+                                </span>
+                              )}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="hidden sm:table-cell px-4 py-1.5 text-gray-600 max-w-xs">
                         {team.description || <span className="text-gray-400 italic">—</span>}
@@ -609,7 +621,7 @@ export default function TeamsPage() {
                       </td>
                     </tr>
                     {/* Mobile-only second row: members + action buttons */}
-                    <tr className="sm:hidden !border-t-0">
+                    <tr className="sm:hidden border-b border-gray-200">
                       <td colSpan={1} className="px-4 pb-2">
                         <div className="flex items-center justify-between gap-2">
                           {membersContent}
