@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, UserPlus, X } from "lucide-react";
+import { CalendarDays, Trash2, UserPlus, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,11 +48,27 @@ function playerName(p: Player) {
 function PlayerDetailDialog({
   player,
   onClose,
+  onRemove,
 }: {
   player: Player;
   onClose: () => void;
+  onRemove?: (playerId: string) => void;
 }) {
   const isInactive = !player.lastLogin;
+  const [removing, setRemoving] = useState(false);
+
+  async function handleRemove() {
+    if (!window.confirm(`Remove "${playerName(player)}" from your players list?`)) return;
+    setRemoving(true);
+    const res = await fetch(`/api/players/my/${encodeURIComponent(player.id)}`, { method: "DELETE" });
+    setRemoving(false);
+    if (res.ok) {
+      onRemove?.(player.id);
+      onClose();
+    } else {
+      alert("Failed to remove player. Please try again.");
+    }
+  }
 
   return (
     <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
@@ -109,12 +125,24 @@ function PlayerDetailDialog({
             )}
           </div>
 
-          <Button asChild variant="outline" className="w-full gap-2 mt-2">
-            <Link href={`/coach/players/${player.id}/calendar`}>
+          <Button asChild variant="outline" className="w-full mt-2">
+            <Link href={`/coach/players/${player.id}/calendar`} className="flex items-center justify-center gap-2">
               <CalendarDays size={16} />
               View Calendar
             </Link>
           </Button>
+
+          {onRemove && (
+            <Button
+              variant="destructive"
+              className="w-full gap-2"
+              onClick={handleRemove}
+              disabled={removing}
+            >
+              <Trash2 size={16} />
+              {removing ? "Removing…" : "Delete Player"}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -332,6 +360,10 @@ export default function PlayersPage() {
         <PlayerDetailDialog
           player={selectedPlayer}
           onClose={() => setSelectedPlayer(null)}
+          onRemove={(playerId) => {
+            setPlayers((prev) => prev.filter((p) => p.id !== playerId));
+            setSelectedPlayer(null);
+          }}
         />
       )}
 
