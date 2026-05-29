@@ -32,12 +32,12 @@ export default function Header({ user, onToggleSidebar, sidebarExpanded }: Heade
   }
 
   return (
-    <header className="flex items-center bg-green-700 text-white h-14 px-4 gap-4">
+    <header className="flex items-center bg-green-700 text-white h-14 px-4 gap-4" style={{ paddingTop: "env(safe-area-inset-top)", height: "calc(3.5rem + env(safe-area-inset-top))" }}>
       {onToggleSidebar && (
         <button
           onClick={onToggleSidebar}
           aria-label="Toggle sidebar"
-          className="flex items-center justify-center rounded p-1 -ml-1 transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          className="hidden md:flex items-center justify-center rounded p-1 -ml-1 transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           <Menu size={22} className="text-white" />
         </button>
@@ -50,7 +50,7 @@ export default function Header({ user, onToggleSidebar, sidebarExpanded }: Heade
         priority
         className="ml-1"
       />
-      <span className="font-bold text-lg">Golf Challenge Point</span>
+      <span className="font-bold text-lg hidden sm:block">Golf Challenge Point</span>
       <div className="ml-auto flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

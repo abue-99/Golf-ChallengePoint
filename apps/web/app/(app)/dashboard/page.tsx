@@ -60,11 +60,11 @@ export default function Dashboard() {
   const isCoachOrAdmin = role === "COACH" || role === "ADMIN";
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 px-0">
 
       {/* Header */}
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-[var(--golf-heading)]">
+        <h1 className="text-2xl font-semibold tracking-tight text-[var(--golf-heading)]">
           Dashboard
         </h1>
       </header>
