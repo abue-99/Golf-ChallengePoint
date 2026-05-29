@@ -10,7 +10,8 @@ type LinkedPlayer = {
 };
 
 async function getPlayer(token: string, playerId: string): Promise<LinkedPlayer | null> {
-  const apiUrl = process.env.API_URL || "http://golf_api:4000";
+  const apiUrl = process.env.API_URL;
+  if (!apiUrl) return null;
   const res = await fetch(`${apiUrl}/users/me/players`, {
     headers: { Authorization: "Bearer " + token },
     cache: "no-store",
