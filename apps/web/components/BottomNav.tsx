@@ -17,7 +17,11 @@ export default function BottomNav({ navItems }: BottomNavProps) {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       {navItems.map(({ href, icon: Icon, label }) => {
-        const active = pathname === href || (href !== "/" && pathname.startsWith(href));
+        // Exact match for root; prefix match for all other routes
+        const active =
+          href === "/"
+            ? pathname === "/"
+            : pathname === href || pathname.startsWith(href + "/");
         return (
           <Link
             key={label}

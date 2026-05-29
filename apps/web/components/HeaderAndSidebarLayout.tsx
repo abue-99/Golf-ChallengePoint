@@ -64,7 +64,8 @@ export default function HeaderAndSidebarLayout({
         </div>
       )}
 
-      {/* Main content — extra bottom padding on mobile for bottom nav */}
+      {/* Main content — extra bottom padding on mobile for bottom nav.
+          --bottom-nav-height is defined in globals.css as 3.5rem + safe-area-inset-bottom */}
       <main className='flex-1 overflow-auto bg-gray-50 p-4 pb-[calc(var(--bottom-nav-height)+1rem)] md:pb-4'>
         {children}
       </main>
