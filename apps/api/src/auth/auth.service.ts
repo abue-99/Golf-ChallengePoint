@@ -182,7 +182,10 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    const match = await bcrypt.compare(currentPassword, user.passwordHash || '');
+    const match = await bcrypt.compare(
+      currentPassword,
+      user.passwordHash || '',
+    );
     if (!match) {
       throw new BadRequestException('Current password is incorrect');
     }
@@ -210,9 +213,11 @@ export class AuthService {
     const updateData: Record<string, unknown> = {};
     if (data.firstName !== undefined) updateData.firstName = data.firstName;
     if (data.lastName !== undefined) updateData.lastName = data.lastName;
-    if (data.profileImage !== undefined) updateData.profileImage = data.profileImage;
+    if (data.profileImage !== undefined)
+      updateData.profileImage = data.profileImage;
     if (data.gender !== undefined) updateData.gender = data.gender;
-    if (data.phoneNumber !== undefined) updateData.phoneNumber = data.phoneNumber;
+    if (data.phoneNumber !== undefined)
+      updateData.phoneNumber = data.phoneNumber;
     if (data.timezone !== undefined) updateData.timezone = data.timezone;
     if (data.country !== undefined) updateData.country = data.country;
 

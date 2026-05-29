@@ -26,9 +26,13 @@ export class ClubsService {
         where: { shortId: dto.shortId },
       });
       if (byShortId)
-        throw new ConflictException(`Short ID "${dto.shortId}" is already in use.`);
+        throw new ConflictException(
+          `Short ID "${dto.shortId}" is already in use.`,
+        );
     }
-    const byName = await this.prisma.club.findFirst({ where: { name: dto.name } });
+    const byName = await this.prisma.club.findFirst({
+      where: { name: dto.name },
+    });
     if (byName)
       throw new ConflictException(`A club named "${dto.name}" already exists.`);
 
@@ -51,7 +55,9 @@ export class ClubsService {
         where: { name: dto.name, NOT: { id } },
       });
       if (conflict)
-        throw new ConflictException(`A club named "${dto.name}" already exists.`);
+        throw new ConflictException(
+          `A club named "${dto.name}" already exists.`,
+        );
     }
 
     if (dto.shortId !== undefined && dto.shortId !== club.shortId) {
@@ -60,7 +66,9 @@ export class ClubsService {
           where: { shortId: dto.shortId, NOT: { id } },
         });
         if (conflict)
-          throw new ConflictException(`Short ID "${dto.shortId}" is already in use.`);
+          throw new ConflictException(
+            `Short ID "${dto.shortId}" is already in use.`,
+          );
       }
     }
 

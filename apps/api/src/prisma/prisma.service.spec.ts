@@ -72,7 +72,8 @@ describe('PrismaService', () => {
       const { prisma } = await import('@challengepoint/db');
       const callback = jest.fn().mockResolvedValue('result');
       const transactionMock = jest.fn().mockResolvedValue('result');
-      (prisma as unknown as { $transaction: jest.Mock }).$transaction = transactionMock;
+      (prisma as unknown as { $transaction: jest.Mock }).$transaction =
+        transactionMock;
 
       await service.$transaction(callback);
 

@@ -293,8 +293,7 @@ export class CalendarService {
       where: { id: taskId },
     });
     if (!task) throw new NotFoundException('Task not found');
-    if (task.coachId !== coachId)
-      throw new ForbiddenException('Not your task');
+    if (task.coachId !== coachId) throw new ForbiddenException('Not your task');
 
     return this.prisma.calendarTask.update({
       where: { id: taskId },
@@ -318,8 +317,7 @@ export class CalendarService {
       where: { id: taskId },
     });
     if (!task) throw new NotFoundException('Task not found');
-    if (task.coachId !== coachId)
-      throw new ForbiddenException('Not your task');
+    if (task.coachId !== coachId) throw new ForbiddenException('Not your task');
 
     await this.prisma.calendarTask.delete({ where: { id: taskId } });
     return { ok: true };

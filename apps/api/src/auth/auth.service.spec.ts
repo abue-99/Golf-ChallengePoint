@@ -73,7 +73,10 @@ describe('AuthService', () => {
 
     it('should create a user and return tokens when email is not taken', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
-      mockPrisma.user.create.mockResolvedValue({ ...mockUser, email: signupDto.email.toLowerCase() });
+      mockPrisma.user.create.mockResolvedValue({
+        ...mockUser,
+        email: signupDto.email.toLowerCase(),
+      });
       mockJwtService.sign.mockReturnValue('access-token');
 
       const result = await service.signup(signupDto);
@@ -85,13 +88,20 @@ describe('AuthService', () => {
     it('should throw BadRequestException when email is already in use', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(mockUser);
 
-      await expect(service.signup(signupDto)).rejects.toThrow(BadRequestException);
-      await expect(service.signup(signupDto)).rejects.toThrow('Email already in use');
+      await expect(service.signup(signupDto)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.signup(signupDto)).rejects.toThrow(
+        'Email already in use',
+      );
     });
 
     it('should normalize email to lowercase', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
-      mockPrisma.user.create.mockResolvedValue({ ...mockUser, email: 'new@example.com' });
+      mockPrisma.user.create.mockResolvedValue({
+        ...mockUser,
+        email: 'new@example.com',
+      });
       mockJwtService.sign.mockReturnValue('access-token');
 
       await service.signup({ ...signupDto, email: 'NEW@EXAMPLE.COM' });
@@ -100,7 +110,9 @@ describe('AuthService', () => {
         where: { email: 'new@example.com' },
       });
       expect(mockPrisma.user.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ email: 'new@example.com' }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ email: 'new@example.com' }),
+        }),
       );
     });
 
@@ -111,7 +123,9 @@ describe('AuthService', () => {
 
       await service.signup(signupDto);
 
-      const createCall = mockPrisma.user.create.mock.calls[0][0] as { data: { passwordHash: string } };
+      const createCall = mockPrisma.user.create.mock.calls[0][0] as {
+        data: { passwordHash: string };
+      };
       const storedHash = createCall.data.passwordHash;
       const matches = await bcrypt.compare(signupDto.password, storedHash);
       expect(matches).toBe(true);
@@ -124,7 +138,9 @@ describe('AuthService', () => {
 
       await service.signup({ email: 'a@b.com', password: 'pass123' });
 
-      const createCall = mockPrisma.user.create.mock.calls[0][0] as { data: { firstName: string } };
+      const createCall = mockPrisma.user.create.mock.calls[0][0] as {
+        data: { firstName: string };
+      };
       expect(createCall.data.firstName).toBe('User');
     });
 
@@ -135,7 +151,9 @@ describe('AuthService', () => {
 
       await service.signup(signupDto);
 
-      const createCall = mockPrisma.user.create.mock.calls[0][0] as { data: { role: string } };
+      const createCall = mockPrisma.user.create.mock.calls[0][0] as {
+        data: { role: string };
+      };
       expect(createCall.data.role).toBe('PLAYER');
     });
   });
@@ -159,19 +177,29 @@ describe('AuthService', () => {
     it('should throw InvalidCredentialsException when user is not found', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
-      await expect(service.login(loginDto)).rejects.toThrow(InvalidCredentialsException);
+      await expect(service.login(loginDto)).rejects.toThrow(
+        InvalidCredentialsException,
+      );
     });
 
     it('should throw InvalidCredentialsException when password does not match', async () => {
       const hash = await bcrypt.hash('differentpassword', 10);
-      mockPrisma.user.findUnique.mockResolvedValue({ ...mockUser, passwordHash: hash });
+      mockPrisma.user.findUnique.mockResolvedValue({
+        ...mockUser,
+        passwordHash: hash,
+      });
 
-      await expect(service.login(loginDto)).rejects.toThrow(InvalidCredentialsException);
+      await expect(service.login(loginDto)).rejects.toThrow(
+        InvalidCredentialsException,
+      );
     });
 
     it('should normalize email to lowercase', async () => {
       const hash = await bcrypt.hash('correctpassword', 10);
-      mockPrisma.user.findUnique.mockResolvedValue({ ...mockUser, passwordHash: hash });
+      mockPrisma.user.findUnique.mockResolvedValue({
+        ...mockUser,
+        passwordHash: hash,
+      });
       mockPrisma.user.update.mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue('access-token');
 
@@ -184,7 +212,10 @@ describe('AuthService', () => {
 
     it('should update lastLogin on successful login', async () => {
       const hash = await bcrypt.hash('correctpassword', 10);
-      mockPrisma.user.findUnique.mockResolvedValue({ ...mockUser, passwordHash: hash });
+      mockPrisma.user.findUnique.mockResolvedValue({
+        ...mockUser,
+        passwordHash: hash,
+      });
       mockPrisma.user.update.mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue('access-token');
 
@@ -234,7 +265,11 @@ describe('AuthService', () => {
 
       const result = await service.validateRefreshToken('valid-refresh-token');
 
-      expect(result).toEqual({ id: mockUser.id, email: mockUser.email, role: mockUser.role });
+      expect(result).toEqual({
+        id: mockUser.id,
+        email: mockUser.email,
+        role: mockUser.role,
+      });
     });
 
     it('should throw UnauthorizedException when token is invalid', async () => {
@@ -279,7 +314,9 @@ describe('AuthService', () => {
     it('should throw UnauthorizedException when user is not found', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
-      await expect(service.getMe('non-existent-id')).rejects.toThrow(UnauthorizedException);
+      await expect(service.getMe('non-existent-id')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });
