@@ -88,6 +88,19 @@
 /* Global 20% size reduction for text, spacing, and headings */
 html {
   font-size: 80%;
+  /* Prevent text size inflation on iOS orientation change */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Safe-area env vars for iPhone notch / home indicator */
+body {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Mobile bottom-nav height token (accounts for iPhone home indicator) */
+:root {
+  --bottom-nav-height: calc(3.5rem + env(safe-area-inset-bottom));
 }
 
 /* Keep avatar/image sizes at their original pixel values (not scaled down) */

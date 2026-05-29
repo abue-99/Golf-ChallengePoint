@@ -189,9 +189,14 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-sm bg-white rounded-xl shadow-2xl overflow-hidden mx-4">
+      <div className="relative z-10 w-full sm:max-w-sm bg-white sm:rounded-xl rounded-t-2xl shadow-2xl overflow-hidden mx-0 sm:mx-4">
+        {/* iOS home-indicator spacer is handled by global body padding */}
+        {/* Drag handle for mobile sheet */}
+        <div className="sm:hidden flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 rounded-full bg-gray-300" />
+        </div>
         {/* Close button */}
         <button
           onClick={onClose}

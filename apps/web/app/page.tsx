@@ -9,9 +9,9 @@ export default function WelcomePage() {
   const [authOpen, setAuthOpen] = useState(true);
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-[100dvh]">
       {/* Header */}
-      <header className="flex items-center bg-green-700 text-white h-14 px-4 gap-4 shadow-md flex-shrink-0">
+      <header className="flex items-center bg-green-700 text-white h-14 px-4 gap-4 shadow-md flex-shrink-0" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <Image
           src="/GolfChallengePoint_Logo_Inv_48x48.png"
           alt="Golf Challenge Point"
@@ -20,7 +20,7 @@ export default function WelcomePage() {
           priority
           className="ml-1"
         />
-        <span className="font-bold text-lg">Golf Challenge Point</span>
+      <span className="font-bold text-lg hidden sm:block">Golf Challenge Point</span>
         <div className="ml-auto flex items-center gap-2">
             <button
               onClick={() => setAuthOpen(true)}
@@ -42,8 +42,8 @@ export default function WelcomePage() {
         />
 
       {/* Body */}
-      <main className="flex-1 overflow-auto flex items-start justify-start p-10">
-        <div className="max-w-sm text-left">
+      <main className="flex-1 overflow-auto flex items-center justify-center p-6">
+        <div className="w-full max-w-sm text-center">
           <h1 className="text-2xl font-bold text-[var(--golf-heading)] mb-2">
             Willkommen bei Golf Challenge Point
           </h1>

@@ -56,7 +56,7 @@ export default async function SettingsPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 space-y-6">
       <h1 className="text-3xl font-semibold">Settings</h1>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {TILES.map((tile) => (
