@@ -8,7 +8,14 @@ import { UsersModule } from './users/users.module';
 import { CalendarModule } from './calendar/calendar.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, ClubsModule, TeamsModule, UsersModule, CalendarModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    ClubsModule,
+    TeamsModule,
+    UsersModule,
+    CalendarModule,
+  ],
   controllers: [AppController],
 })
 export class AppModule {}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, Plus, X } from "lucide-react";
 
@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LogDialog } from "@/components/log-dialog";
+import { PlayerCapabilitiesWidget } from "@/components/player-capabilities-widget";
 
 type Schema = "numeric_success" | "numeric_score" | "text_reflection";
 
@@ -25,7 +26,25 @@ const todayTasks: TodayTask[] = [
   { eventId: "evt_3", title: "Reflection", schema: "text_reflection", tag: "Mindset", status: "open" }
 ];
 
+const DEFAULT_PLAYER_ID = "local-player";
+
 export default function PlayerToday() {
+  const [playerId, setPlayerId] = useState(DEFAULT_PLAYER_ID);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((me) => {
+        if (me?.id) setPlayerId(String(me.id));
+      })
+      .catch((error) => {
+        console.warn(
+          "Failed to load current player identity for capabilities widget; using default profile.",
+          error,
+        );
+      });
+  }, []);
+
   const completed = useMemo(() => todayTasks.filter(t => t.status === "done").length, []);
   const total = todayTasks.length;
   const progress = total ? Math.round((completed / total) * 100) : 0;
@@ -51,6 +70,8 @@ export default function PlayerToday() {
           <Button variant="outline">Quick Start</Button>
         </div>
       </header>
+
+      <PlayerCapabilitiesWidget playerId={playerId} />
 
       {/* Progress */}
       <Card>

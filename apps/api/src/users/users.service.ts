@@ -52,7 +52,10 @@ export class UsersService {
     });
   }
 
-  async updateRole(id: string, role: 'PLAYER' | 'COACH' | 'ADMIN' | 'SYSADMIN') {
+  async updateRole(
+    id: string,
+    role: 'PLAYER' | 'COACH' | 'ADMIN' | 'SYSADMIN',
+  ) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('User not found.');
     return this.prisma.user.update({
@@ -355,12 +358,16 @@ export class UsersService {
 
   /** Unlink a player from the given coach. */
   async removePlayerFromCoach(coachId: string, playerId: string) {
-    await this.prisma.coachPlayerLink.deleteMany({ where: { coachId, playerId } });
+    await this.prisma.coachPlayerLink.deleteMany({
+      where: { coachId, playerId },
+    });
     return this.getCoachPlayers(coachId);
   }
 
   async removePlayerCoach(playerId: string, coachId: string) {
-    await this.prisma.coachPlayerLink.deleteMany({ where: { coachId, playerId } });
+    await this.prisma.coachPlayerLink.deleteMany({
+      where: { coachId, playerId },
+    });
     return this.getPlayerCoaches(playerId);
   }
 

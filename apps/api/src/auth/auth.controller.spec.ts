@@ -56,7 +56,10 @@ describe('AuthController', () => {
     const user = { id: 'uid', email: 'new@example.com', role: 'PLAYER' };
 
     it('should return accessToken and user', async () => {
-      mockAuthService.signup.mockResolvedValue({ accessToken: 'acc-token', user });
+      mockAuthService.signup.mockResolvedValue({
+        accessToken: 'acc-token',
+        user,
+      });
       mockAuthService.generateRefreshToken.mockReturnValue('ref-token');
       const res = mockResponse();
 
@@ -66,7 +69,10 @@ describe('AuthController', () => {
     });
 
     it('should set a refresh_token cookie', async () => {
-      mockAuthService.signup.mockResolvedValue({ accessToken: 'acc-token', user });
+      mockAuthService.signup.mockResolvedValue({
+        accessToken: 'acc-token',
+        user,
+      });
       mockAuthService.generateRefreshToken.mockReturnValue('ref-token');
       const res = mockResponse();
 
@@ -80,10 +86,14 @@ describe('AuthController', () => {
     });
 
     it('should propagate errors from auth service', async () => {
-      mockAuthService.signup.mockRejectedValue(new Error('Email already in use'));
+      mockAuthService.signup.mockRejectedValue(
+        new Error('Email already in use'),
+      );
       const res = mockResponse();
 
-      await expect(controller.signup(dto as SignupDto, res)).rejects.toThrow('Email already in use');
+      await expect(controller.signup(dto as SignupDto, res)).rejects.toThrow(
+        'Email already in use',
+      );
     });
   });
 
@@ -92,7 +102,10 @@ describe('AuthController', () => {
     const user = { id: 'uid', email: 'test@example.com', role: 'PLAYER' };
 
     it('should return accessToken and user', async () => {
-      mockAuthService.login.mockResolvedValue({ accessToken: 'acc-token', user });
+      mockAuthService.login.mockResolvedValue({
+        accessToken: 'acc-token',
+        user,
+      });
       mockAuthService.generateRefreshToken.mockReturnValue('ref-token');
       const res = mockResponse();
 
@@ -102,7 +115,10 @@ describe('AuthController', () => {
     });
 
     it('should set a refresh_token cookie', async () => {
-      mockAuthService.login.mockResolvedValue({ accessToken: 'acc-token', user });
+      mockAuthService.login.mockResolvedValue({
+        accessToken: 'acc-token',
+        user,
+      });
       mockAuthService.generateRefreshToken.mockReturnValue('ref-token');
       const res = mockResponse();
 
@@ -119,7 +135,9 @@ describe('AuthController', () => {
       mockAuthService.login.mockRejectedValue(new Error('Invalid credentials'));
       const res = mockResponse();
 
-      await expect(controller.login(dto as LoginDto, res)).rejects.toThrow('Invalid credentials');
+      await expect(controller.login(dto as LoginDto, res)).rejects.toThrow(
+        'Invalid credentials',
+      );
     });
   });
 
@@ -130,7 +148,9 @@ describe('AuthController', () => {
       mockAuthService.generateAccessToken.mockReturnValue('new-access-token');
       mockAuthService.generateRefreshToken.mockReturnValue('new-refresh-token');
 
-      const req = { cookies: { refresh_token: 'valid-refresh' } } as unknown as Request;
+      const req = {
+        cookies: { refresh_token: 'valid-refresh' },
+      } as unknown as Request;
       const res = mockResponse();
 
       const result = await controller.refresh(req, res);
@@ -144,7 +164,9 @@ describe('AuthController', () => {
       mockAuthService.generateAccessToken.mockReturnValue('new-access-token');
       mockAuthService.generateRefreshToken.mockReturnValue('new-refresh-token');
 
-      const req = { cookies: { refresh_token: 'valid-refresh' } } as unknown as Request;
+      const req = {
+        cookies: { refresh_token: 'valid-refresh' },
+      } as unknown as Request;
       const res = mockResponse();
 
       await controller.refresh(req, res);
@@ -160,7 +182,9 @@ describe('AuthController', () => {
       const req = { cookies: {} } as unknown as Request;
       const res = mockResponse();
 
-      await expect(controller.refresh(req, res)).rejects.toThrow(InvalidTokenException);
+      await expect(controller.refresh(req, res)).rejects.toThrow(
+        InvalidTokenException,
+      );
     });
   });
 

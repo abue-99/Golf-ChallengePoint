@@ -14,7 +14,7 @@ async function bootstrap() {
       allowedHeaders: ['Content-Type', 'Authorization'],
     },
   });
-  
+
   app.use(json({ limit: '5mb' }));
   app.use(urlencoded({ extended: true, limit: '5mb' }));
   app.use(cookieParser());
@@ -25,7 +25,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  
+
   const port = process.env.PORT ?? 4000;
   await app.listen(port);
   console.log(`API listening on http://localhost:${port}`);

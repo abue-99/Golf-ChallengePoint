@@ -87,10 +87,7 @@ export class TeamsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  deleteTeam(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
-  ) {
+  deleteTeam(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     this.requireCoachOrAdmin(user);
     return this.teamsService.deleteTeam(user.id, id);
   }

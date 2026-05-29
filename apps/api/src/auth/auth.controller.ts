@@ -74,7 +74,9 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const token: string | undefined = (req.cookies as Record<string, string>)['refresh_token'];
+    const token: string | undefined = (req.cookies as Record<string, string>)[
+      'refresh_token'
+    ];
     if (!token) {
       throw new InvalidTokenException();
     }
@@ -134,7 +136,9 @@ export class AuthController {
   }
 
   @Post('reset')
-  async reset(@Body() { token, password }: { token: string; password: string }) {
+  async reset(
+    @Body() { token, password }: { token: string; password: string },
+  ) {
     const record = await this.prisma.passwordResetToken.findUnique({
       where: { token },
     });
@@ -165,7 +169,9 @@ export class AuthController {
     @Body() body: { currentPassword: string; newPassword: string },
   ) {
     if (!body.newPassword || body.newPassword.length < 8) {
-      throw new BadRequestException('New password must be at least 8 characters');
+      throw new BadRequestException(
+        'New password must be at least 8 characters',
+      );
     }
     await this.authService.changePassword(
       user.id,

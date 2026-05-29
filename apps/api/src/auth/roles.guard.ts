@@ -6,7 +6,12 @@ import { InsufficientRoleException } from '../common/exceptions/auth.exception';
 import { AuthenticatedUser } from './jwt.strategy';
 
 /** Ordered from lowest to highest privilege. */
-const ROLE_HIERARCHY: Role[] = [Role.PLAYER, Role.COACH, Role.ADMIN, Role.SYSADMIN];
+const ROLE_HIERARCHY: Role[] = [
+  Role.PLAYER,
+  Role.COACH,
+  Role.ADMIN,
+  Role.SYSADMIN,
+];
 
 function meetsRoleRequirement(userRole: Role, requiredRoles: Role[]): boolean {
   const userLevel = ROLE_HIERARCHY.indexOf(userRole);
@@ -30,7 +35,9 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<{ user: AuthenticatedUser }>();
+    const request = context
+      .switchToHttp()
+      .getRequest<{ user: AuthenticatedUser }>();
     const user: AuthenticatedUser = request.user;
 
     if (!user || !meetsRoleRequirement(user.role, requiredRoles)) {

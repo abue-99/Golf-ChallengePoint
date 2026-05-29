@@ -61,20 +61,14 @@ export class UsersController {
 
   @Post(':id/clubs')
   @Roles(Role.SYSADMIN)
-  addUserClub(
-    @Param('id') id: string,
-    @Body() body: { clubId: string },
-  ) {
+  addUserClub(@Param('id') id: string, @Body() body: { clubId: string }) {
     return this.usersService.addUserClub(id, body.clubId);
   }
 
   @Delete(':id/clubs/:clubId')
   @Roles(Role.SYSADMIN)
   @HttpCode(HttpStatus.OK)
-  removeUserClub(
-    @Param('id') id: string,
-    @Param('clubId') clubId: string,
-  ) {
+  removeUserClub(@Param('id') id: string, @Param('clubId') clubId: string) {
     return this.usersService.removeUserClub(id, clubId);
   }
 
@@ -93,10 +87,7 @@ export class UsersController {
   @Post(':id/coaches/:coachId')
   @Roles(Role.SYSADMIN)
   @HttpCode(HttpStatus.OK)
-  addCoachToUser(
-    @Param('id') id: string,
-    @Param('coachId') coachId: string,
-  ) {
+  addCoachToUser(@Param('id') id: string, @Param('coachId') coachId: string) {
     return this.usersService.addPlayerCoach(id, coachId);
   }
 

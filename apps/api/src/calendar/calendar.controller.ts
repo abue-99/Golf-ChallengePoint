@@ -71,10 +71,7 @@ export class CalendarController {
 
   @Delete('slots/:id')
   @HttpCode(HttpStatus.OK)
-  deleteSlot(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
-  ) {
+  deleteSlot(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     return this.calendarService.deleteSlot(user.id, id);
   }
 
@@ -130,10 +127,7 @@ export class CalendarController {
 
   @Delete('tasks/:id')
   @HttpCode(HttpStatus.OK)
-  deleteTask(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
-  ) {
+  deleteTask(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     return this.calendarService.deleteTask(user.id, id);
   }
 
