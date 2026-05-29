@@ -26,8 +26,10 @@ const todayTasks: TodayTask[] = [
   { eventId: "evt_3", title: "Reflection", schema: "text_reflection", tag: "Mindset", status: "open" }
 ];
 
+const DEFAULT_PLAYER_ID = "local-player";
+
 export default function PlayerToday() {
-  const [playerId, setPlayerId] = useState("local-player");
+  const [playerId, setPlayerId] = useState(DEFAULT_PLAYER_ID);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -35,7 +37,12 @@ export default function PlayerToday() {
       .then((me) => {
         if (me?.id) setPlayerId(String(me.id));
       })
-      .catch(() => {});
+      .catch((error) => {
+        console.warn(
+          "Failed to load current player identity for capabilities widget; using default profile.",
+          error,
+        );
+      });
   }, []);
 
   const completed = useMemo(() => todayTasks.filter(t => t.status === "done").length, []);

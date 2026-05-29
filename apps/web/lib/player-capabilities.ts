@@ -39,6 +39,10 @@ export const CAPABILITY_DEFINITIONS: CapabilityDefinition[] = [
   { key: "mental", label: "Mental", base: 59, color: "#3b82f6" },
 ];
 
+const HASH_RANGE = 1000;
+const MIN_BASE_MULTIPLIER = 0.65;
+const VARIANCE_RANGE = 48;
+
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
@@ -49,7 +53,7 @@ function hashToUnit(seed: string): number {
     hash ^= seed.charCodeAt(i);
     hash = Math.imul(hash, 16777619);
   }
-  return Math.abs(hash % 1000) / 1000;
+  return Math.abs(hash % HASH_RANGE) / HASH_RANGE;
 }
 
 export function scoreToRating(score: number): SkillRating {
@@ -76,7 +80,11 @@ export function getPlayerCapabilityProfile(playerId: string): PlayerCapabilityPr
 
   const capabilities = CAPABILITY_DEFINITIONS.map((definition, index) => {
     const roll = hashToUnit(`${idSeed}:${definition.key}:${index}`);
-    const score = clamp(Math.round(definition.base * 0.65 + roll * 48), 1, 100);
+    const score = clamp(
+      Math.round(definition.base * MIN_BASE_MULTIPLIER + roll * VARIANCE_RANGE),
+      1,
+      100,
+    );
 
     return {
       ...definition,

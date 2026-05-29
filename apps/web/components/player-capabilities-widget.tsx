@@ -37,10 +37,12 @@ const ratingTone: Record<CapabilityScore["rating"], string> = {
   Elite: "text-emerald-600",
 };
 
+const FULL_CIRCLE_RADIANS = Math.PI * 2;
+
 function toRadarPoints(scores: CapabilityScore[], radius: number, center: number) {
   return scores
     .map((capability, index) => {
-      const angle = (-Math.PI / 2) + (Math.PI * 2 * index) / scores.length;
+      const angle = (-Math.PI / 2) + (FULL_CIRCLE_RADIANS * index) / scores.length;
       const r = (capability.score / 100) * radius;
       const x = center + Math.cos(angle) * r;
       const y = center + Math.sin(angle) * r;
@@ -51,7 +53,7 @@ function toRadarPoints(scores: CapabilityScore[], radius: number, center: number
 
 function ringPoints(sides: number, radius: number, center: number) {
   return Array.from({ length: sides }, (_, index) => {
-    const angle = (-Math.PI / 2) + (Math.PI * 2 * index) / sides;
+    const angle = (-Math.PI / 2) + (FULL_CIRCLE_RADIANS * index) / sides;
     const x = center + Math.cos(angle) * radius;
     const y = center + Math.sin(angle) * radius;
     return `${x.toFixed(2)},${y.toFixed(2)}`;
@@ -92,7 +94,7 @@ export function PlayerCapabilitiesRadarCard({ playerId, title = "Capabilities Ra
             ))}
 
             {capabilities.map((capability, index) => {
-              const angle = (-Math.PI / 2) + (Math.PI * 2 * index) / capabilities.length;
+              const angle = (-Math.PI / 2) + (FULL_CIRCLE_RADIANS * index) / capabilities.length;
               const x = center + Math.cos(angle) * radius;
               const y = center + Math.sin(angle) * radius;
               return (
