@@ -25,10 +25,12 @@ function timeAgo(dateStr: string): string {
   return `${days} days ago`;
 }
 
+const DEFAULT_PLAYER_ID = "local-player";
+
 export default function Dashboard() {
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
-  const [playerId, setPlayerId] = useState<string>("local-player");
+  const [playerId, setPlayerId] = useState<string>(DEFAULT_PLAYER_ID);
   const [teams, setTeams] = useState<Team[]>([]);
   const [playerCount, setPlayerCount] = useState<number>(0);
 
