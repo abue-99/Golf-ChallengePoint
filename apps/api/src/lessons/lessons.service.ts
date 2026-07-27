@@ -170,8 +170,9 @@ export class LessonsService {
       },
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
-    if (role !== 'ADMIN' && lesson.coachId !== userId) {
-      throw new ForbiddenException('Not your lesson');
+    // Coaches can view their own lessons + public lessons from other coaches; admins see all
+    if (role !== 'ADMIN' && lesson.coachId !== userId && lesson.visibility !== 'PUBLIC') {
+      throw new ForbiddenException('Not authorized to view this lesson');
     }
     return lesson;
   }
