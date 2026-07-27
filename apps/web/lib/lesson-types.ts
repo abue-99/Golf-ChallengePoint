@@ -8,6 +8,18 @@ export const FOCUS_AREAS = [
   { value: "MENTAL", label: "Mental" },
 ] as const;
 
+export const LOCATIONS = [
+  { value: "DRIVING_RANGE", label: "Driving Range" },
+  { value: "SHORT_GAME_AREA", label: "Short Game Area" },
+  { value: "PUTTING_GREEN", label: "Putting Green" },
+  { value: "INDOOR_BAY", label: "Indoor Bay" },
+  { value: "ON_COURSE", label: "On Course" },
+] as const;
+
+export function getLocationLabel(location: string): string {
+  return LOCATIONS.find((l) => l.value === location)?.label ?? location;
+}
+
 export const LESSON_STATUSES = [
   { value: "PLANNED", label: "Planned" },
   { value: "IN_PROGRESS", label: "In Progress" },
@@ -56,6 +68,7 @@ export interface LessonPlayer {
 export interface TrainingLesson {
   id: string;
   name: string;
+  description?: string | null;
   durationMinutes: number;
   focusArea: LessonFocusArea;
   location?: string | null;
