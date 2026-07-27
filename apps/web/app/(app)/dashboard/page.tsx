@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Users } from "lucide-react";
-import { PlayerCapabilitiesWidget } from "@/components/player-capabilities-widget";
+import PlayerHomeDashboard from "@/components/PlayerHomeDashboard";
 
 type Team = {
   id: string;
@@ -31,6 +31,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState<string>(DEFAULT_PLAYER_ID);
+  const [playerFirstName, setPlayerFirstName] = useState<string>("");
   const [teams, setTeams] = useState<Team[]>([]);
   const [playerCount, setPlayerCount] = useState<number>(0);
 
@@ -40,6 +41,7 @@ export default function Dashboard() {
       .then((me) => {
         if (me?.role) setRole(me.role);
         if (me?.id) setPlayerId(String(me.id));
+        if (me?.firstName) setPlayerFirstName(me.firstName);
       });
   }, []);
 
@@ -139,11 +141,11 @@ export default function Dashboard() {
 
       {/* Player dashboard */}
       {role === "PLAYER" && (
-        <section className="space-y-6">
-          <p className="text-sm text-[var(--golf-muted-text)]">
-            Welcome! Use the navigation to manage your challenges and training sessions.
-          </p>
-          <PlayerCapabilitiesWidget playerId={playerId} />
+        <section>
+          <PlayerHomeDashboard
+            firstName={playerFirstName}
+            playerId={playerId}
+          />
         </section>
       )}
 
