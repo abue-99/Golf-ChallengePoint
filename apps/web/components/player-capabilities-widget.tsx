@@ -227,16 +227,19 @@ function SkillRadar2Chart({
     segmentSweep,
   });
 
-  const weakestCapability = useMemo(
-    () => capabilities.reduce((lowest, capability) => (capability.score < lowest.score ? capability : lowest), capabilities[0]),
-    [capabilities],
-  );
+  const weakestCapabilityLabel = useMemo(() => {
+    if (capabilities.length === 0) return "Skill";
+    return capabilities.reduce(
+      (lowest, capability) => (capability.score < lowest.score ? capability : lowest),
+      capabilities[0],
+    ).label;
+  }, [capabilities]);
 
   return (
     <div className="mx-auto w-full max-w-[460px] aspect-square">
       <svg viewBox={`0 0 ${size} ${size}`} className="h-full w-full" role="img" aria-labelledby={`${titleId} ${descId}`}>
         <title id={titleId}>Skill Radar 2.0</title>
-        <desc id={descId}>Overall score {overall}, level {level}, current goal {weakestCapability.label} consistency.</desc>
+        <desc id={descId}>Overall score {overall}, level {level}, current goal {weakestCapabilityLabel} Consistency.</desc>
         {[20, 40, 60, 80, 100].map((ring) => {
           const ringPoints = buildPolygonPoints({
             scores: capabilities.map(() => ring),
@@ -414,7 +417,7 @@ function SkillRadar2Chart({
           className="fill-slate-400 dark:fill-slate-500"
           style={{ fontSize: 10, fontWeight: 600 }}
         >
-          Goal: {weakestCapability.label} Consistency
+          Goal: {weakestCapabilityLabel} Consistency
         </text>
       </svg>
     </div>
@@ -593,12 +596,16 @@ export function PlayerCapabilitiesRadarCard({
   );
 
   const strongestCapability = useMemo(
-    () => profile.capabilities.reduce((best, capability) => (capability.score > best.score ? capability : best), profile.capabilities[0]),
+    () => profile.capabilities.length > 0
+      ? profile.capabilities.reduce((best, capability) => (capability.score > best.score ? capability : best), profile.capabilities[0])
+      : null,
     [profile.capabilities],
   );
 
   const weakestCapability = useMemo(
-    () => profile.capabilities.reduce((lowest, capability) => (capability.score < lowest.score ? capability : lowest), profile.capabilities[0]),
+    () => profile.capabilities.length > 0
+      ? profile.capabilities.reduce((lowest, capability) => (capability.score < lowest.score ? capability : lowest), profile.capabilities[0])
+      : null,
     [profile.capabilities],
   );
 
@@ -673,13 +680,17 @@ export function PlayerCapabilitiesRadarCard({
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
               <div>
                 <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-300">Top Strength</p>
-                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{strongestCapability.label}</p>
-                <p className="text-sm font-black" style={{ color: scoreQualityColor(strongestCapability.score) }}>{strongestCapability.score}</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{strongestCapability?.label ?? "N/A"}</p>
+                <p className="text-sm font-black" style={{ color: strongestCapability ? scoreQualityColor(strongestCapability.score) : "#64748b" }}>
+                  {strongestCapability?.score ?? "—"}
+                </p>
               </div>
               <div>
                 <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-300">Needs Focus</p>
-                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{weakestCapability.label}</p>
-                <p className="text-sm font-black" style={{ color: scoreQualityColor(weakestCapability.score) }}>{weakestCapability.score}</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{weakestCapability?.label ?? "N/A"}</p>
+                <p className="text-sm font-black" style={{ color: weakestCapability ? scoreQualityColor(weakestCapability.score) : "#64748b" }}>
+                  {weakestCapability?.score ?? "—"}
+                </p>
               </div>
             </div>
           </div>
