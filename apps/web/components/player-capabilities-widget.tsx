@@ -63,8 +63,8 @@ function scoreQualityColor(score: number) {
   return "#ef4444";
 }
 
-function historicalDriftByIndex(index: number) {
-  // Stable synthetic wobble so historical overlays look less perfectly linear.
+function syntheticHistoricalOffsetByIndex(index: number) {
+  // Stable synthetic wobble so mocked historical overlays are not perfectly linear.
   const pattern = [-2, 0, 2];
   return pattern[index % pattern.length];
 }
@@ -100,6 +100,7 @@ type DeltaPopup = {
 };
 
 const LESSONS_BY_CAPABILITY: Record<CapabilityKey, string[]> = {
+  // Placeholder lesson mapping until API-backed lesson-impact links are available.
   setup: ["Address Check", "Pre-Shot Routine", "Alignment Gate"],
   putting: ["Gate Drill", "Distance Control", "Pressure Putting"],
   shortGame: ["Bunker Escapes", "One-Hop Pitch", "Up & Down Ladder"],
@@ -111,12 +112,12 @@ const LESSONS_BY_CAPABILITY: Record<CapabilityKey, string[]> = {
 
 function buildComparisonScores(capabilities: CapabilityScore[], preset: ComparisonPresetKey) {
   // We currently do not persist time-series capability history, so these overlays
-  // intentionally simulate prior snapshots until real historical data is wired in.
+  // intentionally simulate prior snapshots using: score - decay + synthetic offset.
   const decay = COMPARISON_PRESETS.find((item) => item.key === preset)?.decay ?? 0;
   if (decay === 0) return capabilities.map((capability) => capability.score);
 
   return capabilities.map((capability, index) => {
-    const drift = historicalDriftByIndex(index);
+    const drift = syntheticHistoricalOffsetByIndex(index);
     return clamp(capability.score - decay + drift, 1, 100);
   });
 }
@@ -261,7 +262,7 @@ function SkillRadar2Chart({
     <div className="mx-auto w-full max-w-[460px] aspect-square">
       <svg viewBox={`0 0 ${size} ${size}`} className="h-full w-full" role="img" aria-labelledby={`${titleId} ${descId}`}>
         <title id={titleId}>Skill Radar 2.0</title>
-        <desc id={descId}>Overall score {overall}, level {level}, current goal {weakestCapabilityLabel} Consistency.</desc>
+        <desc id={descId}>Overall score {overall}, level {level}, current goal Improve {weakestCapabilityLabel}.</desc>
         {[20, 40, 60, 80, 100].map((ring) => {
           const ringPoints = buildPolygonPoints({
             scores: capabilities.map(() => ring),
@@ -439,7 +440,7 @@ function SkillRadar2Chart({
           className="fill-slate-400 dark:fill-slate-500"
           style={{ fontSize: 10, fontWeight: 600 }}
         >
-          Goal: {weakestCapabilityLabel} Consistency
+          Goal: Improve {weakestCapabilityLabel}
         </text>
       </svg>
     </div>
@@ -477,6 +478,7 @@ function CapabilityDetailPanel({
 
       <div className="space-y-2 border-t border-slate-200 pt-2 dark:border-slate-700">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">Sub-Capabilities</p>
+        {/* Show top five for compact readability on mobile and side panel layouts. */}
         {capability.subs.slice(0, 5).map((sub) => (
           <div key={sub.key}>
             <div className="mb-1 flex items-center justify-between text-xs">
@@ -605,7 +607,8 @@ export function PlayerCapabilitiesRadarCard({
   const [hoverCapability, setHoverCapability] = useState<CapabilityKey | null>(null);
   const [comparisonPreset, setComparisonPreset] = useState<ComparisonPresetKey>("lastMonth");
   const [deltaPopups, setDeltaPopups] = useState<DeltaPopup[]>([]);
-  const previousLiveScoresRef = useRef<number[]>(profile.capabilities.map(() => 0));
+  const previousLiveScoresRef = useRef<number[]>(profile.capabilities.map((capability) => capability.score));
+  const hasInitializedDeltaRef = useRef(false);
 
   const comparisonScores = useMemo(
     () => buildComparisonScores(profile.capabilities, comparisonPreset),
@@ -631,11 +634,20 @@ export function PlayerCapabilitiesRadarCard({
     ? profile.capabilities.find((capability) => capability.key === selectedCapability) ?? null
     : null;
 
-  const selectedTrend = selected
-    ? selected.score - (monthScores[profile.capabilities.findIndex((capability) => capability.key === selected.key)] ?? selected.score)
-    : 0;
+  const monthlyScoreByCapability = useMemo(
+    () => Object.fromEntries(profile.capabilities.map((capability, index) => [capability.key, monthScores[index] ?? capability.score])),
+    [monthScores, profile.capabilities],
+  );
+
+  const selectedTrend = selected ? selected.score - (monthlyScoreByCapability[selected.key] ?? selected.score) : 0;
 
   useEffect(() => {
+    if (!hasInitializedDeltaRef.current) {
+      hasInitializedDeltaRef.current = true;
+      previousLiveScoresRef.current = profile.capabilities.map((capability) => capability.score);
+      return;
+    }
+
     const previousScores = previousLiveScoresRef.current;
     const nextPopups = profile.capabilities
       .map((capability, index) => {
