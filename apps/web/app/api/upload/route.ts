@@ -34,7 +34,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "mp4";
+    const rawExt = file.name.split(".").pop()?.toLowerCase() ?? "mp4";
+    // Allow only safe alphanumeric extensions to prevent path manipulation
+    const ext = /^[a-z0-9]{1,8}$/.test(rawExt) ? rawExt : "mp4";
     const filename = `${randomUUID()}.${ext}`;
 
     // Save to public/uploads — served as /uploads/<filename>

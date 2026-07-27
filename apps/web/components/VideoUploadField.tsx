@@ -85,6 +85,7 @@ export function VideoUploadField({
           type="button"
           disabled={disabled || uploading}
           onClick={() => inputRef.current?.click()}
+          aria-label={`Upload video for ${label}`}
           className={cn(
             "flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-white px-4 py-6 text-sm text-slate-500 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600",
             (disabled || uploading) && "cursor-not-allowed opacity-50"
@@ -101,6 +102,7 @@ export function VideoUploadField({
         ref={inputRef}
         type="file"
         accept="video/mp4,video/webm,video/ogg,video/quicktime"
+        aria-label={`File input for ${label}`}
         className="hidden"
         onChange={handleInputChange}
       />
