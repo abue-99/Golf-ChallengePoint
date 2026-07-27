@@ -254,10 +254,11 @@ function CurrentJourneyCard({ plan }: { plan: PlayerDevelopmentPlan | null }) {
           <div className="space-y-1.5">
             {activeBlock.assignments.slice(0, 5).map((a, idx) => {
               const node = STATUS_NODE[a.status] ?? STATUS_NODE.OUTSTANDING;
-              const isLocked =
-                a.status === "OUTSTANDING" &&
-                idx > 0 &&
-                activeBlock.assignments[idx - 1].status === "OUTSTANDING";
+              const prevCompleted =
+                idx === 0 ||
+                activeBlock.assignments[idx - 1].status === "FINISHED" ||
+                activeBlock.assignments[idx - 1].status === "REVIEWED";
+              const isLocked = a.status === "OUTSTANDING" && !prevCompleted;
               return (
                 <div
                   key={a.id}

@@ -795,7 +795,7 @@ function LessonDetailModal({
               {ASSIGNMENT_STATUSES.filter((s) => s.value !== "REVIEWED").map((s) => (
                 <button
                   key={s.value}
-                  onClick={() => setStatus(s.value as typeof status)}
+                  onClick={() => setStatus(s.value)}
                   className={cn(
                     "rounded-2xl border-2 py-3 text-xs font-semibold transition-all",
                     status === s.value
