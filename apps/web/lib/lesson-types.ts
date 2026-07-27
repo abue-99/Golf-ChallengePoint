@@ -86,7 +86,7 @@ export function getFocusAreaPath(
 
   if (!subSubCapability) return `${focusLabel} / ${subLabel}`;
 
-  const subSubLabel = sub?.subSubs.find((ss) => ss.key === subSubCapability)?.label ?? subSubCapability;
+  const subSubLabel = sub?.subSubs?.find((ss) => ss.key === subSubCapability)?.label ?? subSubCapability;
   return `${focusLabel} / ${subLabel} / ${subSubLabel}`;
 }
 
