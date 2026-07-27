@@ -24,6 +24,34 @@ enum Recurrence {
   MONTHLY
 }
 
+enum LessonFocusArea {
+  SETUP
+  PUTTING
+  SHORT_GAME
+  LONG_GAME
+  TACTICAL
+  FITNESS
+  MENTAL
+}
+
+enum LessonStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum LessonPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum GoalAchieved {
+  YES
+  PARTIALLY
+  NO
+}
+
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -49,6 +77,8 @@ model User {
   teamMemberships  TeamMember[]
   practiceSlots    PracticeSlot[]    @relation("PlayerSlots")
   coachTasks       CalendarTask[]    @relation("CoachTasks")
+  coachLessons     TrainingLesson[]  @relation("CoachLessons")
+  playerLessons    TrainingLesson[]  @relation("PlayerLessons")
 
   @@map("users")
 }
@@ -190,4 +220,45 @@ model CalendarTask {
   updatedAt       DateTime     @updatedAt
 
   @@map("calendar_tasks")
+}
+
+model TrainingLesson {
+  id              String           @id @default(cuid())
+
+  // General Information
+  name            String
+  durationMinutes Int
+  focusArea       LessonFocusArea
+  location        String?
+  status          LessonStatus     @default(PLANNED)
+  videoUrl        String?
+
+  // Ownership
+  coachId         String
+  coach           User             @relation("CoachLessons", fields: [coachId], references: [id], onDelete: Cascade)
+  playerId        String?
+  player          User?            @relation("PlayerLessons", fields: [playerId], references: [id], onDelete: SetNull)
+  teamId          String?
+
+  // Goal Setting
+  trainingObjective  String?
+  currentSituation   String?
+  targetOutcome      String?
+  priority           LessonPriority?
+  plannedExercises   String?
+  successCriteria    String?
+
+  // Results & Performance Tracking
+  goalAchieved          GoalAchieved?
+  playerSelfAssessment  Int?
+  coachRating           Int?
+  afterSessionVideoUrl  String?
+  performanceScore      Int?
+  comments              String?
+  keyLearnings          String?
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@map("training_lessons")
 }

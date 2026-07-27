@@ -6,6 +6,7 @@ import { ClubsModule } from './clubs/clubs.module';
 import { TeamsModule } from './teams/teams.module';
 import { UsersModule } from './users/users.module';
 import { CalendarModule } from './calendar/calendar.module';
+import { LessonsModule } from './lessons/lessons.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { CalendarModule } from './calendar/calendar.module';
     TeamsModule,
     UsersModule,
     CalendarModule,
+    LessonsModule,
   ],
   controllers: [AppController],
 })
