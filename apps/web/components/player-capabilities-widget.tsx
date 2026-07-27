@@ -42,6 +42,7 @@ const ratingTone: Record<CapabilityScore["rating"], string> = {
 };
 
 const FULL_CIRCLE_RADIANS = Math.PI * 2;
+const DELTA_POPUP_DURATION_MS = 1500;
 
 function polarToCartesian(radius: number, angle: number, center: number) {
   return {
@@ -60,6 +61,11 @@ function scoreQualityColor(score: number) {
   if (score >= 60) return "#3b82f6";
   if (score >= 40) return "#f97316";
   return "#ef4444";
+}
+
+function historicalDriftByIndex(index: number) {
+  const pattern = [-2, 0, 2];
+  return pattern[index % pattern.length];
 }
 
 const COMPARISON_PRESETS = [
@@ -91,7 +97,7 @@ function buildComparisonScores(capabilities: CapabilityScore[], preset: Comparis
   if (decay === 0) return capabilities.map((capability) => capability.score);
 
   return capabilities.map((capability, index) => {
-    const drift = ((index % 3) - 1) * 2;
+    const drift = historicalDriftByIndex(index);
     return clamp(capability.score - decay + drift, 1, 100);
   });
 }
@@ -229,10 +235,11 @@ function SkillRadar2Chart({
 
   const weakestCapabilityLabel = useMemo(() => {
     if (capabilities.length === 0) return "Skill";
-    return capabilities.reduce(
-      (lowest, capability) => (capability.score < lowest.score ? capability : lowest),
-      capabilities[0],
-    ).label;
+    let lowest = capabilities[0];
+    for (const capability of capabilities) {
+      if (capability.score < lowest.score) lowest = capability;
+    }
+    return lowest.label;
   }, [capabilities]);
 
   return (
@@ -627,7 +634,7 @@ export function PlayerCapabilitiesRadarCard({
       .filter((item): item is DeltaPopup => item !== null);
 
     setDeltaPopups(nextPopups);
-    const timeoutId = window.setTimeout(() => setDeltaPopups([]), 1500);
+    const timeoutId = window.setTimeout(() => setDeltaPopups([]), DELTA_POPUP_DURATION_MS);
     previousLiveScoresRef.current = profile.capabilities.map((capability) => capability.score);
 
     return () => window.clearTimeout(timeoutId);
