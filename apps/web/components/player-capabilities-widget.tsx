@@ -237,7 +237,13 @@ export function PlayerCapabilitiesRadarCard({
 
 // ─── Full Widget ──────────────────────────────────────────────────────────────
 
-export function PlayerCapabilitiesWidget({ playerId }: { playerId: string }) {
+export function PlayerCapabilitiesWidget({
+  playerId,
+  showRadar = true,
+}: {
+  playerId: string;
+  showRadar?: boolean;
+}) {
   const [animate, setAnimate] = useState(false);
   const [expandedCapability, setExpandedCapability] = useState<CapabilityKey | null>(null);
 
@@ -253,7 +259,7 @@ export function PlayerCapabilitiesWidget({ playerId }: { playerId: string }) {
   }
 
   return (
-    <section className="grid gap-4 lg:grid-cols-[1fr_auto]">
+    <section className={cn(showRadar ? "grid gap-4 lg:grid-cols-[1fr_auto]" : "w-full")}>
       <Card className="border border-[var(--golf-muted)] shadow-sm min-w-0">
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <div>
@@ -347,11 +353,13 @@ export function PlayerCapabilitiesWidget({ playerId }: { playerId: string }) {
         </CardContent>
       </Card>
 
-      <PlayerCapabilitiesRadarCard
-        playerId={playerId}
-        title="Spider Overview"
-        onCapabilityClick={toggleCapability}
-      />
+      {showRadar && (
+        <PlayerCapabilitiesRadarCard
+          playerId={playerId}
+          title="Spider Overview"
+          onCapabilityClick={toggleCapability}
+        />
+      )}
     </section>
   );
 }

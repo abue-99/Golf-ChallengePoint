@@ -22,7 +22,7 @@ export class LessonsService {
   async listLessons(
     userId: string,
     role: string,
-    filters: { status?: string; focusArea?: string; visibility?: string },
+    filters: { status?: string; focusArea?: string; subCapability?: string; subSubCapability?: string; visibility?: string },
   ) {
     this.requireCoachOrAdmin(role);
     // Coaches see their own lessons + public lessons from other coaches
@@ -30,6 +30,8 @@ export class LessonsService {
     const where: any = {
       ...(filters.status ? { status: filters.status as any } : {}),
       ...(filters.focusArea ? { focusArea: filters.focusArea as any } : {}),
+      ...(filters.subCapability ? { subCapability: filters.subCapability } : {}),
+      ...(filters.subSubCapability ? { subSubCapability: filters.subSubCapability } : {}),
       ...(filters.visibility ? { visibility: filters.visibility as any } : {}),
     };
     if (role !== 'ADMIN') {
@@ -78,6 +80,8 @@ export class LessonsService {
       description?: string;
       durationMinutes: number;
       focusArea: string;
+      subCapability?: string;
+      subSubCapability?: string;
       location?: string;
       status?: string;
       visibility?: string;
@@ -106,6 +110,8 @@ export class LessonsService {
         description: data.description,
         durationMinutes: data.durationMinutes,
         focusArea: data.focusArea as any,
+        subCapability: data.subCapability ?? null,
+        subSubCapability: data.subSubCapability ?? null,
         location: data.location,
         status: (data.status as any) ?? 'PLANNED',
         visibility: (data.visibility as any) ?? 'PRIVATE',
@@ -190,6 +196,8 @@ export class LessonsService {
       description?: string;
       durationMinutes?: number;
       focusArea?: string;
+      subCapability?: string | null;
+      subSubCapability?: string | null;
       location?: string;
       status?: string;
       visibility?: string;
@@ -230,6 +238,12 @@ export class LessonsService {
           : {}),
         ...(data.focusArea !== undefined
           ? { focusArea: data.focusArea as any }
+          : {}),
+        ...(data.subCapability !== undefined
+          ? { subCapability: data.subCapability || null }
+          : {}),
+        ...(data.subSubCapability !== undefined
+          ? { subSubCapability: data.subSubCapability || null }
           : {}),
         ...(data.location !== undefined ? { location: data.location } : {}),
         ...(data.status !== undefined ? { status: data.status as any } : {}),

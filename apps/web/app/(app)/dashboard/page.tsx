@@ -13,18 +13,6 @@ type Team = {
   createdAt?: string;
 };
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins} minute${mins !== 1 ? "s" : ""} ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} hour${hours !== 1 ? "s" : ""} ago`;
-  const days = Math.floor(hours / 24);
-  if (days === 1) return "Yesterday";
-  return `${days} days ago`;
-}
-
 const DEFAULT_PLAYER_ID = "local-player";
 
 export default function Dashboard() {
@@ -57,14 +45,6 @@ export default function Dashboard() {
       }).catch(() => {});
     }
   }, [role]);
-
-  const recentActivity = [...teams]
-    .sort((a, b) => {
-      const ta = new Date(a.updatedAt ?? a.createdAt ?? 0).getTime();
-      const tb = new Date(b.updatedAt ?? b.createdAt ?? 0).getTime();
-      return tb - ta;
-    })
-    .slice(0, 3);
 
   const isCoachOrAdmin = role === "COACH" || role === "ADMIN";
 
@@ -102,38 +82,6 @@ export default function Dashboard() {
                 <User className="h-5 w-5 text-[var(--golf-primary)]" />
                 <span>{playerCount}</span>
               </div>
-            </CardContent>
-          </Card>
-        </section>
-      )}
-
-      {/* Recent Activity (COACH / ADMIN only) */}
-      {isCoachOrAdmin && (
-        <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-[var(--golf-heading)]">
-            Recent Activity
-          </h2>
-
-          <Card className="shadow-sm border border-[var(--golf-muted)]">
-            <CardContent className="divide-y p-0">
-              {recentActivity.length === 0 ? (
-                <div className="p-4 text-sm text-[var(--golf-muted-text)]">No recent activity.</div>
-              ) : (
-                recentActivity.map((t) => {
-                  const ts = t.updatedAt ?? t.createdAt;
-                  return (
-                    <div
-                      key={t.id}
-                      className="p-4 flex items-center justify-between text-[var(--golf-heading)]"
-                    >
-                      <span className="text-sm">Team &ldquo;{t.shortName}&rdquo; updated</span>
-                      <span className="text-xs text-[var(--golf-muted-text)]">
-                        {ts ? timeAgo(ts) : "—"}
-                      </span>
-                    </div>
-                  );
-                })
-              )}
             </CardContent>
           </Card>
         </section>

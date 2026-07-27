@@ -38,7 +38,7 @@ export const api = {
     fetch(`/api/calendar/player/${playerId}`, { cache: "no-store" }).then((r) => r.json()),
 
   // Lessons
-  listLessons: (params?: { status?: string; focusArea?: string; visibility?: string }) => {
+  listLessons: (params?: { status?: string; focusArea?: string; subCapability?: string; subSubCapability?: string; visibility?: string }) => {
     const qs = params
       ? new URLSearchParams(
           Object.entries(params).filter(([, v]) => v !== undefined) as [string, string][]

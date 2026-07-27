@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { PlayerCapabilitiesWidget } from "@/components/player-capabilities-widget";
+import { PlayerCapabilitiesRadarCard, PlayerCapabilitiesWidget } from "@/components/player-capabilities-widget";
 import { DevelopmentPlanManager } from "@/components/DevelopmentPlanManager";
 
 type LinkedPlayer = {
@@ -48,8 +48,17 @@ export default async function CoachPlayerDashboardPage({
           {player?.country ? ` · ${player.country}` : ""}
         </p>
       </header>
-      <PlayerCapabilitiesWidget playerId={playerId} />
-      <DevelopmentPlanManager playerId={playerId} />
+      <div className="grid gap-4 lg:grid-cols-5">
+        <div className="lg:col-span-2">
+          <PlayerCapabilitiesWidget playerId={playerId} showRadar={false} />
+        </div>
+        <div className="lg:col-span-1">
+          <PlayerCapabilitiesRadarCard playerId={playerId} title="Spider Overview" />
+        </div>
+        <div className="lg:col-span-2">
+          <DevelopmentPlanManager playerId={playerId} />
+        </div>
+      </div>
     </section>
   );
 }
