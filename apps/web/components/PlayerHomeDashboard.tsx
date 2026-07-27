@@ -8,6 +8,7 @@ import {
   type PlayerDevelopmentPlan,
   type LessonAssignment,
 } from "@/lib/lesson-types";
+import { PlayerCapabilitiesRadarCard, PlayerCapabilitiesWidget } from "@/components/player-capabilities-widget";
 import { cn } from "@/lib/utils";
 import { Clock, ChevronRight, Trophy, Zap, CalendarDays } from "lucide-react";
 
@@ -360,6 +361,15 @@ export default function PlayerHomeDashboard({
         <div className="rounded-2xl bg-slate-100 animate-pulse h-48" />
       ) : (
         <CurrentJourneyCard plan={activePlan} />
+      )}
+
+      {loading ? (
+        <div role="status" aria-live="polite" aria-label="Loading capability data" className="rounded-2xl bg-slate-100 animate-pulse h-[360px]" />
+      ) : (
+        <div className="space-y-4">
+          <PlayerCapabilitiesWidget playerId={playerId} showRadar={false} />
+          <PlayerCapabilitiesRadarCard playerId={playerId} title="Capability Wheel" />
+        </div>
       )}
 
       {/* Next coach session */}
