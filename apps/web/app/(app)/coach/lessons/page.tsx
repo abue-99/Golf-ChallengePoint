@@ -15,7 +15,6 @@ import {
   type TrainingLesson,
 } from "@/lib/lesson-types";
 import { Plus, Search, BookOpen, Clock, MapPin, User, Globe, Lock } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export default function LessonsPage() {
   const [lessons, setLessons] = useState<TrainingLesson[] | null>(null);
