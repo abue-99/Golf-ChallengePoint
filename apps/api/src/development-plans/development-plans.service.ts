@@ -32,6 +32,7 @@ export class DevelopmentPlansService {
                   select: {
                     id: true, name: true, focusArea: true, durationMinutes: true,
                     trainingObjective: true, successCriteria: true,
+                    subCapability: true, subSubCapability: true,
                   },
                 },
               },
@@ -58,6 +59,7 @@ export class DevelopmentPlansService {
                   select: {
                     id: true, name: true, focusArea: true, durationMinutes: true,
                     trainingObjective: true, successCriteria: true, plannedExercises: true,
+                    subCapability: true, subSubCapability: true,
                   },
                 },
               },
@@ -147,7 +149,7 @@ export class DevelopmentPlansService {
       include: {
         assignments: {
           include: {
-            lesson: { select: { id: true, name: true, focusArea: true, durationMinutes: true } },
+            lesson: { select: { id: true, name: true, focusArea: true, durationMinutes: true, subCapability: true, subSubCapability: true } },
           },
         },
       },
@@ -209,7 +211,7 @@ export class DevelopmentPlansService {
         sortOrder: data.sortOrder ?? 0,
       },
       include: {
-        lesson: { select: { id: true, name: true, focusArea: true, durationMinutes: true } },
+        lesson: { select: { id: true, name: true, focusArea: true, durationMinutes: true, subCapability: true, subSubCapability: true } },
       },
     });
   }
@@ -250,7 +252,7 @@ export class DevelopmentPlansService {
       where: { id: assignmentId },
       data: updateData,
       include: {
-        lesson: { select: { id: true, name: true, focusArea: true, durationMinutes: true } },
+        lesson: { select: { id: true, name: true, focusArea: true, durationMinutes: true, subCapability: true, subSubCapability: true } },
       },
     });
   }
