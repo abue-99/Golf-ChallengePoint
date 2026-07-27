@@ -43,6 +43,7 @@ const ratingTone: Record<CapabilityScore["rating"], string> = {
 
 const FULL_CIRCLE_RADIANS = Math.PI * 2;
 const DELTA_POPUP_DURATION_MS = 1500;
+const MAX_DISPLAYED_SUBS = 5;
 
 function polarToCartesian(radius: number, angle: number, center: number) {
   return {
@@ -100,7 +101,7 @@ type DeltaPopup = {
 };
 
 const LESSONS_BY_CAPABILITY: Record<CapabilityKey, string[]> = {
-  // Placeholder lesson mapping until API-backed lesson-impact links are available.
+  // TODO: Replace this placeholder map once lesson-impact links are provided by API.
   setup: ["Address Check", "Pre-Shot Routine", "Alignment Gate"],
   putting: ["Gate Drill", "Distance Control", "Pressure Putting"],
   shortGame: ["Bunker Escapes", "One-Hop Pitch", "Up & Down Ladder"],
@@ -110,6 +111,10 @@ const LESSONS_BY_CAPABILITY: Record<CapabilityKey, string[]> = {
   mental: ["Reset Breath", "Pressure Rehearsal", "Focus Ladder"],
 };
 
+/**
+ * Returns historical-like scores aligned to capability order for the selected preset.
+ * Values are synthetic until true capability history is available from the backend.
+ */
 function buildComparisonScores(capabilities: CapabilityScore[], preset: ComparisonPresetKey) {
   // We currently do not persist time-series capability history, so these overlays
   // intentionally simulate prior snapshots using: score - decay + synthetic offset.
@@ -479,7 +484,7 @@ function CapabilityDetailPanel({
       <div className="space-y-2 border-t border-slate-200 pt-2 dark:border-slate-700">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">Sub-Capabilities</p>
         {/* Show top five for compact readability on mobile and side panel layouts. */}
-        {capability.subs.slice(0, 5).map((sub) => (
+        {capability.subs.slice(0, MAX_DISPLAYED_SUBS).map((sub) => (
           <div key={sub.key}>
             <div className="mb-1 flex items-center justify-between text-xs">
               <span className="font-medium text-slate-700 dark:text-slate-200">{sub.label}</span>
@@ -705,7 +710,7 @@ export function PlayerCapabilitiesRadarCard({
           />
 
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/40">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">Player Development | Skill Radar 2.0</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">Player Development Overview</p>
             <p className="mt-1 text-sm font-bold text-slate-800 dark:text-slate-100">{profile.overall} OVR</p>
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
               <div>
