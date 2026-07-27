@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Brain,
@@ -157,11 +157,22 @@ function SkillRadar2Chart({
   deltaPopups: DeltaPopup[];
 }) {
   const [animatedScores, setAnimatedScores] = useState<number[]>(() => capabilities.map(() => 0));
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const previousScoresRef = useRef<number[]>(capabilities.map(() => 0));
+  const titleId = useId();
+  const descId = useId();
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setPrefersReducedMotion(media.matches);
+    updatePreference();
+    media.addEventListener("change", updatePreference);
+    return () => media.removeEventListener("change", updatePreference);
+  }, []);
 
   useEffect(() => {
     const start = performance.now();
-    const duration = 1000;
+    const duration = prefersReducedMotion ? 0 : 1000;
     let raf = 0;
 
     const fromScores = previousScoresRef.current.length === capabilities.length
@@ -169,7 +180,7 @@ function SkillRadar2Chart({
       : capabilities.map(() => 0);
 
     const tick = (timestamp: number) => {
-      const progress = Math.min(1, (timestamp - start) / duration);
+      const progress = duration === 0 ? 1 : Math.min(1, (timestamp - start) / duration);
       const eased = 1 - Math.pow(1 - progress, 3);
       const nextScores = capabilities.map((capability, index) => {
         const from = fromScores[index] ?? 0;
@@ -185,9 +196,15 @@ function SkillRadar2Chart({
       }
     };
 
+    if (duration === 0) {
+      setAnimatedScores(capabilities.map((capability) => capability.score));
+      previousScoresRef.current = capabilities.map((capability) => capability.score);
+      return;
+    }
+
     raf = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(raf);
-  }, [capabilities]);
+  }, [capabilities, prefersReducedMotion]);
 
   const size = 420;
   const center = size / 2;
@@ -217,7 +234,9 @@ function SkillRadar2Chart({
 
   return (
     <div className="mx-auto w-full max-w-[460px] aspect-square">
-      <svg viewBox={`0 0 ${size} ${size}`} className="h-full w-full">
+      <svg viewBox={`0 0 ${size} ${size}`} className="h-full w-full" role="img" aria-labelledby={`${titleId} ${descId}`}>
+        <title id={titleId}>Skill Radar 2.0</title>
+        <desc id={descId}>Overall score {overall}, level {level}, current goal {weakestCapability.label} consistency.</desc>
         {[20, 40, 60, 80, 100].map((ring) => {
           const ringPoints = buildPolygonPoints({
             scores: capabilities.map(() => ring),
@@ -288,7 +307,7 @@ function SkillRadar2Chart({
                       fill="none"
                       stroke={scoreQualityColor(capability.score)}
                       strokeWidth={2}
-                      className="animate-ping"
+                      className={prefersReducedMotion ? undefined : "animate-ping"}
                     />
                     <text
                       x={nodePoint.x}
@@ -308,7 +327,16 @@ function SkillRadar2Chart({
                   r={22}
                   fill="transparent"
                   style={{ cursor: "pointer" }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${capability.label} score ${Math.round(liveScore)}`}
                   onClick={() => onNodeTap(capability.key)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onNodeTap(capability.key);
+                    }
+                  }}
                 />
 
                 <text
@@ -640,7 +668,7 @@ export function PlayerCapabilitiesRadarCard({
           />
 
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/40">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">Player Development · Skill Radar 2.0</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">Player Development | Skill Radar 2.0</p>
             <p className="mt-1 text-sm font-bold text-slate-800 dark:text-slate-100">{profile.overall} OVR</p>
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
               <div>
