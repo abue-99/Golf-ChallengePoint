@@ -64,8 +64,25 @@ function scoreQualityColor(score: number) {
 }
 
 function historicalDriftByIndex(index: number) {
+  // Stable synthetic wobble so historical overlays look less perfectly linear.
   const pattern = [-2, 0, 2];
   return pattern[index % pattern.length];
+}
+
+function findCapabilityByScore(
+  capabilities: CapabilityScore[],
+  mode: "min" | "max",
+): CapabilityScore | null {
+  if (capabilities.length === 0) return null;
+  let selected = capabilities[0];
+  for (let i = 1; i < capabilities.length; i += 1) {
+    const capability = capabilities[i];
+    const shouldReplace = mode === "min"
+      ? capability.score < selected.score
+      : capability.score > selected.score;
+    if (shouldReplace) selected = capability;
+  }
+  return selected;
 }
 
 const COMPARISON_PRESETS = [
@@ -93,6 +110,8 @@ const LESSONS_BY_CAPABILITY: Record<CapabilityKey, string[]> = {
 };
 
 function buildComparisonScores(capabilities: CapabilityScore[], preset: ComparisonPresetKey) {
+  // We currently do not persist time-series capability history, so these overlays
+  // intentionally simulate prior snapshots until real historical data is wired in.
   const decay = COMPARISON_PRESETS.find((item) => item.key === preset)?.decay ?? 0;
   if (decay === 0) return capabilities.map((capability) => capability.score);
 
@@ -234,12 +253,8 @@ function SkillRadar2Chart({
   });
 
   const weakestCapabilityLabel = useMemo(() => {
-    if (capabilities.length === 0) return "Skill";
-    let lowest = capabilities[0];
-    for (const capability of capabilities) {
-      if (capability.score < lowest.score) lowest = capability;
-    }
-    return lowest.label;
+    const weakest = findCapabilityByScore(capabilities, "min");
+    return weakest?.label ?? "Skill";
   }, [capabilities]);
 
   return (
@@ -603,16 +618,12 @@ export function PlayerCapabilitiesRadarCard({
   );
 
   const strongestCapability = useMemo(
-    () => profile.capabilities.length > 0
-      ? profile.capabilities.reduce((best, capability) => (capability.score > best.score ? capability : best), profile.capabilities[0])
-      : null,
+    () => findCapabilityByScore(profile.capabilities, "max"),
     [profile.capabilities],
   );
 
   const weakestCapability = useMemo(
-    () => profile.capabilities.length > 0
-      ? profile.capabilities.reduce((lowest, capability) => (capability.score < lowest.score ? capability : lowest), profile.capabilities[0])
-      : null,
+    () => findCapabilityByScore(profile.capabilities, "min"),
     [profile.capabilities],
   );
 
