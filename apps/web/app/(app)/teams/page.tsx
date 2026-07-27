@@ -1067,7 +1067,7 @@ function PlayerDetailDialog({
           </div>
 
           <div>
-            <PlayerCapabilitiesRadarCard playerId={player.id} title="Capability Wheel" />
+            <PlayerCapabilitiesRadarCard playerId={player.id} title="Skill Radar 2.0" />
           </div>
         </div>
       </DialogContent>
