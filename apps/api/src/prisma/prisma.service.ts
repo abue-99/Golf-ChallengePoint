@@ -58,6 +58,22 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.calendarTask;
   }
 
+  get trainingLesson() {
+    return this.client.trainingLesson;
+  }
+
+  get playerDevelopmentPlan() {
+    return this.client.playerDevelopmentPlan;
+  }
+
+  get trainingBlock() {
+    return this.client.trainingBlock;
+  }
+
+  get lessonAssignment() {
+    return this.client.lessonAssignment;
+  }
+
   $transaction<T>(
     ...args: Parameters<PrismaClient['$transaction']>
   ): Promise<T> {
