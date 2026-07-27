@@ -10,7 +10,6 @@ import {
 } from "@/lib/lesson-types";
 import { cn } from "@/lib/utils";
 import { Clock, ChevronRight, Trophy, Zap, CalendarDays } from "lucide-react";
-import { PlayerCapabilitiesWidget, PlayerCapabilitiesRadarCard } from "@/components/player-capabilities-widget";
 
 const FOCUS_AREA_EMOJI: Record<string, string> = {
   SETUP: "🏌️",
@@ -362,12 +361,6 @@ export default function PlayerHomeDashboard({
       ) : (
         <CurrentJourneyCard plan={activePlan} />
       )}
-
-      {/* Player Capabilities */}
-      <PlayerCapabilitiesWidget playerId={playerId} showRadar={false} />
-
-      {/* Spider diagram */}
-      <PlayerCapabilitiesRadarCard playerId={playerId} title="Spider Overview" />
 
       {/* Next coach session */}
       <NextSessionCard />
