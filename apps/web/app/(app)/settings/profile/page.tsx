@@ -13,8 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlayerCapabilitiesWidget } from "@/components/player-capabilities-widget";
-
 const TIMEZONES = [
   "Africa/Cairo",
   "Africa/Johannesburg",
@@ -93,8 +91,6 @@ type UserProfile = {
   timezone: string | null;
 };
 
-const DEFAULT_PLAYER_ID = "local-player";
-
 export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -111,8 +107,6 @@ export default function ProfilePage() {
   const [savedMsg, setSavedMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [fileSizeError, setFileSizeError] = useState("");
-  const [role, setRole] = useState<string | null>(null);
-  const [playerId, setPlayerId] = useState<string>(DEFAULT_PLAYER_ID);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -130,8 +124,6 @@ export default function ProfilePage() {
             phoneNumber: data.phoneNumber ?? null,
             timezone: data.timezone ?? null,
           });
-          if (data.role) setRole(data.role);
-          if (data.id) setPlayerId(String(data.id));
         }
         setLoading(false);
       })
@@ -324,13 +316,6 @@ export default function ProfilePage() {
           <span className="text-sm text-red-600">{errorMsg}</span>
         )}
       </div>
-
-      {/* Player skill profile */}
-      {role === "PLAYER" && (
-        <div className="pt-4">
-          <PlayerCapabilitiesWidget playerId={playerId} />
-        </div>
-      )}
     </div>
   );
 }
