@@ -364,7 +364,7 @@ export default function PlayerHomeDashboard({
       )}
 
       {loading ? (
-        <div className="rounded-2xl bg-slate-100 animate-pulse h-[360px]" />
+        <div role="status" aria-live="polite" aria-label="Loading capability data" className="rounded-2xl bg-slate-100 animate-pulse h-[360px]" />
       ) : (
         <div className="space-y-4">
           <PlayerCapabilitiesWidget playerId={playerId} showRadar={false} />

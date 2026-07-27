@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Brain,
@@ -82,25 +82,28 @@ function CircularSkillWheel({
   onSegmentClick?: (key: CapabilityKey) => void;
 }) {
   const [animatedScores, setAnimatedScores] = useState<number[]>(() => capabilities.map(() => 0));
+  const previousScoresRef = useRef<number[]>(capabilities.map(() => 0));
 
   useEffect(() => {
     const start = performance.now();
     const duration = 950;
     let raf = 0;
 
-    const fromScores = animatedScores.length === capabilities.length
-      ? animatedScores
+    const fromScores = previousScoresRef.current.length === capabilities.length
+      ? previousScoresRef.current
       : capabilities.map(() => 0);
 
     const tick = (timestamp: number) => {
       const progress = Math.min(1, (timestamp - start) / duration);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setAnimatedScores(
-        capabilities.map((capability, index) => {
-          const from = fromScores[index] ?? 0;
-          return Math.round(from + (capability.score - from) * eased);
-        })
-      );
+      const nextScores = capabilities.map((capability, index) => {
+        const from = fromScores[index] ?? 0;
+        return Math.round(from + (capability.score - from) * eased);
+      });
+
+      previousScoresRef.current = nextScores;
+      setAnimatedScores(nextScores);
+
       if (progress < 1) raf = window.requestAnimationFrame(tick);
     };
 
