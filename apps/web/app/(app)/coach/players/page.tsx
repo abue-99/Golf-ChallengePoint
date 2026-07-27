@@ -128,7 +128,7 @@ function PlayerDetailDialog({
             </div>
           </div>
 
-          <PlayerCapabilitiesRadarCard playerId={player.id} title="Spider Overview" />
+          <PlayerCapabilitiesRadarCard playerId={player.id} title="Capability Wheel" />
         </div>
 
         <div className="mt-4 flex flex-col gap-2">

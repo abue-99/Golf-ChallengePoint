@@ -9,6 +9,7 @@ import { api } from "@/lib/api";
 import {
   FOCUS_AREAS,
   LESSON_VISIBILITIES,
+  getFocusAreaPath,
   getSubCapabilitiesForFocusArea,
   getSubSubCapabilitiesForFocusArea,
   getLocationLabel,
@@ -198,6 +199,12 @@ function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | n
   const focusLabel =
     FOCUS_AREAS.find((f) => f.value === lesson.focusArea)?.label ??
     lesson.focusArea;
+  const capabilityPath = getFocusAreaPath(
+    lesson.focusArea,
+    lesson.subCapability,
+    lesson.subSubCapability
+  );
+  const showCapabilityPath = capabilityPath !== focusLabel;
 
   const isOwner = myId && lesson.coachId === myId;
   const isPublic = lesson.visibility === "PUBLIC";
@@ -232,6 +239,9 @@ function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | n
                 {lesson.name}
               </p>
               <p className="text-xs text-slate-500">{focusLabel}</p>
+              {showCapabilityPath && (
+                <p className="text-[11px] text-slate-400">{capabilityPath}</p>
+              )}
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
