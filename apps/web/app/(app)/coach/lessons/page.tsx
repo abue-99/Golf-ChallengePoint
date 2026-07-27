@@ -7,8 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import {
   FOCUS_AREAS,
-  LOCATIONS,
   LESSON_VISIBILITIES,
+  getLocationLabel,
   type TrainingLesson,
 } from "@/lib/lesson-types";
 import { Plus, Search, BookOpen, Clock, MapPin, User, Globe, Lock } from "lucide-react";
@@ -184,7 +184,7 @@ function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | n
           {lesson.location && (
             <div className="flex items-center gap-1.5">
               <MapPin className="h-3.5 w-3.5" />
-              {LOCATIONS.find((l) => l.value === lesson.location)?.label ?? lesson.location}
+          {getLocationLabel(lesson.location)}
             </div>
           )}
           {coachName && !isOwner && (

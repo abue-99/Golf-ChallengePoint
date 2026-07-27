@@ -9,7 +9,7 @@ import LessonForm from "@/components/LessonForm";
 import { api } from "@/lib/api";
 import {
   FOCUS_AREAS,
-  LOCATIONS,
+  getLocationLabel,
   type TrainingLesson,
 } from "@/lib/lesson-types";
 import {
@@ -190,7 +190,7 @@ function ViewMode({
             <InfoItem label="Location">
               <span className="flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                {LOCATIONS.find((l) => l.value === lesson.location)?.label ?? lesson.location}
+                {getLocationLabel(lesson.location)}
               </span>
             </InfoItem>
           )}

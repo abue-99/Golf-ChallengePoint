@@ -16,6 +16,10 @@ export const LOCATIONS = [
   { value: "ON_COURSE", label: "On Course" },
 ] as const;
 
+export function getLocationLabel(location: string): string {
+  return LOCATIONS.find((l) => l.value === location)?.label ?? location;
+}
+
 export const LESSON_STATUSES = [
   { value: "PLANNED", label: "Planned" },
   { value: "IN_PROGRESS", label: "In Progress" },
