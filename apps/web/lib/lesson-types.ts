@@ -69,6 +69,27 @@ const FOCUS_AREA_CAPABILITY_KEY: Record<LessonFocusArea, CapabilityKey> = {
   MENTAL: "mental",
 };
 
+export function getFocusAreaPath(
+  focusArea: string,
+  subCapability?: string | null,
+  subSubCapability?: string | null
+): string {
+  const focusLabel = FOCUS_AREAS.find((f) => f.value === focusArea)?.label ?? focusArea;
+  if (!subCapability) return focusLabel;
+
+  const capabilityKey = FOCUS_AREA_CAPABILITY_KEY[focusArea as LessonFocusArea];
+  const capability = capabilityKey
+    ? CAPABILITY_DEFINITIONS.find((c) => c.key === capabilityKey)
+    : undefined;
+  const sub = capability?.subs.find((s) => s.key === subCapability);
+  const subLabel = sub?.label ?? subCapability;
+
+  if (!subSubCapability) return `${focusLabel} / ${subLabel}`;
+
+  const subSubLabel = sub?.subSubs?.find((ss) => ss.key === subSubCapability)?.label ?? subSubCapability;
+  return `${focusLabel} / ${subLabel} / ${subSubLabel}`;
+}
+
 export function getSubCapabilitiesForFocusArea(focusArea?: string) {
   if (!focusArea) return [];
   const capabilityKey = FOCUS_AREA_CAPABILITY_KEY[focusArea as LessonFocusArea];
@@ -141,7 +162,7 @@ export interface LessonAssignment {
   sortOrder: number;
   playerNotes?: string | null;
   selfAssessment?: number | null;
-  lesson: Pick<TrainingLesson, "id" | "name" | "focusArea" | "durationMinutes" | "trainingObjective" | "successCriteria" | "plannedExercises">;
+  lesson: Pick<TrainingLesson, "id" | "name" | "focusArea" | "subCapability" | "subSubCapability" | "durationMinutes" | "trainingObjective" | "successCriteria" | "plannedExercises">;
   createdAt: string;
   updatedAt: string;
 }

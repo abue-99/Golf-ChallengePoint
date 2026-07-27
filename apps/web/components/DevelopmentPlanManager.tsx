@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { FOCUS_AREAS, type PlayerDevelopmentPlan, type TrainingBlock, type TrainingLesson, type LessonAssignment } from "@/lib/lesson-types";
+import { FOCUS_AREAS, getFocusAreaPath, type PlayerDevelopmentPlan, type TrainingBlock, type TrainingLesson, type LessonAssignment } from "@/lib/lesson-types";
 import {
   Plus,
   ChevronDown,
@@ -367,8 +367,6 @@ function PlanCard({
         <div className="min-w-0 flex-1">
           <p className="font-extrabold text-lg text-slate-900 leading-tight truncate">{plan.name}</p>
           <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-            <span className="text-xs text-slate-500">{blocks.length} block{blocks.length !== 1 ? "s" : ""}</span>
-            <span className="text-xs text-slate-500">{totalAssignments} lesson{totalAssignments !== 1 ? "s" : ""}</span>
             {totalAssignments > 0 && (
               <span className="text-xs font-semibold text-blue-600">{progress}% complete</span>
             )}
@@ -706,7 +704,6 @@ function TrainingBlockCard({
             {block.goal && (
               <p className="text-xs text-slate-500 mt-0.5 truncate">Goal: {block.goal}</p>
             )}
-            <p className="text-xs text-slate-400 mt-0.5">{done}/{total} lessons</p>
           </div>
         </button>
         <div className="flex items-center gap-1 flex-shrink-0 ml-2">
@@ -800,7 +797,11 @@ function AssignmentRow({
   onRemove: () => void;
 }) {
   const focusEmoji = FOCUS_AREA_EMOJI[assignment.lesson.focusArea] ?? "📋";
-  const focusLabel = FOCUS_AREAS.find((f) => f.value === assignment.lesson.focusArea)?.label ?? assignment.lesson.focusArea;
+  const focusPath = getFocusAreaPath(
+    assignment.lesson.focusArea,
+    assignment.lesson.subCapability,
+    assignment.lesson.subSubCapability
+  );
   const badgeClass = STATUS_BADGE[assignment.status] ?? "bg-slate-100 text-slate-600";
   const statusLabel = STATUS_LABEL[assignment.status] ?? assignment.status;
 
@@ -820,7 +821,7 @@ function AssignmentRow({
             {assignment.lesson.durationMinutes}m
           </span>
           <span>·</span>
-          <span>{focusLabel}</span>
+          <span>{focusPath}</span>
           {assignment.dueDate && (
             <>
               <span>·</span>

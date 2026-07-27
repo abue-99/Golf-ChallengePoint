@@ -8,9 +8,9 @@ import {
   type PlayerDevelopmentPlan,
   type LessonAssignment,
 } from "@/lib/lesson-types";
-import { getPlayerCapabilityProfile } from "@/lib/player-capabilities";
 import { cn } from "@/lib/utils";
-import { Clock, ChevronRight, Trophy, Zap, Target, CalendarDays } from "lucide-react";
+import { Clock, ChevronRight, Trophy, Zap, CalendarDays } from "lucide-react";
+import { PlayerCapabilitiesWidget, PlayerCapabilitiesRadarCard } from "@/components/player-capabilities-widget";
 
 const FOCUS_AREA_EMOJI: Record<string, string> = {
   SETUP: "🏌️",
@@ -90,15 +90,12 @@ function getActivePlan(plans: PlayerDevelopmentPlan[]): PlayerDevelopmentPlan | 
 
 function HeroLevelCard({
   firstName,
-  playerId,
   xp,
 }: {
   firstName: string;
-  playerId: string;
   xp: number;
 }) {
   const { level, progress } = xpToLevel(xp);
-  const profile = getPlayerCapabilityProfile(playerId);
 
   return (
     <div className="rounded-2xl bg-gradient-to-br from-green-700 via-green-800 to-emerald-900 px-5 py-5 text-white shadow-lg">
@@ -116,7 +113,6 @@ function HeroLevelCard({
             <Trophy className="h-3.5 w-3.5 text-amber-300" />
             <span className="text-sm font-bold">Level {level}</span>
           </div>
-          <p className="mt-1 text-xs text-green-300">{profile.archetype}</p>
         </div>
       </div>
 
@@ -319,42 +315,6 @@ function NextSessionCard() {
   );
 }
 
-// ─── Skill Highlights ─────────────────────────────────────────────────────────
-
-function SkillHighlightCard({ playerId }: { playerId: string }) {
-  const profile = getPlayerCapabilityProfile(playerId);
-  const top = [...profile.capabilities].sort((a, b) => b.score - a.score).slice(0, 3);
-  const focus = [...profile.capabilities].sort((a, b) => a.score - b.score).slice(0, 2);
-
-  return (
-    <div className="rounded-2xl bg-white border border-slate-200 shadow-sm px-5 py-4">
-      <div className="flex items-center gap-2 mb-3">
-        <Target className="h-4 w-4 text-slate-500" />
-        <h3 className="text-sm font-semibold text-slate-700">Next Focus Area</h3>
-      </div>
-      <div className="space-y-2">
-        {focus.map((cap) => (
-          <div key={cap.key}>
-            <div className="flex items-center justify-between text-xs mb-1">
-              <span className="font-medium text-slate-700">{cap.label}</span>
-              <span className="text-slate-500">{cap.score}/100</span>
-            </div>
-            <div className="h-1.5 w-full rounded-full bg-slate-100">
-              <div
-                className="h-1.5 rounded-full transition-all duration-700"
-                style={{ width: `${cap.score}%`, background: cap.color }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-      <p className="mt-3 text-xs text-slate-400">
-        Strongest: {top.map((c) => c.label).join(", ")}
-      </p>
-    </div>
-  );
-}
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function PlayerHomeDashboard({
@@ -387,7 +347,7 @@ export default function PlayerHomeDashboard({
   return (
     <div className="space-y-4 max-w-lg mx-auto pb-4">
       {/* Hero level card */}
-      <HeroLevelCard firstName={firstName} playerId={playerId} xp={xp} />
+      <HeroLevelCard firstName={firstName} xp={xp} />
 
       {/* Today's training */}
       {loading ? (
@@ -403,8 +363,11 @@ export default function PlayerHomeDashboard({
         <CurrentJourneyCard plan={activePlan} />
       )}
 
-      {/* Skill highlights */}
-      <SkillHighlightCard playerId={playerId} />
+      {/* Player Capabilities */}
+      <PlayerCapabilitiesWidget playerId={playerId} showRadar={false} />
+
+      {/* Spider diagram */}
+      <PlayerCapabilitiesRadarCard playerId={playerId} title="Spider Overview" />
 
       {/* Next coach session */}
       <NextSessionCard />

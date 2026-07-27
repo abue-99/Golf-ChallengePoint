@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import {
   FOCUS_AREAS,
   ASSIGNMENT_STATUSES,
+  getFocusAreaPath,
   type PlayerDevelopmentPlan,
   type TrainingBlock,
   type LessonAssignment,
@@ -145,9 +146,11 @@ function LessonCard({
   const statusKey = resolveStatus(assignment, isLocked);
   const style = STATUS_STYLE[statusKey];
   const focusEmoji = FOCUS_AREA_EMOJI[assignment.lesson.focusArea] ?? "📋";
-  const focusLabel =
-    FOCUS_AREAS.find((f) => f.value === assignment.lesson.focusArea)?.label ??
-    assignment.lesson.focusArea;
+  const focusPath = getFocusAreaPath(
+    assignment.lesson.focusArea,
+    assignment.lesson.subCapability,
+    assignment.lesson.subSubCapability
+  );
 
   return (
     <div
@@ -183,7 +186,7 @@ function LessonCard({
             {assignment.lesson.durationMinutes}m
           </span>
           <span>·</span>
-          <span>{focusLabel}</span>
+          <span>{focusPath}</span>
         </div>
       </div>
 
@@ -241,7 +244,9 @@ function BlockCard({
         >
           <div className="min-w-0">
             <p className="font-semibold text-slate-800 text-sm">{block.name}</p>
-            <p className="text-xs text-slate-500 mt-0.5">{done} of {total} lessons</p>
+            {blockStarted && !blockDone && (
+              <p className="text-xs text-blue-600 font-medium mt-0.5">In Progress</p>
+            )}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0 ml-3">
             {/* Circular progress */}
@@ -344,12 +349,6 @@ function PlanCard({
           {coachName && (
             <p className="text-sm text-slate-500 mt-0.5">{coachName}</p>
           )}
-        </div>
-        <div className="text-right flex-shrink-0 ml-4">
-          <p className="text-base font-bold text-slate-700">
-            {done}<span className="text-slate-400 font-normal text-sm">/{total}</span>
-          </p>
-          <p className="text-xs text-slate-400">lessons</p>
         </div>
       </div>
 
@@ -547,9 +546,11 @@ function LessonDetailModal({
   );
   const [saving, setSaving] = useState(false);
 
-  const focusLabel =
-    FOCUS_AREAS.find((f) => f.value === assignment.lesson.focusArea)?.label ??
-    assignment.lesson.focusArea;
+  const focusPath = getFocusAreaPath(
+    assignment.lesson.focusArea,
+    assignment.lesson.subCapability,
+    assignment.lesson.subSubCapability
+  );
   const focusEmoji = FOCUS_AREA_EMOJI[assignment.lesson.focusArea] ?? "📋";
 
   async function handleSave() {
@@ -586,7 +587,7 @@ function LessonDetailModal({
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white px-6 py-4 rounded-t-3xl sm:rounded-t-2xl">
           <div>
             <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">
-              {focusEmoji} {focusLabel}
+              {focusEmoji} {focusPath}
             </p>
             <h2 className="text-lg font-bold text-slate-800">{assignment.lesson.name}</h2>
           </div>
