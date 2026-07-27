@@ -75,6 +75,7 @@ export class LessonsService {
     role: string,
     data: {
       name: string;
+      description?: string;
       durationMinutes: number;
       focusArea: string;
       location?: string;
@@ -102,6 +103,7 @@ export class LessonsService {
       data: {
         coachId,
         name: data.name,
+        description: data.description,
         durationMinutes: data.durationMinutes,
         focusArea: data.focusArea as any,
         location: data.location,
@@ -185,6 +187,7 @@ export class LessonsService {
     id: string,
     data: {
       name?: string;
+      description?: string;
       durationMinutes?: number;
       focusArea?: string;
       location?: string;
@@ -221,6 +224,7 @@ export class LessonsService {
       where: { id },
       data: {
         ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.description !== undefined ? { description: data.description } : {}),
         ...(data.durationMinutes !== undefined
           ? { durationMinutes: data.durationMinutes }
           : {}),

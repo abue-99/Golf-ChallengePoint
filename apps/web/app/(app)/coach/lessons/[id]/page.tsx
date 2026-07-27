@@ -5,11 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { LessonStatusBadge } from "@/components/LessonStatusBadge";
 import LessonForm from "@/components/LessonForm";
 import { api } from "@/lib/api";
 import {
   FOCUS_AREAS,
+  LOCATIONS,
   type TrainingLesson,
 } from "@/lib/lesson-types";
 import {
@@ -19,7 +19,6 @@ import {
   BookOpen,
   Clock,
   MapPin,
-  User,
   Target,
   BarChart2,
   Play,
@@ -161,21 +160,12 @@ function ViewMode({
   focusLabel: string;
   coachName?: string;
 }) {
-  const playerName = lesson.player
-    ? lesson.player.firstName || lesson.player.lastName
-      ? `${lesson.player.firstName ?? ""} ${lesson.player.lastName ?? ""}`.trim()
-      : lesson.player.email
-    : null;
-
   return (
     <div className="space-y-5">
       {/* General */}
       <SectionCard title="General Information" icon={<BookOpen className="h-4 w-4" />}>
         <InfoGrid>
           <InfoItem label="Focus Area">{focusLabel}</InfoItem>
-          <InfoItem label="Status">
-            <LessonStatusBadge status={lesson.status} />
-          </InfoItem>
           <InfoItem label="Visibility">
             <span className={cn(
               "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
@@ -200,15 +190,7 @@ function ViewMode({
             <InfoItem label="Location">
               <span className="flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                {lesson.location}
-              </span>
-            </InfoItem>
-          )}
-          {playerName && (
-            <InfoItem label="Assigned Player">
-              <span className="flex items-center gap-1">
-                <User className="h-3.5 w-3.5 text-slate-400" />
-                {playerName}
+                {LOCATIONS.find((l) => l.value === lesson.location)?.label ?? lesson.location}
               </span>
             </InfoItem>
           )}
@@ -217,6 +199,15 @@ function ViewMode({
             {new Date(lesson.createdAt).toLocaleString()}
           </InfoItem>
         </InfoGrid>
+
+        {lesson.description && (
+          <div className="mt-4">
+            <p className="mb-1 text-xs font-medium text-slate-500 uppercase tracking-wide">
+              Description
+            </p>
+            <p className="text-sm text-slate-700 whitespace-pre-wrap">{lesson.description}</p>
+          </div>
+        )}
 
         {lesson.videoUrl && (
           <div className="mt-4">

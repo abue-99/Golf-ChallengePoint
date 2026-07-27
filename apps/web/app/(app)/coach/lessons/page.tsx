@@ -4,11 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { LessonStatusBadge } from "@/components/LessonStatusBadge";
 import { api } from "@/lib/api";
 import {
   FOCUS_AREAS,
-  LESSON_STATUSES,
+  LOCATIONS,
   LESSON_VISIBILITIES,
   type TrainingLesson,
 } from "@/lib/lesson-types";
@@ -19,7 +18,6 @@ export default function LessonsPage() {
   const [lessons, setLessons] = useState<TrainingLesson[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
   const [focusFilter, setFocusFilter] = useState("");
   const [visibilityFilter, setVisibilityFilter] = useState("");
   const [myId, setMyId] = useState<string | null>(null);
@@ -51,12 +49,11 @@ export default function LessonsPage() {
     return lessons.filter((l) => {
       const matchesQ =
         !q || l.name.toLowerCase().includes(q.toLowerCase());
-      const matchesStatus = !statusFilter || l.status === statusFilter;
       const matchesFocus = !focusFilter || l.focusArea === focusFilter;
       const matchesVisibility = !visibilityFilter || l.visibility === visibilityFilter;
-      return matchesQ && matchesStatus && matchesFocus && matchesVisibility;
+      return matchesQ && matchesFocus && matchesVisibility;
     });
-  }, [lessons, q, statusFilter, focusFilter, visibilityFilter]);
+  }, [lessons, q, focusFilter, visibilityFilter]);
 
   return (
     <div className="space-y-6">
@@ -99,19 +96,6 @@ export default function LessonsPage() {
           {LESSON_VISIBILITIES.map((v) => (
             <option key={v.value} value={v.value}>
               {v.label}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-        >
-          <option value="">All Statuses</option>
-          {LESSON_STATUSES.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
             </option>
           ))}
         </select>
@@ -182,10 +166,15 @@ function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | n
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
-            <LessonStatusBadge status={lesson.status} />
             <VisibilityBadge visibility={lesson.visibility} />
           </div>
         </div>
+
+        {lesson.description && (
+          <p className="mb-3 text-xs text-slate-600 line-clamp-3">
+            {lesson.description}
+          </p>
+        )}
 
         <div className="mb-4 space-y-1 text-xs text-slate-500">
           <div className="flex items-center gap-1.5">
@@ -195,7 +184,7 @@ function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | n
           {lesson.location && (
             <div className="flex items-center gap-1.5">
               <MapPin className="h-3.5 w-3.5" />
-              {lesson.location}
+              {LOCATIONS.find((l) => l.value === lesson.location)?.label ?? lesson.location}
             </div>
           )}
           {coachName && !isOwner && (

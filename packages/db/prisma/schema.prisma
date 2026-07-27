@@ -243,6 +243,7 @@ model TrainingLesson {
 
   // General Information
   name            String
+  description     String?
   durationMinutes Int
   focusArea       LessonFocusArea
   location        String?

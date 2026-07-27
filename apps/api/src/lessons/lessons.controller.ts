@@ -53,6 +53,7 @@ export class LessonsController {
     @Body()
     body: {
       name: string;
+      description?: string;
       durationMinutes: number;
       focusArea: string;
       location?: string;
@@ -98,6 +99,7 @@ export class LessonsController {
     @Body()
     body: {
       name?: string;
+      description?: string;
       durationMinutes?: number;
       focusArea?: string;
       location?: string;
