@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,8 @@ import {
   LOCATIONS,
   LESSON_VISIBILITIES,
   PRIORITIES,
+  getSubCapabilitiesForFocusArea,
+  getSubSubCapabilitiesForFocusArea,
   type TrainingLesson,
 } from "@/lib/lesson-types";
 import { toast } from "sonner";
@@ -21,6 +23,8 @@ type FormData = {
   description: string;
   durationMinutes: string;
   focusArea: string;
+  subCapability: string;
+  subSubCapability: string;
   location: string;
   visibility: string;
   videoUrl: string | null;
@@ -38,6 +42,8 @@ const EMPTY: FormData = {
   description: "",
   durationMinutes: "",
   focusArea: "",
+  subCapability: "",
+  subSubCapability: "",
   location: "",
   visibility: "PRIVATE",
   videoUrl: null,
@@ -55,6 +61,8 @@ function lessonToForm(lesson: TrainingLesson): FormData {
     description: lesson.description ?? "",
     durationMinutes: String(lesson.durationMinutes),
     focusArea: lesson.focusArea,
+    subCapability: lesson.subCapability ?? "",
+    subSubCapability: lesson.subSubCapability ?? "",
     location: lesson.location ?? "",
     visibility: lesson.visibility ?? "PRIVATE",
     videoUrl: lesson.videoUrl ?? null,
@@ -73,6 +81,8 @@ function buildPayload(f: FormData) {
     description: f.description.trim() || undefined,
     durationMinutes: parseInt(f.durationMinutes, 10),
     focusArea: f.focusArea,
+    subCapability: f.subCapability || undefined,
+    subSubCapability: f.subSubCapability || undefined,
     location: f.location || undefined,
     visibility: f.visibility || "PRIVATE",
     videoUrl: f.videoUrl || undefined,
@@ -103,6 +113,14 @@ export default function LessonForm({
   );
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const subCapabilities = useMemo(
+    () => getSubCapabilitiesForFocusArea(form.focusArea),
+    [form.focusArea]
+  );
+  const subSubCapabilities = useMemo(
+    () => getSubSubCapabilitiesForFocusArea(form.focusArea, form.subCapability),
+    [form.focusArea, form.subCapability]
+  );
 
   function set<K extends keyof FormData>(key: K, value: FormData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -202,7 +220,11 @@ export default function LessonForm({
             <select
               className={selectClass(!!errors.focusArea)}
               value={form.focusArea}
-              onChange={(e) => set("focusArea", e.target.value)}
+              onChange={(e) => {
+                set("focusArea", e.target.value);
+                set("subCapability", "");
+                set("subSubCapability", "");
+              }}
             >
               <option value="">Select focus area…</option>
               {FOCUS_AREAS.map((fa) => (
@@ -212,6 +234,49 @@ export default function LessonForm({
               ))}
             </select>
             {errors.focusArea && <FieldError>{errors.focusArea}</FieldError>}
+          </div>
+
+          {/* Sub Capability */}
+          <div>
+            <FieldLabel>Sub Capability</FieldLabel>
+            <select
+              className={selectClass(false)}
+              value={form.subCapability}
+              disabled={!form.focusArea}
+              onChange={(e) => {
+                set("subCapability", e.target.value);
+                set("subSubCapability", "");
+              }}
+            >
+              <option value="">
+                {form.focusArea ? "Select sub capability…" : "Select focus area first…"}
+              </option>
+              {subCapabilities.map((sub) => (
+                <option key={sub.value} value={sub.value}>
+                  {sub.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sub Sub Capability */}
+          <div>
+            <FieldLabel>Sub Sub Capability</FieldLabel>
+            <select
+              className={selectClass(false)}
+              value={form.subSubCapability}
+              disabled={!form.subCapability}
+              onChange={(e) => set("subSubCapability", e.target.value)}
+            >
+              <option value="">
+                {form.subCapability ? "Select sub sub capability…" : "Select sub capability first…"}
+              </option>
+              {subSubCapabilities.map((subSub) => (
+                <option key={subSub.value} value={subSub.value}>
+                  {subSub.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Location */}
@@ -435,4 +500,3 @@ function textareaClass(hasError: boolean) {
       : "border-gray-200 focus:border-blue-400",
   ].join(" ");
 }
-

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,6 +9,8 @@ import LessonForm from "@/components/LessonForm";
 import { api } from "@/lib/api";
 import {
   FOCUS_AREAS,
+  getSubCapabilitiesForFocusArea,
+  getSubSubCapabilitiesForFocusArea,
   getLocationLabel,
   type TrainingLesson,
 } from "@/lib/lesson-types";
@@ -31,10 +33,15 @@ import { cn } from "@/lib/utils";
 export default function LessonDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [lesson, setLesson] = useState<TrainingLesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    setEditing(searchParams.get("mode") === "edit");
+  }, [searchParams, id]);
 
   useEffect(() => {
     let ignore = false;
@@ -88,6 +95,13 @@ export default function LessonDetailPage() {
   const focusLabel =
     FOCUS_AREAS.find((f) => f.value === lesson.focusArea)?.label ??
     lesson.focusArea;
+  const subCapabilityLabel =
+    getSubCapabilitiesForFocusArea(lesson.focusArea).find((sub) => sub.value === lesson.subCapability)?.label ??
+    lesson.subCapability;
+  const subSubCapabilityLabel =
+    getSubSubCapabilitiesForFocusArea(lesson.focusArea, lesson.subCapability ?? undefined)
+      .find((subSub) => subSub.value === lesson.subSubCapability)?.label ??
+    lesson.subSubCapability;
 
   const coachName = lesson.coach
     ? lesson.coach.firstName || lesson.coach.lastName
@@ -145,7 +159,13 @@ export default function LessonDetailPage() {
           createdAt={lesson.createdAt}
         />
       ) : (
-        <ViewMode lesson={lesson} focusLabel={focusLabel} coachName={coachName} />
+        <ViewMode
+          lesson={lesson}
+          focusLabel={focusLabel}
+          subCapabilityLabel={subCapabilityLabel}
+          subSubCapabilityLabel={subSubCapabilityLabel}
+          coachName={coachName}
+        />
       )}
     </div>
   );
@@ -154,10 +174,14 @@ export default function LessonDetailPage() {
 function ViewMode({
   lesson,
   focusLabel,
+  subCapabilityLabel,
+  subSubCapabilityLabel,
   coachName,
 }: {
   lesson: TrainingLesson;
   focusLabel: string;
+  subCapabilityLabel?: string | null;
+  subSubCapabilityLabel?: string | null;
   coachName?: string;
 }) {
   return (
@@ -166,6 +190,8 @@ function ViewMode({
       <SectionCard title="General Information" icon={<BookOpen className="h-4 w-4" />}>
         <InfoGrid>
           <InfoItem label="Focus Area">{focusLabel}</InfoItem>
+          {subCapabilityLabel && <InfoItem label="Sub Capability">{subCapabilityLabel}</InfoItem>}
+          {subSubCapabilityLabel && <InfoItem label="Sub Sub Capability">{subSubCapabilityLabel}</InfoItem>}
           <InfoItem label="Visibility">
             <span className={cn(
               "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",

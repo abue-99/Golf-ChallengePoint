@@ -1,3 +1,5 @@
+import { CAPABILITY_DEFINITIONS, type CapabilityKey } from "@/lib/player-capabilities";
+
 export const FOCUS_AREAS = [
   { value: "SETUP", label: "Setup" },
   { value: "PUTTING", label: "Putting" },
@@ -57,6 +59,35 @@ export type LessonPriority = (typeof PRIORITIES)[number]["value"];
 export type GoalAchieved = (typeof GOAL_ACHIEVED_OPTIONS)[number]["value"];
 export type AssignmentStatus = (typeof ASSIGNMENT_STATUSES)[number]["value"];
 
+const FOCUS_AREA_CAPABILITY_KEY: Record<LessonFocusArea, CapabilityKey> = {
+  SETUP: "setup",
+  PUTTING: "putting",
+  SHORT_GAME: "shortGame",
+  LONG_GAME: "longGame",
+  TACTICAL: "tactics",
+  FITNESS: "fitness",
+  MENTAL: "mental",
+};
+
+export function getSubCapabilitiesForFocusArea(focusArea?: string) {
+  if (!focusArea) return [];
+  const capabilityKey = FOCUS_AREA_CAPABILITY_KEY[focusArea as LessonFocusArea];
+  if (!capabilityKey) return [];
+  const capability = CAPABILITY_DEFINITIONS.find((item) => item.key === capabilityKey);
+  if (!capability) return [];
+  return capability.subs.map((sub) => ({ value: sub.key, label: sub.label }));
+}
+
+export function getSubSubCapabilitiesForFocusArea(focusArea?: string, subCapability?: string) {
+  if (!focusArea || !subCapability) return [];
+  const capabilityKey = FOCUS_AREA_CAPABILITY_KEY[focusArea as LessonFocusArea];
+  if (!capabilityKey) return [];
+  const capability = CAPABILITY_DEFINITIONS.find((item) => item.key === capabilityKey);
+  const sub = capability?.subs.find((item) => item.key === subCapability);
+  if (!sub) return [];
+  return sub.subSubs.map((subSub) => ({ value: subSub.key, label: subSub.label }));
+}
+
 export interface LessonPlayer {
   id: string;
   firstName?: string | null;
@@ -71,6 +102,8 @@ export interface TrainingLesson {
   description?: string | null;
   durationMinutes: number;
   focusArea: LessonFocusArea;
+  subCapability?: string | null;
+  subSubCapability?: string | null;
   location?: string | null;
   status: LessonStatus;
   visibility: LessonVisibility;
@@ -141,4 +174,3 @@ export interface PlayerDevelopmentPlan {
   createdAt: string;
   updatedAt: string;
 }
-

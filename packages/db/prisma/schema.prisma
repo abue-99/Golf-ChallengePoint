@@ -246,6 +246,8 @@ model TrainingLesson {
   description     String?
   durationMinutes Int
   focusArea       LessonFocusArea
+  subCapability   String?
+  subSubCapability String?
   location        String?
   status          LessonStatus     @default(PLANNED)
   visibility      LessonVisibility @default(PRIVATE)

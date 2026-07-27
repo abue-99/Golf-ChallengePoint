@@ -28,11 +28,15 @@ export class LessonsController {
     @CurrentUser() user: AuthenticatedUser,
     @Query('status') status?: string,
     @Query('focusArea') focusArea?: string,
+    @Query('subCapability') subCapability?: string,
+    @Query('subSubCapability') subSubCapability?: string,
     @Query('visibility') visibility?: string,
   ) {
     return this.lessonsService.listLessons(user.id, user.role as string, {
       status,
       focusArea,
+      subCapability,
+      subSubCapability,
       visibility,
     });
   }
@@ -56,6 +60,8 @@ export class LessonsController {
       description?: string;
       durationMinutes: number;
       focusArea: string;
+      subCapability?: string;
+      subSubCapability?: string;
       location?: string;
       status?: string;
       visibility?: string;
@@ -102,6 +108,8 @@ export class LessonsController {
       description?: string;
       durationMinutes?: number;
       focusArea?: string;
+      subCapability?: string | null;
+      subSubCapability?: string | null;
       location?: string;
       status?: string;
       visibility?: string;

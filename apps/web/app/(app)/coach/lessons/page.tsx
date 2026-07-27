@@ -2,12 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import {
   FOCUS_AREAS,
   LESSON_VISIBILITIES,
+  getSubCapabilitiesForFocusArea,
+  getSubSubCapabilitiesForFocusArea,
   getLocationLabel,
   type TrainingLesson,
 } from "@/lib/lesson-types";
@@ -19,6 +22,8 @@ export default function LessonsPage() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [focusFilter, setFocusFilter] = useState("");
+  const [subCapabilityFilter, setSubCapabilityFilter] = useState("");
+  const [subSubCapabilityFilter, setSubSubCapabilityFilter] = useState("");
   const [visibilityFilter, setVisibilityFilter] = useState("");
   const [myId, setMyId] = useState<string | null>(null);
 
@@ -50,10 +55,24 @@ export default function LessonsPage() {
       const matchesQ =
         !q || l.name.toLowerCase().includes(q.toLowerCase());
       const matchesFocus = !focusFilter || l.focusArea === focusFilter;
+      const matchesSubCapability =
+        !subCapabilityFilter || l.subCapability === subCapabilityFilter;
+      const matchesSubSubCapability =
+        !subSubCapabilityFilter || l.subSubCapability === subSubCapabilityFilter;
       const matchesVisibility = !visibilityFilter || l.visibility === visibilityFilter;
-      return matchesQ && matchesFocus && matchesVisibility;
+      return matchesQ && matchesFocus && matchesSubCapability && matchesSubSubCapability && matchesVisibility;
     });
-  }, [lessons, q, focusFilter, visibilityFilter]);
+  }, [lessons, q, focusFilter, subCapabilityFilter, subSubCapabilityFilter, visibilityFilter]);
+
+  const subCapabilityOptions = useMemo(
+    () => getSubCapabilitiesForFocusArea(focusFilter),
+    [focusFilter]
+  );
+
+  const subSubCapabilityOptions = useMemo(
+    () => getSubSubCapabilitiesForFocusArea(focusFilter, subCapabilityFilter),
+    [focusFilter, subCapabilityFilter]
+  );
 
   return (
     <div className="space-y-6">
@@ -102,13 +121,52 @@ export default function LessonsPage() {
 
         <select
           value={focusFilter}
-          onChange={(e) => setFocusFilter(e.target.value)}
+          onChange={(e) => {
+            setFocusFilter(e.target.value);
+            setSubCapabilityFilter("");
+            setSubSubCapabilityFilter("");
+          }}
           className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200"
         >
           <option value="">All Focus Areas</option>
           {FOCUS_AREAS.map((f) => (
             <option key={f.value} value={f.value}>
               {f.label}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={subCapabilityFilter}
+          disabled={!focusFilter}
+          onChange={(e) => {
+            setSubCapabilityFilter(e.target.value);
+            setSubSubCapabilityFilter("");
+          }}
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
+        >
+          <option value="">
+            {focusFilter ? "All Sub Capabilities" : "Select focus area first…"}
+          </option>
+          {subCapabilityOptions.map((sub) => (
+            <option key={sub.value} value={sub.value}>
+              {sub.label}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={subSubCapabilityFilter}
+          disabled={!subCapabilityFilter}
+          onChange={(e) => setSubSubCapabilityFilter(e.target.value)}
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
+        >
+          <option value="">
+            {subCapabilityFilter ? "All Sub Sub Capabilities" : "Select sub capability first…"}
+          </option>
+          {subSubCapabilityOptions.map((subSub) => (
+            <option key={subSub.value} value={subSub.value}>
+              {subSub.label}
             </option>
           ))}
         </select>
@@ -137,6 +195,7 @@ export default function LessonsPage() {
 }
 
 function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | null }) {
+  const router = useRouter();
   const focusLabel =
     FOCUS_AREAS.find((f) => f.value === lesson.focusArea)?.label ??
     lesson.focusArea;
@@ -151,7 +210,18 @@ function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | n
     : null;
 
   return (
-    <Card className="group border border-gray-200 bg-white shadow-[0_4px_16px_-4px_rgba(2,6,23,.1)] transition-shadow hover:shadow-[0_8px_24px_-6px_rgba(2,6,23,.15)]">
+    <Card
+      className="group cursor-pointer border border-gray-200 bg-white shadow-[0_4px_16px_-4px_rgba(2,6,23,.1)] transition-shadow hover:shadow-[0_8px_24px_-6px_rgba(2,6,23,.15)]"
+      onClick={() => router.push(`/coach/lessons/${lesson.id}`)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          router.push(`/coach/lessons/${lesson.id}`);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+    >
       <CardContent className="p-5">
         <div className="mb-3 flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -199,9 +269,9 @@ function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | n
           <p className="text-xs text-slate-400">
             {new Date(lesson.createdAt).toLocaleDateString()}
           </p>
-          <div className="flex gap-1">
+          <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
             {isOwner && (
-              <Link href={`/coach/lessons/${lesson.id}`}>
+              <Link href={`/coach/lessons/${lesson.id}?mode=edit`}>
                 <Button
                   size="sm"
                   className="bg-blue-600 text-white hover:bg-blue-500"
