@@ -24,6 +24,46 @@ enum Recurrence {
   MONTHLY
 }
 
+enum LessonFocusArea {
+  SETUP
+  PUTTING
+  SHORT_GAME
+  LONG_GAME
+  TACTICAL
+  FITNESS
+  MENTAL
+}
+
+enum LessonStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum LessonVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum LessonPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum GoalAchieved {
+  YES
+  PARTIALLY
+  NO
+}
+
+enum AssignmentStatus {
+  OUTSTANDING
+  STARTED
+  FINISHED
+  REVIEWED
+}
+
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -49,6 +89,12 @@ model User {
   teamMemberships  TeamMember[]
   practiceSlots    PracticeSlot[]    @relation("PlayerSlots")
   coachTasks       CalendarTask[]    @relation("CoachTasks")
+  coachLessons         TrainingLesson[]        @relation("CoachLessons")
+  playerLessons        TrainingLesson[]        @relation("PlayerLessons")
+  coachDevelopmentPlans PlayerDevelopmentPlan[] @relation("CoachPlans")
+  playerDevelopmentPlans PlayerDevelopmentPlan[] @relation("PlayerPlans")
+  coachTrainingBlocks  TrainingBlock[]         @relation("CoachBlocks")
+  lessonAssignments    LessonAssignment[]      @relation("PlayerAssignments")
 
   @@map("users")
 }
@@ -190,4 +236,111 @@ model CalendarTask {
   updatedAt       DateTime     @updatedAt
 
   @@map("calendar_tasks")
+}
+
+model TrainingLesson {
+  id              String           @id @default(cuid())
+
+  // General Information
+  name            String
+  durationMinutes Int
+  focusArea       LessonFocusArea
+  location        String?
+  status          LessonStatus     @default(PLANNED)
+  visibility      LessonVisibility @default(PRIVATE)
+  videoUrl        String?
+
+  // Ownership
+  coachId         String
+  coach           User             @relation("CoachLessons", fields: [coachId], references: [id], onDelete: Cascade)
+  playerId        String?
+  player          User?            @relation("PlayerLessons", fields: [playerId], references: [id], onDelete: SetNull)
+  teamId          String?
+
+  // Goal Setting
+  trainingObjective  String?
+  currentSituation   String?
+  targetOutcome      String?
+  priority           LessonPriority?
+  plannedExercises   String?
+  successCriteria    String?
+
+  // Results & Performance Tracking
+  goalAchieved          GoalAchieved?
+  playerSelfAssessment  Int?
+  coachRating           Int?
+  afterSessionVideoUrl  String?
+  performanceScore      Int?
+  comments              String?
+  keyLearnings          String?
+
+  assignments     LessonAssignment[]
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@map("training_lessons")
+}
+
+// ─── Player Development Plan ───────────────────────────────────────────────
+
+model PlayerDevelopmentPlan {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  coachId     String
+  coach       User           @relation("CoachPlans", fields: [coachId], references: [id], onDelete: Cascade)
+  playerId    String
+  player      User           @relation("PlayerPlans", fields: [playerId], references: [id], onDelete: Cascade)
+  startDate   DateTime?
+  endDate     DateTime?
+  blocks      TrainingBlock[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@map("player_development_plans")
+}
+
+// ─── Training Block ────────────────────────────────────────────────────────
+
+model TrainingBlock {
+  id          String                @id @default(cuid())
+  planId      String
+  plan        PlayerDevelopmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  coachId     String
+  coach       User                  @relation("CoachBlocks", fields: [coachId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  goal        String?
+  startDate   DateTime?
+  endDate     DateTime?
+  sortOrder   Int                   @default(0)
+  assignments LessonAssignment[]
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@map("training_blocks")
+}
+
+// ─── Lesson Assignment ─────────────────────────────────────────────────────
+
+model LessonAssignment {
+  id             String           @id @default(cuid())
+  blockId        String
+  block          TrainingBlock    @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  lessonId       String
+  lesson         TrainingLesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  playerId       String
+  player         User             @relation("PlayerAssignments", fields: [playerId], references: [id], onDelete: Cascade)
+  coachId        String
+  dueDate        DateTime?
+  priority       LessonPriority   @default(MEDIUM)
+  status         AssignmentStatus @default(OUTSTANDING)
+  sortOrder      Int              @default(0)
+  playerNotes    String?
+  selfAssessment Int?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@map("lesson_assignments")
 }

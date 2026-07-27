@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { PlayerCapabilitiesWidget } from "@/components/player-capabilities-widget";
+import { DevelopmentPlanManager } from "@/components/DevelopmentPlanManager";
 
 type LinkedPlayer = {
   id: string;
@@ -48,6 +49,7 @@ export default async function CoachPlayerDashboardPage({
         </p>
       </header>
       <PlayerCapabilitiesWidget playerId={playerId} />
+      <DevelopmentPlanManager playerId={playerId} />
     </section>
   );
 }

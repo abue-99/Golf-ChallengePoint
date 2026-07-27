@@ -36,6 +36,61 @@ export const api = {
   // Calendar – full player calendar view
   getPlayerCalendar: (playerId: string) =>
     fetch(`/api/calendar/player/${playerId}`, { cache: "no-store" }).then((r) => r.json()),
+
+  // Lessons
+  listLessons: (params?: { status?: string; focusArea?: string; visibility?: string }) => {
+    const qs = params
+      ? new URLSearchParams(
+          Object.entries(params).filter(([, v]) => v !== undefined) as [string, string][]
+        ).toString()
+      : "";
+    return fetch(`/api/lessons${qs ? `?${qs}` : ""}`, { cache: "no-store" }).then((r) => r.json());
+  },
+  getLesson: (id: string) =>
+    fetch(`/api/lessons/${id}`, { cache: "no-store" }).then((r) => r.json()),
+  createLesson: (payload: any) =>
+    fetch("/api/lessons", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
+  updateLesson: (id: string, payload: any) =>
+    fetch(`/api/lessons/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
+  deleteLesson: (id: string) =>
+    fetch(`/api/lessons/${id}`, { method: "DELETE" }).then((r) => r.json()),
+  listLessonPlayers: () =>
+    fetch("/api/lessons/players", { cache: "no-store" }).then((r) => r.json()),
+
+  // File upload (video)
+  uploadVideo: (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return fetch("/api/upload", { method: "POST", body: form }).then((r) => r.json());
+  },
+
+  // Development Plans
+  listPlansForPlayer: (playerId: string) =>
+    fetch(`/api/development-plans/player/${playerId}`, { cache: "no-store" }).then((r) => r.json()),
+  getMyPlans: () =>
+    fetch("/api/development-plans/my-plans", { cache: "no-store" }).then((r) => r.json()),
+  createPlan: (payload: any) =>
+    fetch("/api/development-plans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
+  updatePlan: (planId: string, payload: any) =>
+    fetch(`/api/development-plans/${planId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
+  deletePlan: (planId: string) =>
+    fetch(`/api/development-plans/${planId}`, { method: "DELETE" }).then((r) => r.json()),
+
+  // Training Blocks
+  createBlock: (planId: string, payload: any) =>
+    fetch(`/api/development-plans/${planId}/blocks`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
+  updateBlock: (blockId: string, payload: any) =>
+    fetch(`/api/development-plans/blocks/${blockId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
+  deleteBlock: (blockId: string) =>
+    fetch(`/api/development-plans/blocks/${blockId}`, { method: "DELETE" }).then((r) => r.json()),
+
+  // Lesson Assignments
+  addAssignment: (blockId: string, payload: any) =>
+    fetch(`/api/development-plans/blocks/${blockId}/assignments`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
+  updateAssignment: (assignmentId: string, payload: any) =>
+    fetch(`/api/development-plans/assignments/${assignmentId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
+  removeAssignment: (assignmentId: string) =>
+    fetch(`/api/development-plans/assignments/${assignmentId}`, { method: "DELETE" }).then((r) => r.json()),
 };
 
 /**
