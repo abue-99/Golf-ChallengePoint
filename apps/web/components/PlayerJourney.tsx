@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Clock, ChevronDown, ChevronUp, Star, Lock, Zap, Trophy } from "lucide-react";
+import { Clock, ChevronDown, ChevronUp, Star, Zap, Trophy } from "lucide-react";
 
 const FOCUS_AREA_EMOJI: Record<string, string> = {
   SETUP: "🏌️",
@@ -28,54 +28,12 @@ const FOCUS_AREA_EMOJI: Record<string, string> = {
 
 type StatusKey = "OUTSTANDING" | "STARTED" | "FINISHED" | "REVIEWED" | "LOCKED";
 
-const NODE_CONFIG: Record<StatusKey, {
-  emoji: string;
-  label: string;
-  ringColor: string;
-  bgColor: string;
-  textColor: string;
-  dotColor: string;
-}> = {
-  OUTSTANDING: {
-    emoji: "⚪",
-    label: "Open",
-    ringColor: "border-slate-300",
-    bgColor: "bg-slate-100",
-    textColor: "text-slate-700",
-    dotColor: "bg-slate-400",
-  },
-  STARTED: {
-    emoji: "🟡",
-    label: "In Progress",
-    ringColor: "border-blue-400",
-    bgColor: "bg-blue-50",
-    textColor: "text-blue-700",
-    dotColor: "bg-blue-500",
-  },
-  FINISHED: {
-    emoji: "✅",
-    label: "Completed",
-    ringColor: "border-green-400",
-    bgColor: "bg-green-50",
-    textColor: "text-green-700",
-    dotColor: "bg-green-500",
-  },
-  REVIEWED: {
-    emoji: "⭐",
-    label: "Reviewed by Coach",
-    ringColor: "border-amber-400",
-    bgColor: "bg-amber-50",
-    textColor: "text-amber-700",
-    dotColor: "bg-amber-400",
-  },
-  LOCKED: {
-    emoji: "🔒",
-    label: "Locked",
-    ringColor: "border-slate-200",
-    bgColor: "bg-slate-50",
-    textColor: "text-slate-400",
-    dotColor: "bg-slate-300",
-  },
+const STATUS_STYLE: Record<StatusKey, { label: string; badge: string; dot: string }> = {
+  OUTSTANDING: { label: "Open", badge: "bg-slate-100 text-slate-600", dot: "bg-slate-300" },
+  STARTED: { label: "In Progress", badge: "bg-blue-100 text-blue-700", dot: "bg-blue-500" },
+  FINISHED: { label: "Completed", badge: "bg-green-100 text-green-700", dot: "bg-green-500" },
+  REVIEWED: { label: "Reviewed", badge: "bg-amber-100 text-amber-700", dot: "bg-amber-400" },
+  LOCKED: { label: "Locked", badge: "bg-slate-100 text-slate-400", dot: "bg-slate-200" },
 };
 
 function resolveStatus(assignment: LessonAssignment, isLocked: boolean): StatusKey {
@@ -173,212 +131,135 @@ function CompletionCelebration({
   );
 }
 
-// ─── Journey Node ─────────────────────────────────────────────────────────────
+// ─── Lesson Card ──────────────────────────────────────────────────────────────
 
-function JourneyNode({
+function LessonCard({
   assignment,
   isLocked,
-  isLast,
   onTap,
 }: {
   assignment: LessonAssignment;
   isLocked: boolean;
-  isLast: boolean;
   onTap: () => void;
 }) {
   const statusKey = resolveStatus(assignment, isLocked);
-  const cfg = NODE_CONFIG[statusKey];
+  const style = STATUS_STYLE[statusKey];
   const focusEmoji = FOCUS_AREA_EMOJI[assignment.lesson.focusArea] ?? "📋";
   const focusLabel =
     FOCUS_AREAS.find((f) => f.value === assignment.lesson.focusArea)?.label ??
     assignment.lesson.focusArea;
 
   return (
-    <div className="flex gap-4">
-      {/* Left track: dot + line */}
-      <div className="flex flex-col items-center flex-shrink-0">
-        <div
-          className={cn(
-            "h-9 w-9 rounded-full border-2 flex items-center justify-center text-base shadow-sm flex-shrink-0 transition-all duration-300",
-            cfg.ringColor,
-            cfg.bgColor,
-            statusKey === "STARTED" && "ring-2 ring-blue-300 ring-offset-1",
-            statusKey === "FINISHED" && "ring-2 ring-green-300 ring-offset-1",
-            statusKey === "REVIEWED" && "ring-2 ring-amber-300 ring-offset-1",
-          )}
-        >
-          {statusKey === "LOCKED" ? (
-            <Lock className="h-4 w-4 text-slate-300" />
-          ) : statusKey === "FINISHED" ? (
-            "✅"
-          ) : statusKey === "REVIEWED" ? (
-            "⭐"
-          ) : statusKey === "STARTED" ? (
-            "🟡"
-          ) : (
-            "⚪"
-          )}
-        </div>
-        {!isLast && (
-          <div
-            className={cn(
-              "w-0.5 flex-1 min-h-[24px] mt-1",
-              statusKey === "FINISHED" || statusKey === "REVIEWED"
-                ? "bg-green-300"
-                : statusKey === "STARTED"
-                ? "bg-blue-200"
-                : "bg-slate-200"
-            )}
-          />
-        )}
+    <div
+      className={cn(
+        "flex items-center gap-3 rounded-xl border-2 p-3 transition-all duration-200",
+        statusKey === "STARTED" && "border-blue-200 bg-blue-50/60",
+        statusKey === "FINISHED" && "border-green-200 bg-green-50/60",
+        statusKey === "REVIEWED" && "border-amber-200 bg-amber-50/60",
+        statusKey === "OUTSTANDING" && "border-gray-200 bg-white",
+        statusKey === "LOCKED" && "border-slate-100 bg-slate-50/60 opacity-60",
+        !isLocked && "cursor-pointer hover:shadow-sm active:scale-[0.99]"
+      )}
+      onClick={!isLocked ? onTap : undefined}
+    >
+      {/* Icon circle */}
+      <div className={cn(
+        "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-base border-2",
+        statusKey === "STARTED" && "border-blue-300 bg-blue-100",
+        statusKey === "FINISHED" && "border-green-300 bg-green-100",
+        statusKey === "REVIEWED" && "border-amber-300 bg-amber-100",
+        statusKey === "OUTSTANDING" && "border-slate-200 bg-slate-100",
+        statusKey === "LOCKED" && "border-slate-100 bg-slate-50",
+      )}>
+        {statusKey === "FINISHED" ? "✅" : statusKey === "REVIEWED" ? "⭐" : focusEmoji}
       </div>
 
-      {/* Right content */}
-      <div className={cn("pb-4 flex-1", isLast && "pb-0")}>
-        <div
-          className={cn(
-            "rounded-2xl border-2 p-4 transition-all duration-200",
-            cfg.ringColor,
-            cfg.bgColor,
-            !isLocked && "cursor-pointer active:scale-[0.98] hover:shadow-md",
-            isLocked && "opacity-60"
-          )}
-          onClick={!isLocked ? onTap : undefined}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-start gap-2.5">
-              <span className="text-lg leading-none mt-0.5">{focusEmoji}</span>
-              <div>
-                <p className={cn("font-semibold leading-tight", cfg.textColor)}>
-                  {assignment.lesson.name}
-                </p>
-                <div className="mt-1 flex items-center gap-2.5 text-xs text-slate-500">
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {assignment.lesson.durationMinutes}m
-                  </span>
-                  <span>{focusLabel}</span>
-                </div>
-              </div>
-            </div>
-            <span className={cn("text-xs font-semibold flex-shrink-0 mt-0.5", cfg.textColor)}>
-              {cfg.label}
-            </span>
-          </div>
-
-          {statusKey === "LOCKED" && (
-            <p className="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
-              <Lock className="h-3 w-3" />
-              Complete previous lesson first
-            </p>
-          )}
-
-          {assignment.lesson.trainingObjective && !isLocked && (
-            <p className="mt-2 text-xs text-slate-500 line-clamp-1">
-              {assignment.lesson.trainingObjective}
-            </p>
-          )}
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-slate-800 truncate">{assignment.lesson.name}</p>
+        <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
+          <span className="flex items-center gap-0.5">
+            <Clock className="h-3 w-3" />
+            {assignment.lesson.durationMinutes}m
+          </span>
+          <span>·</span>
+          <span>{focusLabel}</span>
         </div>
       </div>
+
+      {/* Status badge */}
+      <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold flex-shrink-0", style.badge)}>
+        {style.label}
+      </span>
     </div>
   );
 }
 
-// ─── Block Journey Card ───────────────────────────────────────────────────────
+// ─── Block Card ───────────────────────────────────────────────────────────────
 
-function BlockJourneyCard({
+function BlockCard({
   block,
   isFirst,
-  blockDone,
-  blockStarted,
   onAssignmentUpdated,
 }: {
   block: TrainingBlock;
   isFirst: boolean;
-  blockDone: boolean;
-  blockStarted: boolean;
   onAssignmentUpdated: (updated: LessonAssignment) => void;
 }) {
-  const [expanded, setExpanded] = useState(isFirst || blockStarted || !blockDone);
-  const [selectedAssignment, setSelectedAssignment] = useState<LessonAssignment | null>(null);
-  const [celebration, setCelebration] = useState<{
-    lessonName: string;
-    nextLesson?: string;
-  } | null>(null);
-
   const total = block.assignments.length;
   const done = block.assignments.filter(
     (a) => a.status === "FINISHED" || a.status === "REVIEWED"
   ).length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const blockDone = done === total && total > 0;
+  const blockStarted = block.assignments.some((a) => a.status !== "OUTSTANDING");
+
+  const [expanded, setExpanded] = useState(isFirst || blockStarted || !blockDone);
+  const [selectedAssignment, setSelectedAssignment] = useState<LessonAssignment | null>(null);
+  const [celebration, setCelebration] = useState<{ lessonName: string; nextLesson?: string } | null>(null);
 
   function handleStatusChange(updated: LessonAssignment) {
     onAssignmentUpdated(updated);
     if (selectedAssignment) setSelectedAssignment(updated);
-
     if (updated.status === "FINISHED") {
       const idx = block.assignments.findIndex((a) => a.id === updated.id);
       const nextAssignment = block.assignments[idx + 1];
-      setCelebration({
-        lessonName: updated.lesson.name,
-        nextLesson: nextAssignment?.lesson.name,
-      });
+      setCelebration({ lessonName: updated.lesson.name, nextLesson: nextAssignment?.lesson.name });
     }
   }
 
   return (
     <>
-      <div
-        className={cn(
-          "rounded-2xl border-2 overflow-hidden transition-all duration-300",
-          blockDone ? "border-green-300 bg-green-50/20" : "border-slate-200 bg-white"
-        )}
-      >
+      <div className={cn(
+        "rounded-2xl border overflow-hidden",
+        blockDone ? "border-green-200" : "border-gray-200"
+      )}>
         {/* Block header */}
         <button
-          className="flex w-full items-center justify-between px-5 py-4 text-left"
+          className="flex w-full items-center justify-between px-4 py-3 text-left bg-white hover:bg-slate-50/50 transition-colors"
           onClick={() => setExpanded((e) => !e)}
         >
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-xl shadow-sm",
-                blockDone ? "bg-green-100" : blockStarted ? "bg-blue-100" : "bg-slate-100"
-              )}
-            >
-              {blockDone ? "🏆" : blockStarted ? "🎯" : "📋"}
-            </div>
-            <div>
-              <p className="font-bold text-slate-800">{block.name}</p>
-              <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-                <span>{done} of {total} lessons</span>
-                {block.goal && (
-                  <>
-                    <span>·</span>
-                    <span className="truncate max-w-[120px]">{block.goal}</span>
-                  </>
-                )}
-              </div>
-            </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-slate-800 text-sm">{block.name}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{done} of {total} lessons</p>
           </div>
-
-          <div className="flex items-center gap-2">
-            {/* Mini circular progress */}
-            <div className="relative h-9 w-9 flex-shrink-0">
-              <svg className="h-9 w-9 -rotate-90" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15" fill="none" stroke="#e2e8f0" strokeWidth="3" />
+          <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+            {/* Circular progress */}
+            <div className="relative h-8 w-8">
+              <svg className="h-8 w-8 -rotate-90" viewBox="0 0 32 32">
+                <circle cx="16" cy="16" r="12" fill="none" stroke="#e2e8f0" strokeWidth="3" />
                 <circle
-                  cx="18"
-                  cy="18"
-                  r="15"
+                  cx="16"
+                  cy="16"
+                  r="12"
                   fill="none"
                   stroke={blockDone ? "#22c55e" : "#3b82f6"}
                   strokeWidth="3"
-                  strokeDasharray={`${(pct / 100) * 94.25} 94.25`}
+                  strokeDasharray={`${(pct / 100) * 75.4} 75.4`}
                   strokeLinecap="round"
                 />
               </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-slate-600">
+              <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-slate-600">
                 {pct}%
               </span>
             </div>
@@ -390,44 +271,32 @@ function BlockJourneyCard({
           </div>
         </button>
 
-        {/* Vertical path */}
+        {/* Lessons */}
         {expanded && (
-          <div className="px-5 pb-5 pt-1">
-            {/* Progress bar */}
-            <div className="mb-4 h-1.5 w-full rounded-full bg-slate-100">
-              <div
-                className={cn(
-                  "h-1.5 rounded-full transition-all duration-700",
-                  blockDone ? "bg-green-500" : "bg-blue-500"
-                )}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-
-            {/* Node list */}
-            <div>
-              {block.assignments.map((assignment, idx) => {
+          <div className="border-t border-gray-100 bg-slate-50/30 px-4 py-3 space-y-2">
+            {block.assignments.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-2">No lessons in this block yet.</p>
+            ) : (
+              block.assignments.map((assignment, idx) => {
                 const prevDone =
                   idx === 0 ||
                   block.assignments[idx - 1].status === "FINISHED" ||
                   block.assignments[idx - 1].status === "REVIEWED";
                 const isLocked = !prevDone && assignment.status === "OUTSTANDING";
                 return (
-                  <JourneyNode
+                  <LessonCard
                     key={assignment.id}
                     assignment={assignment}
                     isLocked={isLocked}
-                    isLast={idx === block.assignments.length - 1}
                     onTap={() => setSelectedAssignment(assignment)}
                   />
                 );
-              })}
-            </div>
+              })
+            )}
           </div>
         )}
       </div>
 
-      {/* Lesson Detail Modal */}
       {selectedAssignment && (
         <LessonDetailModal
           assignment={selectedAssignment}
@@ -436,7 +305,6 @@ function BlockJourneyCard({
         />
       )}
 
-      {/* Completion Celebration */}
       {celebration && (
         <CompletionCelebration
           lessonName={celebration.lessonName}
@@ -448,9 +316,9 @@ function BlockJourneyCard({
   );
 }
 
-// ─── Plan Journey View ────────────────────────────────────────────────────────
+// ─── Plan Card ────────────────────────────────────────────────────────────────
 
-function PlanJourneyView({
+function PlanCard({
   plan,
   onAssignmentUpdated,
 }: {
@@ -463,58 +331,47 @@ function PlanJourneyView({
     (a) => a.status === "FINISHED" || a.status === "REVIEWED"
   ).length;
 
+  const coachName = plan.coach
+    ? `Coach ${plan.coach.firstName ?? plan.coach.email}`
+    : null;
+
   return (
-    <div className="space-y-4">
+    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       {/* Plan header */}
-      <div className="flex items-center justify-between px-1">
-        <div>
-          <h2 className="text-lg font-extrabold text-slate-800">{plan.name}</h2>
-          {plan.coach && (
-            <p className="text-xs text-slate-400 mt-0.5">
-              Coach {plan.coach.firstName ?? plan.coach.email}
-            </p>
+      <div className="flex items-start justify-between px-5 py-4">
+        <div className="min-w-0">
+          <h2 className="text-lg font-extrabold text-slate-900 leading-tight">{plan.name}</h2>
+          {coachName && (
+            <p className="text-sm text-slate-500 mt-0.5">{coachName}</p>
           )}
         </div>
-        <div className="text-right">
-          <p className="text-sm font-bold text-slate-600">
-            {done}<span className="text-slate-400 font-normal">/{total}</span>
+        <div className="text-right flex-shrink-0 ml-4">
+          <p className="text-base font-bold text-slate-700">
+            {done}<span className="text-slate-400 font-normal text-sm">/{total}</span>
           </p>
           <p className="text-xs text-slate-400">lessons</p>
         </div>
       </div>
 
-      {plan.description && (
-        <p className="px-1 text-sm text-slate-600">{plan.description}</p>
-      )}
-
-      {/* Training blocks */}
-      <div className="space-y-3">
-        {plan.blocks.map((block, blockIdx) => {
-          const blockDone = block.assignments.every(
-            (a) => a.status === "FINISHED" || a.status === "REVIEWED"
-          );
-          const blockStarted = block.assignments.some(
-            (a) => a.status !== "OUTSTANDING"
-          );
-          return (
-            <BlockJourneyCard
-              key={block.id}
-              block={block}
-              isFirst={blockIdx === 0}
-              blockDone={blockDone}
-              blockStarted={blockStarted}
-              onAssignmentUpdated={(updated) =>
-                onAssignmentUpdated(block.id, updated)
-              }
-            />
-          );
-        })}
+      {/* Blocks */}
+      <div className="px-4 pb-4 space-y-3">
+        {plan.blocks.map((block, blockIdx) => (
+          <BlockCard
+            key={block.id}
+            block={block}
+            isFirst={blockIdx === 0}
+            onAssignmentUpdated={(updated) => onAssignmentUpdated(block.id, updated)}
+          />
+        ))}
+        {plan.blocks.length === 0 && (
+          <p className="text-sm text-slate-400 text-center py-4">No training blocks yet.</p>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Overall Progress Banner ──────────────────────────────────────────────────
+// ─── Journey Header ───────────────────────────────────────────────────────────
 
 function JourneyHeader({
   playerName,
@@ -523,9 +380,7 @@ function JourneyHeader({
   playerName: string;
   plans: PlayerDevelopmentPlan[];
 }) {
-  const allAssignments = plans.flatMap((p) =>
-    p.blocks.flatMap((b) => b.assignments)
-  );
+  const allAssignments = plans.flatMap((p) => p.blocks.flatMap((b) => b.assignments));
   const total = allAssignments.length;
   const done = allAssignments.filter(
     (a) => a.status === "FINISHED" || a.status === "REVIEWED"
@@ -570,7 +425,6 @@ function JourneyHeader({
         </div>
       </div>
 
-      {/* Level XP bar */}
       <div className="mt-2">
         <div className="mb-1 flex items-center justify-between text-xs">
           <span className="text-slate-500">Level {level} XP</span>
@@ -663,7 +517,7 @@ export default function PlayerJourney() {
       <JourneyHeader playerName={playerName} plans={plans} />
 
       {plans.map((plan) => (
-        <PlanJourneyView
+        <PlanCard
           key={plan.id}
           plan={plan}
           onAssignmentUpdated={(blockId, updated) =>
@@ -834,20 +688,6 @@ function LessonDetailModal({
             </div>
           </div>
 
-          {/* Notes */}
-          <div>
-            <h3 className="mb-2 text-sm font-semibold text-slate-700">
-              Practice Notes (optional)
-            </h3>
-            <textarea
-              rows={3}
-              className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-              placeholder="How did it go? What did you learn?"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </div>
-
           {/* Star rating display */}
           {selfAssessment && (
             <div className="flex items-center gap-1">
@@ -867,6 +707,20 @@ function LessonDetailModal({
               </span>
             </div>
           )}
+
+          {/* Notes */}
+          <div>
+            <h3 className="mb-2 text-sm font-semibold text-slate-700">
+              Practice Notes (optional)
+            </h3>
+            <textarea
+              rows={3}
+              className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+              placeholder="How did it go? What did you learn?"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
 
           <Button
             className="w-full rounded-2xl bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 py-3 text-base font-bold"
@@ -888,17 +742,19 @@ function JourneySkeleton() {
     <div className="space-y-4 max-w-lg mx-auto">
       <div className="h-36 animate-pulse rounded-2xl bg-slate-800/10" />
       {Array.from({ length: 2 }).map((_, i) => (
-        <div key={i} className="rounded-2xl border-2 border-slate-200 p-5 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="h-11 w-11 animate-pulse rounded-full bg-slate-200" />
+        <div key={i} className="rounded-2xl border border-gray-200 p-5 space-y-3">
+          <div className="flex items-center justify-between">
             <div className="space-y-2">
               <div className="h-4 w-36 animate-pulse rounded-full bg-slate-200" />
               <div className="h-3 w-24 animate-pulse rounded-full bg-slate-200" />
             </div>
+            <div className="h-8 w-8 animate-pulse rounded-full bg-slate-200" />
           </div>
-          {Array.from({ length: 3 }).map((_, j) => (
-            <div key={j} className="h-16 animate-pulse rounded-2xl bg-slate-100" />
-          ))}
+          <div className="space-y-2">
+            {Array.from({ length: 2 }).map((_, j) => (
+              <div key={j} className="h-14 animate-pulse rounded-xl bg-slate-100" />
+            ))}
+          </div>
         </div>
       ))}
     </div>
