@@ -65,6 +65,8 @@ function ringPoints(sides: number, radius: number, center: number) {
 
 // ─── Sub-Capability Panel ─────────────────────────────────────────────────────
 
+const SUB_SUB_CAPABILITY_ALPHA = "99";
+
 function SubCapabilityPanel({
   capability,
   onClose,
@@ -124,7 +126,7 @@ function SubCapabilityPanel({
                     <span className="h-1 w-10 rounded-full overflow-hidden bg-slate-200">
                       <span
                         className="block h-full rounded-full"
-                        style={{ width: `${ss.score}%`, background: capability.color + "99" }}
+                        style={{ width: `${ss.score}%`, background: capability.color + SUB_SUB_CAPABILITY_ALPHA }}
                       />
                     </span>
                   </div>

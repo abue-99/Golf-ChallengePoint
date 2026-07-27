@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { FOCUS_AREAS, type PlayerDevelopmentPlan, type TrainingLesson, type LessonAssignment } from "@/lib/lesson-types";
+import { FOCUS_AREAS, type PlayerDevelopmentPlan, type TrainingBlock, type TrainingLesson, type LessonAssignment } from "@/lib/lesson-types";
 import {
   Plus,
   ChevronDown,
@@ -477,7 +477,7 @@ function NewBlockForm({
   onCancel,
 }: {
   planId: string;
-  onCreated: (block: any) => void;
+  onCreated: (block: TrainingBlock) => void;
   onCancel: () => void;
 }) {
   const [name, setName] = useState("");
@@ -545,8 +545,8 @@ function EditBlockForm({
   onSaved,
   onCancel,
 }: {
-  block: any;
-  onSaved: (updated: any) => void;
+  block: TrainingBlock;
+  onSaved: (updated: TrainingBlock) => void;
   onCancel: () => void;
 }) {
   const [name, setName] = useState(block.name);
@@ -611,10 +611,10 @@ function TrainingBlockCard({
   onDeleted,
   onUpdated,
 }: {
-  block: any;
+  block: TrainingBlock;
   playerId: string;
   onDeleted: () => void;
-  onUpdated: (block: any) => void;
+  onUpdated: (block: TrainingBlock) => void;
 }) {
   const [assignments, setAssignments] = useState<LessonAssignment[]>(block.assignments || []);
   const [showAddLesson, setShowAddLesson] = useState(false);

@@ -504,7 +504,14 @@ export function getPlayerCapabilityProfile(playerId: string): PlayerCapabilityPr
         );
         return { ...ss, score: ssScore, rating: scoreToRating(ssScore) };
       });
-      return { key: sub.key, label: sub.label, base: sub.base, score: subScore, rating: scoreToRating(subScore), subSubs };
+      return {
+        key: sub.key,
+        label: sub.label,
+        base: sub.base,
+        score: subScore,
+        rating: scoreToRating(subScore),
+        subSubs,
+      };
     });
 
     return {
