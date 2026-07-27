@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const res = await fetch(url, {
-      headers: { Authorization: `****** },
+      headers: { Authorization: 'Bearer ' + token },
       cache: "no-store",
     });
     const data = await res.json().catch(() => ([]));
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `******
+        Authorization: 'Bearer ' + token
       },
       body: JSON.stringify(body),
     });

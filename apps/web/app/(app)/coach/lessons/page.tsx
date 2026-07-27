@@ -9,9 +9,10 @@ import { api } from "@/lib/api";
 import {
   FOCUS_AREAS,
   LESSON_STATUSES,
+  LESSON_VISIBILITIES,
   type TrainingLesson,
 } from "@/lib/lesson-types";
-import { Plus, Search, BookOpen, Clock, MapPin, User } from "lucide-react";
+import { Plus, Search, BookOpen, Clock, MapPin, User, Globe, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function LessonsPage() {
@@ -20,6 +21,15 @@ export default function LessonsPage() {
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [focusFilter, setFocusFilter] = useState("");
+  const [visibilityFilter, setVisibilityFilter] = useState("");
+  const [myId, setMyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((me) => { if (me?.id) setMyId(me.id); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     let ignore = false;
@@ -43,9 +53,10 @@ export default function LessonsPage() {
         !q || l.name.toLowerCase().includes(q.toLowerCase());
       const matchesStatus = !statusFilter || l.status === statusFilter;
       const matchesFocus = !focusFilter || l.focusArea === focusFilter;
-      return matchesQ && matchesStatus && matchesFocus;
+      const matchesVisibility = !visibilityFilter || l.visibility === visibilityFilter;
+      return matchesQ && matchesStatus && matchesFocus && matchesVisibility;
     });
-  }, [lessons, q, statusFilter, focusFilter]);
+  }, [lessons, q, statusFilter, focusFilter, visibilityFilter]);
 
   return (
     <div className="space-y-6">
@@ -53,10 +64,10 @@ export default function LessonsPage() {
       <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Training Lessons
+            Lesson Library
           </h1>
           <p className="text-sm text-slate-500">
-            Create and manage your training lessons.
+            Create reusable lessons. Public lessons are shared across all coaches.
           </p>
         </div>
         <Link href="/coach/lessons/new">
@@ -78,6 +89,19 @@ export default function LessonsPage() {
             className="w-full rounded-lg border border-gray-200 bg-white px-8 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200"
           />
         </div>
+
+        <select
+          value={visibilityFilter}
+          onChange={(e) => setVisibilityFilter(e.target.value)}
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+        >
+          <option value="">All Visibility</option>
+          {LESSON_VISIBILITIES.map((v) => (
+            <option key={v.value} value={v.value}>
+              {v.label}
+            </option>
+          ))}
+        </select>
 
         <select
           value={statusFilter}
@@ -120,7 +144,7 @@ export default function LessonsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((lesson) => (
-            <LessonCard key={lesson.id} lesson={lesson} />
+            <LessonCard key={lesson.id} lesson={lesson} myId={myId} />
           ))}
         </div>
       )}
@@ -128,15 +152,18 @@ export default function LessonsPage() {
   );
 }
 
-function LessonCard({ lesson }: { lesson: TrainingLesson }) {
+function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | null }) {
   const focusLabel =
     FOCUS_AREAS.find((f) => f.value === lesson.focusArea)?.label ??
     lesson.focusArea;
 
-  const playerName = lesson.player
-    ? lesson.player.firstName || lesson.player.lastName
-      ? `${lesson.player.firstName ?? ""} ${lesson.player.lastName ?? ""}`.trim()
-      : lesson.player.email
+  const isOwner = myId && lesson.coachId === myId;
+  const isPublic = lesson.visibility === "PUBLIC";
+
+  const coachName = lesson.coach
+    ? lesson.coach.firstName || lesson.coach.lastName
+      ? `${lesson.coach.firstName ?? ""} ${lesson.coach.lastName ?? ""}`.trim()
+      : lesson.coach.email
     : null;
 
   return (
@@ -154,7 +181,10 @@ function LessonCard({ lesson }: { lesson: TrainingLesson }) {
               <p className="text-xs text-slate-500">{focusLabel}</p>
             </div>
           </div>
-          <LessonStatusBadge status={lesson.status} />
+          <div className="flex flex-col items-end gap-1">
+            <LessonStatusBadge status={lesson.status} />
+            <VisibilityBadge visibility={lesson.visibility} />
+          </div>
         </div>
 
         <div className="mb-4 space-y-1 text-xs text-slate-500">
@@ -168,10 +198,10 @@ function LessonCard({ lesson }: { lesson: TrainingLesson }) {
               {lesson.location}
             </div>
           )}
-          {playerName && (
+          {coachName && !isOwner && (
             <div className="flex items-center gap-1.5">
               <User className="h-3.5 w-3.5" />
-              {playerName}
+              <span className="italic">By {coachName}</span>
             </div>
           )}
         </div>
@@ -180,17 +210,45 @@ function LessonCard({ lesson }: { lesson: TrainingLesson }) {
           <p className="text-xs text-slate-400">
             {new Date(lesson.createdAt).toLocaleDateString()}
           </p>
-          <Link href={`/coach/lessons/${lesson.id}`}>
-            <Button
-              size="sm"
-              className="bg-blue-600 text-white hover:bg-blue-500"
-            >
-              View
-            </Button>
-          </Link>
+          <div className="flex gap-1">
+            {isOwner && (
+              <Link href={`/coach/lessons/${lesson.id}`}>
+                <Button
+                  size="sm"
+                  className="bg-blue-600 text-white hover:bg-blue-500"
+                >
+                  Edit
+                </Button>
+              </Link>
+            )}
+            {!isOwner && isPublic && (
+              <Link href={`/coach/lessons/${lesson.id}`}>
+                <Button size="sm" variant="outline">
+                  View
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function VisibilityBadge({ visibility }: { visibility: string }) {
+  if (visibility === "PUBLIC") {
+    return (
+      <span className="inline-flex items-center gap-0.5 rounded-full bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700">
+        <Globe className="h-2.5 w-2.5" />
+        Public
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-0.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
+      <Lock className="h-2.5 w-2.5" />
+      Private
+    </span>
   );
 }
 

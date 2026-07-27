@@ -28,10 +28,12 @@ export class LessonsController {
     @CurrentUser() user: AuthenticatedUser,
     @Query('status') status?: string,
     @Query('focusArea') focusArea?: string,
+    @Query('visibility') visibility?: string,
   ) {
     return this.lessonsService.listLessons(user.id, user.role as string, {
       status,
       focusArea,
+      visibility,
     });
   }
 
@@ -55,6 +57,7 @@ export class LessonsController {
       focusArea: string;
       location?: string;
       status?: string;
+      visibility?: string;
       videoUrl?: string;
       playerId?: string;
       trainingObjective?: string;
@@ -99,6 +102,7 @@ export class LessonsController {
       focusArea?: string;
       location?: string;
       status?: string;
+      visibility?: string;
       videoUrl?: string;
       playerId?: string | null;
       trainingObjective?: string;

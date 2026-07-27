@@ -9,6 +9,7 @@ import { api } from "@/lib/api";
 import {
   FOCUS_AREAS,
   LESSON_STATUSES,
+  LESSON_VISIBILITIES,
   PRIORITIES,
   GOAL_ACHIEVED_OPTIONS,
   type TrainingLesson,
@@ -23,6 +24,7 @@ type FormData = {
   focusArea: string;
   location: string;
   status: string;
+  visibility: string;
   videoUrl: string | null;
   playerId: string;
   // Goals
@@ -48,6 +50,7 @@ const EMPTY: FormData = {
   focusArea: "",
   location: "",
   status: "PLANNED",
+  visibility: "PRIVATE",
   videoUrl: null,
   playerId: "",
   trainingObjective: "",
@@ -72,6 +75,7 @@ function lessonToForm(lesson: TrainingLesson): FormData {
     focusArea: lesson.focusArea,
     location: lesson.location ?? "",
     status: lesson.status,
+    visibility: lesson.visibility ?? "PRIVATE",
     videoUrl: lesson.videoUrl ?? null,
     playerId: lesson.playerId ?? "",
     trainingObjective: lesson.trainingObjective ?? "",
@@ -101,6 +105,7 @@ function buildPayload(f: FormData) {
     focusArea: f.focusArea,
     location: f.location.trim() || undefined,
     status: f.status,
+    visibility: f.visibility || "PRIVATE",
     videoUrl: f.videoUrl || undefined,
     playerId: f.playerId || undefined,
     trainingObjective: f.trainingObjective.trim() || undefined,
@@ -299,6 +304,25 @@ export default function LessonForm({
               ))}
             </select>
             {errors.status && <FieldError>{errors.status}</FieldError>}
+          </div>
+
+          {/* Visibility */}
+          <div>
+            <FieldLabel required>Visibility</FieldLabel>
+            <select
+              className={selectClass(false)}
+              value={form.visibility}
+              onChange={(e) => set("visibility", e.target.value)}
+            >
+              {LESSON_VISIBILITIES.map((v) => (
+                <option key={v.value} value={v.value}>
+                  {v.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-slate-400">
+              Public lessons are visible and assignable by all coaches.
+            </p>
           </div>
 
           {/* Assign Player */}

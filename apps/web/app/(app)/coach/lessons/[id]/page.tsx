@@ -23,6 +23,8 @@ import {
   Target,
   BarChart2,
   Play,
+  Globe,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -173,6 +175,20 @@ function ViewMode({
           <InfoItem label="Focus Area">{focusLabel}</InfoItem>
           <InfoItem label="Status">
             <LessonStatusBadge status={lesson.status} />
+          </InfoItem>
+          <InfoItem label="Visibility">
+            <span className={cn(
+              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+              lesson.visibility === "PUBLIC"
+                ? "bg-green-50 text-green-700"
+                : "bg-slate-100 text-slate-600"
+            )}>
+              {lesson.visibility === "PUBLIC" ? (
+                <><Globe className="h-2.5 w-2.5" /> Public</>
+              ) : (
+                <><Lock className="h-2.5 w-2.5" /> Private</>
+              )}
+            </span>
           </InfoItem>
           <InfoItem label="Duration">
             <span className="flex items-center gap-1">

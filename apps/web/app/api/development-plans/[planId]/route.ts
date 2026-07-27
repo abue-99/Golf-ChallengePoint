@@ -8,70 +8,44 @@ async function getToken() {
   return cookieStore.get("token")?.value;
 }
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const token = await getToken();
-  if (!token) return NextResponse.json(null, { status: 401 });
-  const { id } = await params;
-
-  try {
-    const res = await fetch(`${API_URL}/lessons/${id}`, {
-      headers: { Authorization: 'Bearer ' + token },
-      cache: "no-store",
-    });
-    const data = await res.json().catch(() => ({}));
-    return NextResponse.json(data, { status: res.status });
-  } catch (err) {
-    console.error("[/api/lessons/[id] GET]", err);
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
-  }
-}
-
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ planId: string }> }
 ) {
   const token = await getToken();
   if (!token) return NextResponse.json(null, { status: 401 });
-  const { id } = await params;
-
+  const { planId } = await params;
   try {
     const body = await req.json();
-    const res = await fetch(`${API_URL}/lessons/${id}`, {
+    const res = await fetch(`${API_URL}/development-plans/${planId}`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: 'Bearer ' + token
-      },
+      headers: { "Content-Type": "application/json", Authorization: 'Bearer ' + token },
       body: JSON.stringify(body),
     });
     const data = await res.json().catch(() => ({}));
     return NextResponse.json(data, { status: res.status });
   } catch (err) {
-    console.error("[/api/lessons/[id] PATCH]", err);
+    console.error("[/api/development-plans/[planId] PATCH]", err);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });
   }
 }
 
 export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  req: NextRequest,
+  { params }: { params: Promise<{ planId: string }> }
 ) {
   const token = await getToken();
   if (!token) return NextResponse.json(null, { status: 401 });
-  const { id } = await params;
-
+  const { planId } = await params;
   try {
-    const res = await fetch(`${API_URL}/lessons/${id}`, {
+    const res = await fetch(`${API_URL}/development-plans/${planId}`, {
       method: "DELETE",
       headers: { Authorization: 'Bearer ' + token },
     });
     const data = await res.json().catch(() => ({}));
     return NextResponse.json(data, { status: res.status });
   } catch (err) {
-    console.error("[/api/lessons/[id] DELETE]", err);
+    console.error("[/api/development-plans/[planId] DELETE]", err);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });
   }
 }

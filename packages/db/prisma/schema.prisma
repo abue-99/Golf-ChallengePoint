@@ -40,6 +40,11 @@ enum LessonStatus {
   COMPLETED
 }
 
+enum LessonVisibility {
+  PUBLIC
+  PRIVATE
+}
+
 enum LessonPriority {
   LOW
   MEDIUM
@@ -50,6 +55,13 @@ enum GoalAchieved {
   YES
   PARTIALLY
   NO
+}
+
+enum AssignmentStatus {
+  OUTSTANDING
+  STARTED
+  FINISHED
+  REVIEWED
 }
 
 model User {
@@ -77,8 +89,12 @@ model User {
   teamMemberships  TeamMember[]
   practiceSlots    PracticeSlot[]    @relation("PlayerSlots")
   coachTasks       CalendarTask[]    @relation("CoachTasks")
-  coachLessons     TrainingLesson[]  @relation("CoachLessons")
-  playerLessons    TrainingLesson[]  @relation("PlayerLessons")
+  coachLessons         TrainingLesson[]        @relation("CoachLessons")
+  playerLessons        TrainingLesson[]        @relation("PlayerLessons")
+  coachDevelopmentPlans PlayerDevelopmentPlan[] @relation("CoachPlans")
+  playerDevelopmentPlans PlayerDevelopmentPlan[] @relation("PlayerPlans")
+  coachTrainingBlocks  TrainingBlock[]         @relation("CoachBlocks")
+  lessonAssignments    LessonAssignment[]      @relation("PlayerAssignments")
 
   @@map("users")
 }
@@ -231,6 +247,7 @@ model TrainingLesson {
   focusArea       LessonFocusArea
   location        String?
   status          LessonStatus     @default(PLANNED)
+  visibility      LessonVisibility @default(PRIVATE)
   videoUrl        String?
 
   // Ownership
@@ -257,8 +274,73 @@ model TrainingLesson {
   comments              String?
   keyLearnings          String?
 
+  assignments     LessonAssignment[]
+
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
   @@map("training_lessons")
+}
+
+// ─── Player Development Plan ───────────────────────────────────────────────
+
+model PlayerDevelopmentPlan {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  coachId     String
+  coach       User           @relation("CoachPlans", fields: [coachId], references: [id], onDelete: Cascade)
+  playerId    String
+  player      User           @relation("PlayerPlans", fields: [playerId], references: [id], onDelete: Cascade)
+  startDate   DateTime?
+  endDate     DateTime?
+  blocks      TrainingBlock[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@map("player_development_plans")
+}
+
+// ─── Training Block ────────────────────────────────────────────────────────
+
+model TrainingBlock {
+  id          String                @id @default(cuid())
+  planId      String
+  plan        PlayerDevelopmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  coachId     String
+  coach       User                  @relation("CoachBlocks", fields: [coachId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  goal        String?
+  startDate   DateTime?
+  endDate     DateTime?
+  sortOrder   Int                   @default(0)
+  assignments LessonAssignment[]
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@map("training_blocks")
+}
+
+// ─── Lesson Assignment ─────────────────────────────────────────────────────
+
+model LessonAssignment {
+  id             String           @id @default(cuid())
+  blockId        String
+  block          TrainingBlock    @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  lessonId       String
+  lesson         TrainingLesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  playerId       String
+  player         User             @relation("PlayerAssignments", fields: [playerId], references: [id], onDelete: Cascade)
+  coachId        String
+  dueDate        DateTime?
+  priority       LessonPriority   @default(MEDIUM)
+  status         AssignmentStatus @default(OUTSTANDING)
+  sortOrder      Int              @default(0)
+  playerNotes    String?
+  selfAssessment Int?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@map("lesson_assignments")
 }

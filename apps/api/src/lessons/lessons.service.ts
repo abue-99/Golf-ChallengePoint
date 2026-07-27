@@ -22,20 +22,40 @@ export class LessonsService {
   async listLessons(
     userId: string,
     role: string,
-    filters: { status?: string; focusArea?: string },
+    filters: { status?: string; focusArea?: string; visibility?: string },
   ) {
     this.requireCoachOrAdmin(role);
+    // Coaches see their own lessons + public lessons from other coaches
+    // Admins see all lessons
+    const where: any = {
+      ...(filters.status ? { status: filters.status as any } : {}),
+      ...(filters.focusArea ? { focusArea: filters.focusArea as any } : {}),
+      ...(filters.visibility ? { visibility: filters.visibility as any } : {}),
+    };
+    if (role !== 'ADMIN') {
+      where.OR = [
+        { coachId: userId },
+        { visibility: 'PUBLIC' },
+      ];
+      if (filters.visibility === 'PRIVATE') {
+        // If filtering for private only, restrict to own lessons
+        delete where.OR;
+        where.coachId = userId;
+        where.visibility = 'PRIVATE';
+      }
+    }
     return this.prisma.trainingLesson.findMany({
-      where: {
-        // Admins see all lessons; coaches see only their own
-        ...(role === 'ADMIN' ? {} : { coachId: userId }),
-        ...(filters.status ? { status: filters.status as any } : {}),
-        ...(filters.focusArea
-          ? { focusArea: filters.focusArea as any }
-          : {}),
-      },
+      where,
       include: {
         player: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        coach: {
           select: {
             id: true,
             firstName: true,
@@ -59,6 +79,7 @@ export class LessonsService {
       focusArea: string;
       location?: string;
       status?: string;
+      visibility?: string;
       videoUrl?: string;
       playerId?: string;
       trainingObjective?: string;
@@ -85,6 +106,7 @@ export class LessonsService {
         focusArea: data.focusArea as any,
         location: data.location,
         status: (data.status as any) ?? 'PLANNED',
+        visibility: (data.visibility as any) ?? 'PRIVATE',
         videoUrl: data.videoUrl,
         playerId: data.playerId || null,
         trainingObjective: data.trainingObjective,
@@ -103,6 +125,14 @@ export class LessonsService {
       },
       include: {
         player: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        coach: {
           select: {
             id: true,
             firstName: true,
@@ -158,6 +188,7 @@ export class LessonsService {
       focusArea?: string;
       location?: string;
       status?: string;
+      visibility?: string;
       videoUrl?: string;
       playerId?: string | null;
       trainingObjective?: string;
@@ -180,8 +211,9 @@ export class LessonsService {
       where: { id },
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
+    // Only the original creator (or admin) can edit any lesson
     if (role !== 'ADMIN' && lesson.coachId !== userId) {
-      throw new ForbiddenException('Not your lesson');
+      throw new ForbiddenException('Only the creator can edit this lesson');
     }
 
     return this.prisma.trainingLesson.update({
@@ -196,6 +228,7 @@ export class LessonsService {
           : {}),
         ...(data.location !== undefined ? { location: data.location } : {}),
         ...(data.status !== undefined ? { status: data.status as any } : {}),
+        ...(data.visibility !== undefined ? { visibility: data.visibility as any } : {}),
         ...(data.videoUrl !== undefined ? { videoUrl: data.videoUrl } : {}),
         ...(data.playerId !== undefined
           ? { playerId: data.playerId || null }
