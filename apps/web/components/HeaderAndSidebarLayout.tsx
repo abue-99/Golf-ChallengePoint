@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Header from './header';
 import Sidebar from './sidebar';
 import BottomNav from './BottomNav';
-import { Home, Settings, CalendarDays, BookOpen } from 'lucide-react';
+import { Home, Settings, CalendarDays, BookOpen, Map, User } from 'lucide-react';
 import { Users } from 'lucide-react';
 import type { ReactNode } from "react";
 import { defaultNavItems } from './sidebar';
@@ -36,9 +36,10 @@ export default function HeaderAndSidebarLayout({
      ]
    : role === 'PLAYER'
    ? [
-       { href: '/', icon: Home, label: 'Dashboard' },
+       { href: '/', icon: Home, label: 'Home' },
+       { href: '/player', icon: Map, label: 'Journey' },
        { href: '/calendar', icon: CalendarDays, label: 'Calendar' },
-       { href: '/settings', icon: Settings, label: 'Settings' },
+       { href: '/settings/profile', icon: User, label: 'Profile' },
      ]
    : defaultNavItems;
 
