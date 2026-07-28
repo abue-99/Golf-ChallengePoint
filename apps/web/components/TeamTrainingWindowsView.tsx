@@ -112,7 +112,7 @@ function WindowCard({
   onDelete: (slot: TeamSlotData) => void;
 }) {
   const icon = slotToIcon(slot.title);
-  const firstOcc = slot.occurrences[0];
+  const firstOcc = slot.occurrences?.[0];
   const totalMin = firstOcc ? getDurationMin(firstOcc) : 0;
   return (
     <div
@@ -283,7 +283,7 @@ export default function TeamTrainingWindowsView({ teamId, teamName }: Props) {
     );
   }
 
-  const firstOccOfSlot = (slot: TeamSlotData) => slot.occurrences[0];
+  const firstOccOfSlot = (slot: TeamSlotData) => slot.occurrences?.[0];
 
   return (
     <>
