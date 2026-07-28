@@ -12,6 +12,20 @@ export interface SlotOccurrence {
   end: Date;
 }
 
+interface RawSlot {
+  id: string;
+  ownerType: OwnerType;
+  playerId: string | null;
+  teamId: string | null;
+  team: { id: string; shortName: string; icon: string | null } | null;
+  title: string;
+  recurrence: string;
+  recurrenceEndDate: Date | null;
+  startTime: Date;
+  endTime: Date;
+  tasks: unknown[];
+}
+
 function expandSlotOccurrences(
   slot: {
     startTime: Date;
@@ -144,7 +158,7 @@ export class CalendarService {
     });
   }
 
-  private expandSlot(slot: any) {
+  private expandSlot(slot: RawSlot) {
     const limit = new Date();
     limit.setFullYear(limit.getFullYear() + 1);
     return {

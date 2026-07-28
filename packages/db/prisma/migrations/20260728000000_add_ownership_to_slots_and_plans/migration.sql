@@ -20,7 +20,7 @@ ALTER TABLE "practice_slots"
   ADD CONSTRAINT "practice_slots_teamId_fkey"
     FOREIGN KEY ("teamId") REFERENCES "teams"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- ─── player_development_plans: add ownerType and teamId, make playerId nullable
+-- ─── player_development_plans: add ownerType and teamId, make playerId nullable ─
 
 -- 1. Add ownerType column with default PLAYER (applies to all existing rows)
 ALTER TABLE "player_development_plans"
