@@ -36,7 +36,7 @@ export default async function CoachPlanningPage({
           Planning Board — {playerName}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Drag lessons onto training windows to build the player&apos;s training plan
+          Drag lessons onto training windows to build the player's training plan
           {player?.country ? ` · ${player.country}` : ""}
         </p>
       </header>

@@ -224,7 +224,6 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
 
 function WeeklyBudget({ slots }: { slots: SlotData[] }) {
   const weeklyMinutes = slots
-    .filter((s) => s.recurrence !== "NONE" || true)
     .reduce((sum, slot) => {
       const occ = slot.occurrences[0];
       if (!occ) return sum;

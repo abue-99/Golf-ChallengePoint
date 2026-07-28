@@ -147,27 +147,57 @@ function LessonCard({
 function WindowDropZone({
   window: win,
   isOver,
-  onDragOver,
+  onDragEnter,
   onDragLeave,
   onDrop,
 }: {
   window: TrainingWindow;
   isOver: boolean;
-  onDragOver: (e: React.DragEvent) => void;
-  onDragLeave: () => void;
+  onDragEnter: (windowId: string) => void;
+  onDragLeave: (windowId: string) => void;
   onDrop: (windowId: string) => void;
 }) {
+  // Use a counter to track nested dragenter/dragleave events so that
+  // entering a child element does not incorrectly clear the "over" state.
+  const enterCount = useRef(0);
+
   const firstOcc = win.occurrences[0];
   const totalMin = firstOcc ? getDurationMin(firstOcc) : 0;
   const assignedMin = win.tasks.reduce((s, t) => s + t.durationMinutes, 0);
   const remainMin = Math.max(0, totalMin - assignedMin);
   const pct = totalMin > 0 ? Math.min(100, Math.round((assignedMin / totalMin) * 100)) : 0;
 
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    enterCount.current += 1;
+    if (enterCount.current === 1) {
+      onDragEnter(win.id);
+    }
+  };
+
+  const handleDragLeave = () => {
+    enterCount.current -= 1;
+    if (enterCount.current === 0) {
+      onDragLeave(win.id);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    enterCount.current = 0;
+    onDrop(win.id);
+  };
+
   return (
     <div
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={() => onDrop(win.id)}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
       className={cn(
         "rounded-2xl border-2 p-4 space-y-3 transition-all",
         isOver
@@ -280,15 +310,12 @@ export default function CoachPlanningBoard({ playerId }: Props) {
     setOverWindowId(null);
   };
 
-  const handleDragOver = (e: React.DragEvent, windowId: string) => {
-    e.preventDefault();
+  const handleWindowDragEnter = (windowId: string) => {
     setOverWindowId(windowId);
   };
 
-  const handleDragLeave = (windowId: string) => {
-    if (overWindowId === windowId) {
-      setOverWindowId(null);
-    }
+  const handleWindowDragLeave = (windowId: string) => {
+    setOverWindowId((prev) => (prev === windowId ? null : prev));
   };
 
   const handleDrop = async (windowId: string) => {
@@ -395,8 +422,8 @@ export default function CoachPlanningBoard({ playerId }: Props) {
                   key={win.id}
                   window={win}
                   isOver={overWindowId === win.id}
-                  onDragOver={(e) => handleDragOver(e, win.id)}
-                  onDragLeave={() => handleDragLeave(win.id)}
+                  onDragEnter={handleWindowDragEnter}
+                  onDragLeave={handleWindowDragLeave}
                   onDrop={handleDrop}
                 />
               ))}
