@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { OwnerType } from '@challengepoint/db';
 
 @Injectable()
 export class DevelopmentPlansService {
@@ -11,62 +12,116 @@ export class DevelopmentPlansService {
     }
   }
 
-  // ─── Plans ────────────────────────────────────────────────────────────────
+  private async assertCoachPlayerLink(coachId: string, playerId: string) {
+    const link = await this.prisma.coachPlayerLink.findFirst({
+      where: { coachId, playerId },
+    });
+    if (!link) {
+      throw new ForbiddenException('Not linked to this player');
+    }
+  }
 
-  async listPlansForPlayer(coachId: string, role: string, playerId: string) {
-    this.requireCoachOrAdmin(role);
-    return this.prisma.playerDevelopmentPlan.findMany({
-      where: {
-        playerId,
-        ...(role === 'ADMIN' ? {} : { coachId }),
-      },
-      include: {
-        coach: { select: { id: true, firstName: true, lastName: true, email: true } },
-        blocks: {
-          orderBy: { sortOrder: 'asc' },
-          include: {
-            assignments: {
-              orderBy: { sortOrder: 'asc' },
-              include: {
-                lesson: {
-                  select: {
-                    id: true, name: true, focusArea: true, durationMinutes: true,
-                    trainingObjective: true, successCriteria: true,
-                    subCapability: true, subSubCapability: true,
-                  },
+  private async assertCoachOwnsTeam(coachId: string, teamId: string) {
+    const team = await this.prisma.team.findUnique({ where: { id: teamId } });
+    if (!team) throw new NotFoundException('Team not found');
+    if (team.coachId !== coachId) throw new ForbiddenException('Not your team');
+    return team;
+  }
+
+  private async getActiveTeamIdsForPlayer(playerId: string) {
+    const memberships = await this.prisma.teamMember.findMany({
+      where: { userId: playerId },
+      select: { teamId: true },
+    });
+    return memberships.map((membership) => membership.teamId);
+  }
+
+  private planInclude(playerIdForAssignments?: string) {
+    return {
+      coach: { select: { id: true, firstName: true, lastName: true, email: true } },
+      player: { select: { id: true, firstName: true, lastName: true, email: true } },
+      team: { select: { id: true, shortName: true, icon: true } },
+      blocks: {
+        orderBy: { sortOrder: 'asc' as const },
+        include: {
+          assignments: {
+            ...(playerIdForAssignments ? { where: { playerId: playerIdForAssignments } } : {}),
+            orderBy: { sortOrder: 'asc' as const },
+            include: {
+              lesson: {
+                select: {
+                  id: true, name: true, focusArea: true, durationMinutes: true,
+                  trainingObjective: true, successCriteria: true, plannedExercises: true,
+                  subCapability: true, subSubCapability: true,
                 },
               },
             },
           },
         },
       },
+    };
+  }
+
+  // ─── Plans ────────────────────────────────────────────────────────────────
+
+  async listPlansForPlayer(coachId: string, role: string, playerId: string) {
+    this.requireCoachOrAdmin(role);
+    if (role !== 'ADMIN') {
+      await this.assertCoachPlayerLink(coachId, playerId);
+    }
+    const activeTeamIds = await this.getActiveTeamIdsForPlayer(playerId);
+    return this.prisma.playerDevelopmentPlan.findMany({
+      where: {
+        ...(role === 'ADMIN' ? {} : { coachId }),
+        OR: [
+          { ownerType: OwnerType.PLAYER, playerId },
+          ...(activeTeamIds.length > 0
+            ? [{ ownerType: OwnerType.TEAM, teamId: { in: activeTeamIds } }]
+            : []),
+        ],
+      },
+      include: this.planInclude(playerId),
       orderBy: { createdAt: 'desc' },
     });
   }
 
   async getPlayerPlansAsPlayer(playerId: string) {
+    const activeTeamIds = await this.getActiveTeamIdsForPlayer(playerId);
     return this.prisma.playerDevelopmentPlan.findMany({
-      where: { playerId },
-      include: {
-        coach: { select: { id: true, firstName: true, lastName: true, email: true } },
-        blocks: {
-          orderBy: { sortOrder: 'asc' },
-          include: {
-            assignments: {
-              orderBy: { sortOrder: 'asc' },
-              include: {
-                lesson: {
-                  select: {
-                    id: true, name: true, focusArea: true, durationMinutes: true,
-                    trainingObjective: true, successCriteria: true, plannedExercises: true,
-                    subCapability: true, subSubCapability: true,
-                  },
-                },
-              },
-            },
-          },
-        },
+      where: {
+        OR: [
+          { ownerType: OwnerType.PLAYER, playerId },
+          ...(activeTeamIds.length > 0
+            ? [{ ownerType: OwnerType.TEAM, teamId: { in: activeTeamIds } }]
+            : []),
+        ],
       },
+      include: this.planInclude(playerId),
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getCoachPlans(coachId: string, role: string) {
+    this.requireCoachOrAdmin(role);
+    return this.prisma.playerDevelopmentPlan.findMany({
+      where: role === 'ADMIN' ? {} : { coachId },
+      include: this.planInclude(),
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
+  async listPlansForTeam(coachId: string, role: string, teamId: string) {
+    this.requireCoachOrAdmin(role);
+    if (role !== 'ADMIN') {
+      await this.assertCoachOwnsTeam(coachId, teamId);
+    }
+    return this.prisma.playerDevelopmentPlan.findMany({
+      where: {
+        ownerType: OwnerType.TEAM,
+        teamId,
+        ...(role === 'ADMIN' ? {} : { coachId }),
+      },
+      include: this.planInclude(),
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -74,22 +129,32 @@ export class DevelopmentPlansService {
   async createPlan(
     coachId: string,
     role: string,
-    data: { playerId: string; name: string; description?: string; startDate?: string; endDate?: string },
+    data: { playerId?: string; teamId?: string; name: string; description?: string; startDate?: string; endDate?: string },
   ) {
     this.requireCoachOrAdmin(role);
+    const hasPlayerOwner = Boolean(data.playerId);
+    const hasTeamOwner = Boolean(data.teamId);
+    if (hasPlayerOwner === hasTeamOwner) {
+      throw new ForbiddenException('A development plan must belong to exactly one player or one team');
+    }
+    if (data.playerId && role !== 'ADMIN') {
+      await this.assertCoachPlayerLink(coachId, data.playerId);
+    }
+    if (data.teamId && role !== 'ADMIN') {
+      await this.assertCoachOwnsTeam(coachId, data.teamId);
+    }
     return this.prisma.playerDevelopmentPlan.create({
       data: {
         coachId,
-        playerId: data.playerId,
+        ownerType: data.teamId ? OwnerType.TEAM : OwnerType.PLAYER,
+        playerId: data.playerId ?? null,
+        teamId: data.teamId ?? null,
         name: data.name,
         description: data.description,
         startDate: data.startDate ? new Date(data.startDate) : null,
         endDate: data.endDate ? new Date(data.endDate) : null,
       },
-      include: {
-        coach: { select: { id: true, firstName: true, lastName: true, email: true } },
-        blocks: true,
-      },
+      include: this.planInclude(),
     });
   }
 
@@ -100,7 +165,10 @@ export class DevelopmentPlansService {
     data: { name?: string; description?: string; startDate?: string | null; endDate?: string | null },
   ) {
     this.requireCoachOrAdmin(role);
-    const plan = await this.prisma.playerDevelopmentPlan.findUnique({ where: { id } });
+    const plan = await this.prisma.playerDevelopmentPlan.findUnique({
+      where: { id },
+      include: { team: { select: { coachId: true } } },
+    });
     if (!plan) throw new NotFoundException('Plan not found');
     if (role !== 'ADMIN' && plan.coachId !== coachId) throw new ForbiddenException('Not your plan');
     return this.prisma.playerDevelopmentPlan.update({

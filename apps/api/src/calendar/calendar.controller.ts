@@ -48,15 +48,40 @@ export class CalendarController {
   ) {
     const role = user.role as string;
     if (role === 'PLAYER') {
-      // Players create their own slots
       return this.calendarService.createSlot(user.id, body);
     }
-    if ((role === 'COACH' || role === 'ADMIN') && body.playerId) {
-      // Coaches/admins create slots on behalf of a player (e.g. team fan-out)
-      return this.calendarService.createSlot(body.playerId, body);
-    }
     throw new ForbiddenException(
-      'Only players can create practice slots, or coaches can create for a specified playerId',
+      'Only players can create personal practice slots',
+    );
+  }
+
+  @Get('team-slots/:teamId')
+  listTeamSlots(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('teamId') teamId: string,
+  ) {
+    return this.calendarService.listTeamSlots(user.id, user.role as string, teamId);
+  }
+
+  @Post('team-slots/:teamId')
+  @HttpCode(HttpStatus.CREATED)
+  createTeamSlot(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('teamId') teamId: string,
+    @Body()
+    body: {
+      title: string;
+      startTime: string;
+      endTime: string;
+      recurrence?: string;
+      recurrenceEndDate?: string;
+    },
+  ) {
+    return this.calendarService.createTeamSlot(
+      user.id,
+      user.role as string,
+      teamId,
+      body,
     );
   }
 
@@ -74,13 +99,13 @@ export class CalendarController {
       recurrenceEndDate?: string | null;
     },
   ) {
-    return this.calendarService.updateSlot(user.id, id, body);
+    return this.calendarService.updateSlot(user.id, user.role as string, id, body);
   }
 
   @Delete('slots/:id')
   @HttpCode(HttpStatus.OK)
   deleteSlot(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
-    return this.calendarService.deleteSlot(user.id, id);
+    return this.calendarService.deleteSlot(user.id, user.role as string, id);
   }
 
   // ─── Slot Tasks ───────────────────────────────────────────────────────────
@@ -90,7 +115,7 @@ export class CalendarController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('slotId') slotId: string,
   ) {
-    return this.calendarService.listSlotTasks(user.id, slotId);
+    return this.calendarService.listSlotTasks(user.id, user.role as string, slotId);
   }
 
   @Post('slots/:slotId/tasks')
@@ -112,7 +137,7 @@ export class CalendarController {
     if (role !== 'COACH' && role !== 'ADMIN') {
       throw new ForbiddenException('Only coaches can assign tasks');
     }
-    return this.calendarService.assignTask(user.id, slotId, body);
+    return this.calendarService.assignTask(user.id, role, slotId, body);
   }
 
   // ─── Calendar Tasks ───────────────────────────────────────────────────────

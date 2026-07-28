@@ -19,6 +19,10 @@ type CalendarTask = {
 
 type SlotData = {
   id: string;
+  ownerType: "PLAYER" | "TEAM";
+  playerId?: string | null;
+  teamId?: string | null;
+  team?: { id: string; shortName: string; icon?: string | null } | null;
   title: string;
   recurrence: string;
   recurrenceEndDate: string | null;
@@ -141,6 +145,7 @@ function WindowCard({
   const firstOcc = slot.occurrences[0];
   const totalMin = firstOcc ? getDurationMin(firstOcc) : 0;
   const assignedMin = slot.tasks.reduce((sum, t) => sum + t.durationMinutes, 0);
+  const isTeamSlot = slot.ownerType === "TEAM";
 
   return (
     <div
@@ -156,18 +161,28 @@ function WindowCard({
           <span className="text-2xl">{icon}</span>
           <div>
             <h3 className="font-semibold text-gray-800 text-sm leading-tight">{slot.title}</h3>
-            <p className="text-xs text-gray-500">{formatRecurrence(slot.recurrence)}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-xs text-gray-500">{formatRecurrence(slot.recurrence)}</p>
+              <span className={cn(
+                "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                isTeamSlot ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"
+              )}>
+                {isTeamSlot ? `👥 Team${slot.team?.shortName ? ` · ${slot.team.shortName}` : ""}` : "👤 Personal"}
+              </span>
+            </div>
           </div>
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(slot.id);
-          }}
-          className="rounded-lg p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
-        >
-          <Trash2 size={14} />
-        </button>
+        {!isTeamSlot && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(slot.id);
+            }}
+            className="rounded-lg p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
       </div>
 
       {/* Time */}
@@ -197,7 +212,7 @@ function WindowCard({
 
       {/* Edit hint */}
       <div className="flex items-center justify-end gap-1 text-xs text-gray-400">
-        <span>Tap to edit</span>
+        <span>{isTeamSlot ? "Managed by coach" : "Tap to edit"}</span>
         <ChevronRight size={12} />
       </div>
     </div>
@@ -337,6 +352,7 @@ export default function TrainingWindowsView({ userId }: Props) {
   };
 
   const openEdit = (slot: SlotData) => {
+    if (slot.ownerType === "TEAM") return;
     setEditSlot(slot);
     setDialogOpen(true);
   };

@@ -37,15 +37,15 @@ export const api = {
   getPlayerCalendar: (playerId: string) =>
     fetch(`/api/calendar/player/${playerId}`, { cache: "no-store" }).then((r) => r.json()),
 
-  // Calendar – team training windows (fan-out to all members)
+  // Calendar – team training windows
   getTeamTrainingWindows: (teamId: string) =>
     fetch(`/api/calendar/team-slots/${teamId}`, { cache: "no-store" }).then((r) => r.json()),
   createTeamPracticeSlot: (teamId: string, payload: object) =>
     fetch(`/api/calendar/team-slots/${teamId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
-  updateTeamPracticeSlot: (teamId: string, payload: object) =>
-    fetch(`/api/calendar/team-slots/${teamId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
-  deleteTeamPracticeSlot: (teamId: string, memberSlotIds: string[]) =>
-    fetch(`/api/calendar/team-slots/${teamId}`, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ memberSlotIds }) }).then((r) => r.json()),
+  updateTeamPracticeSlot: (slotId: string, payload: object) =>
+    fetch(`/api/calendar/slots/${slotId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
+  deleteTeamPracticeSlot: (slotId: string) =>
+    fetch(`/api/calendar/slots/${slotId}`, { method: "DELETE" }).then((r) => r.json()),
 
   // Lessons
   listLessons: (params?: { status?: string; focusArea?: string; subCapability?: string; subSubCapability?: string; visibility?: string }) => {

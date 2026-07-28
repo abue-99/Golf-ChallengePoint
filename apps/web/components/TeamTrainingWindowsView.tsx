@@ -19,13 +19,14 @@ type CalendarTask = {
 
 type TeamSlotData = {
   id: string;
+  ownerType: "PLAYER" | "TEAM";
+  teamId?: string | null;
+  team?: { id: string; shortName: string; icon?: string | null } | null;
   title: string;
   recurrence: string;
   recurrenceEndDate: string | null;
   occurrences: { start: string; end: string }[];
   tasks: CalendarTask[];
-  /** IDs of the individual per-member slots that correspond to this team window */
-  memberSlotIds: string[];
 };
 
 type Props = {
@@ -113,8 +114,6 @@ function WindowCard({
   const icon = slotToIcon(slot.title);
   const firstOcc = slot.occurrences[0];
   const totalMin = firstOcc ? getDurationMin(firstOcc) : 0;
-  const memberCount = slot.memberSlotIds.length;
-
   return (
     <div
       className={cn(
@@ -159,7 +158,7 @@ function WindowCard({
       {/* Member coverage badge */}
       <div className="flex items-center gap-1.5 text-xs text-blue-600">
         <Users size={12} />
-        <span>{memberCount} member{memberCount !== 1 ? "s" : ""} assigned</span>
+        <span>Team training window</span>
       </div>
 
       {/* Edit button */}
@@ -190,7 +189,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
       <div>
         <h3 className="font-semibold text-gray-700 text-base">No team training windows yet</h3>
         <p className="text-sm text-gray-500 mt-1 max-w-xs">
-          Create a training window for this team — it will automatically be added to every member&apos;s personal calendar.
+          Create a training window for this team. Active members will see it automatically.
         </p>
       </div>
       <Button
@@ -234,28 +233,27 @@ export default function TeamTrainingWindowsView({ teamId, teamName }: Props) {
       recurrence: data.recurrence,
       recurrenceEndDate: data.recurrenceEndDate,
     });
-    toast.success(`Training window created for all ${teamName} members!`);
+    toast.success(`Training window created for ${teamName}.`);
     await load();
   };
 
   const handleEdit = async (data: TrainingWindowFormData) => {
     if (!activeSlot) return;
-    await api.updateTeamPracticeSlot(teamId, {
-      memberSlotIds: activeSlot.memberSlotIds,
+    await api.updateTeamPracticeSlot(activeSlot.id, {
       title: data.title,
       startTime: data.startTime,
       endTime: data.endTime,
       recurrence: data.recurrence,
       recurrenceEndDate: data.recurrenceEndDate ?? null,
     });
-    toast.success("Team training window updated for all members!");
+    toast.success("Team training window updated.");
     await load();
   };
 
   const handleDelete = async (slot: TeamSlotData) => {
     if (!confirm(`Delete training window "${slot.title}" for all team members?`)) return;
-    await api.deleteTeamPracticeSlot(teamId, slot.memberSlotIds);
-    toast.success("Training window removed from all members");
+    await api.deleteTeamPracticeSlot(slot.id);
+    toast.success("Training window removed");
     await load();
   };
 

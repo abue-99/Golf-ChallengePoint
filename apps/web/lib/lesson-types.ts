@@ -187,9 +187,12 @@ export interface PlayerDevelopmentPlan {
   name: string;
   description?: string | null;
   coachId: string;
+  ownerType: "PLAYER" | "TEAM";
   playerId?: string | null;
   teamId?: string | null;
   coach?: { id: string; firstName?: string | null; lastName?: string | null; email: string } | null;
+  player?: { id: string; firstName?: string | null; lastName?: string | null; email: string } | null;
+  team?: { id: string; shortName: string; icon?: string | null } | null;
   startDate?: string | null;
   endDate?: string | null;
   blocks: TrainingBlock[];
