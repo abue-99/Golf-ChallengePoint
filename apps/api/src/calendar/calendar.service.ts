@@ -144,12 +144,29 @@ export class CalendarService {
     });
   }
 
+  private expandSlot(slot: any) {
+    const limit = new Date();
+    limit.setFullYear(limit.getFullYear() + 1);
+    return {
+      id: slot.id,
+      ownerType: slot.ownerType,
+      playerId: slot.playerId,
+      teamId: slot.teamId,
+      team: slot.team,
+      title: slot.title,
+      recurrence: slot.recurrence,
+      recurrenceEndDate: slot.recurrenceEndDate,
+      occurrences: expandSlotOccurrences(slot, limit),
+      tasks: slot.tasks,
+    };
+  }
+
   async listTeamSlots(userId: string, role: string, teamId: string) {
     this.requireCoachOrAdmin(role);
     if (role !== 'ADMIN') {
       await this.assertCoachOwnsTeam(userId, teamId);
     }
-    return this.prisma.practiceSlot.findMany({
+    const slots = await this.prisma.practiceSlot.findMany({
       where: { ownerType: OwnerType.TEAM, teamId },
       include: {
         tasks: true,
@@ -157,6 +174,7 @@ export class CalendarService {
       },
       orderBy: { startTime: 'asc' },
     });
+    return slots.map((slot) => this.expandSlot(slot));
   }
 
   async createTeamSlot(
@@ -175,7 +193,7 @@ export class CalendarService {
     if (role !== 'ADMIN') {
       await this.assertCoachOwnsTeam(userId, teamId);
     }
-    return this.prisma.practiceSlot.create({
+    const slot = await this.prisma.practiceSlot.create({
       data: {
         ownerType: OwnerType.TEAM,
         playerId: null,
@@ -193,6 +211,7 @@ export class CalendarService {
         team: { select: { id: true, shortName: true, icon: true } },
       },
     });
+    return this.expandSlot(slot);
   }
 
   async updateSlot(
