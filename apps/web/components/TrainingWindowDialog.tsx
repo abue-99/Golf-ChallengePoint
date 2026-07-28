@@ -163,10 +163,12 @@ export default function TrainingWindowDialog({
   }
 
   // ── Duration calculation ──
-  const startMin =
-    parseInt(startTimeLocal.split(":")[0]) * 60 + parseInt(startTimeLocal.split(":")[1]);
-  const endMin =
-    parseInt(endTimeLocal.split(":")[0]) * 60 + parseInt(endTimeLocal.split(":")[1]);
+  function timeToMinutes(t: string): number {
+    const [h, m] = t.split(":").map((v) => parseInt(v, 10));
+    return (h || 0) * 60 + (m || 0);
+  }
+  const startMin = timeToMinutes(startTimeLocal);
+  const endMin = timeToMinutes(endTimeLocal);
   const durationMin = endMin > startMin ? endMin - startMin : 0;
   const durationHours = Math.floor(durationMin / 60);
   const durationRemMin = durationMin % 60;

@@ -6,6 +6,8 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Clock, Target, CheckCircle2, GripVertical } from "lucide-react";
 
+const DEFAULT_LESSON_DURATION = 30; // minutes, fallback when lesson has no duration
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type Lesson = {
@@ -338,7 +340,7 @@ export default function CoachPlanningBoard({ playerId }: Props) {
       await api.assignTask(windowId, {
         title: lesson.name,
         description: lesson.description ?? "",
-        durationMinutes: lesson.durationMinutes ?? 30,
+        durationMinutes: lesson.durationMinutes ?? DEFAULT_LESSON_DURATION,
         scheduledDate,
       });
 

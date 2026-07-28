@@ -54,7 +54,7 @@ export default async function CoachPlayerCalendarPage({
         <div className="flex-1">
           <p className="font-semibold">Open Planning Board</p>
           <p className="text-xs text-blue-700">
-            Drag &amp; drop lessons onto training windows to build this player's training plan.
+            Drag & drop lessons onto training windows to build this player's training plan.
           </p>
         </div>
         <span className="text-blue-600 font-medium text-xs">Open →</span>

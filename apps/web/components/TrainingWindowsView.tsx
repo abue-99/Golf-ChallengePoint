@@ -60,6 +60,15 @@ function slotToIcon(title: string): string {
   return "☀️";
 }
 
+const COLOR_KEYS = Object.keys(COLOR_MAP);
+
+/** Deterministic color derived from the slot id to distinguish windows visually */
+function slotToColor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  return COLOR_KEYS[Math.abs(hash) % COLOR_KEYS.length];
+}
+
 function formatRecurrence(rec: string): string {
   if (rec === "NONE") return "One-time";
   if (rec === "WEEKLY") return "Every week";
@@ -128,7 +137,7 @@ function WindowCard({
   onDelete: (slotId: string) => void;
 }) {
   const icon = slotToIcon(slot.title);
-  const colorKey = "green"; // TODO: persist color choice from dialog
+  const colorKey = slotToColor(slot.id);
   const firstOcc = slot.occurrences[0];
   const totalMin = firstOcc ? getDurationMin(firstOcc) : 0;
   const assignedMin = slot.tasks.reduce((sum, t) => sum + t.durationMinutes, 0);
