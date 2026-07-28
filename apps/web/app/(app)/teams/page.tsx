@@ -206,6 +206,19 @@ export default function TeamsPage() {
     return form.categoryInput.trim() || form.category;
   }
 
+  /** Reload badge counts for a single team (called after dialog close or member change). */
+  function refreshTeamBadgeCounts(teamId: string) {
+    Promise.allSettled([
+      fetch(`/api/calendar/team-slots/${teamId}`, { cache: "no-store" }).then((r) => r.ok ? r.json() : []),
+      fetch(`/api/development-plans/team/${teamId}`, { cache: "no-store" }).then((r) => r.ok ? r.json() : []),
+    ]).then(([windowsResult, plansResult]) => {
+      const windowCount = windowsResult.status === "fulfilled" && Array.isArray(windowsResult.value) ? windowsResult.value.length : 0;
+      const planCount = plansResult.status === "fulfilled" && Array.isArray(plansResult.value) ? plansResult.value.length : 0;
+      setTeamWindowCounts((prev) => ({ ...prev, [teamId]: windowCount }));
+      setTeamPlanCounts((prev) => ({ ...prev, [teamId]: planCount }));
+    });
+  }
+
   function validateForm(): boolean {
     if (!form.shortName.trim()) { setFormError("Short name is required."); return false; }
     if (form.shortName.trim().length > 20) { setFormError("Short name must be ≤ 20 characters."); return false; }
@@ -277,12 +290,13 @@ export default function TeamsPage() {
       const updated = await res.json();
       setTeams((prev) => prev.map((t) => (t.id === teamId ? updated : t)));
       setEditingTeam((prev) => (prev?.id === teamId ? updated : prev));
+      refreshTeamBadgeCounts(teamId);
     }
     setAddMemberTeamId(null);
   }
 
   async function handleRemoveMember(teamId: string, userId: string) {
-    if (!window.confirm("Remove this member from the team?")) return;
+    if (!window.confirm("Remove this member from the team? Their team-assigned training windows and development plans will also be removed.")) return;
     const res = await fetch(`/api/teams/${teamId}/members/${userId}`, {
       method: "DELETE",
     });
@@ -290,6 +304,7 @@ export default function TeamsPage() {
       const updated = await res.json();
       setTeams((prev) => prev.map((t) => (t.id === teamId ? updated : t)));
       setEditingTeam((prev) => (prev?.id === teamId ? updated : prev));
+      refreshTeamBadgeCounts(teamId);
     }
   }
 
@@ -579,26 +594,44 @@ export default function TeamsPage() {
 
                 const actionsContent = (
                   <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-gray-500 hover:text-emerald-600"
-                      onClick={(e) => { e.stopPropagation(); setJourneyTeam(team); }}
-                      aria-label="Team Journey"
-                      title="Journey"
-                    >
-                      <RouteIcon size={16} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-gray-500 hover:text-blue-600"
-                      onClick={(e) => { e.stopPropagation(); setTrainingWindowsTeam(team); }}
-                      aria-label="Team Training Windows"
-                      title="Training Windows"
-                    >
-                      <CalendarDays size={16} />
-                    </Button>
+                    {/* Dev Plans button with badge */}
+                    <div className="relative">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={teamPlanCounts[team.id] ? "text-emerald-600 hover:text-emerald-700" : "text-gray-500 hover:text-emerald-600"}
+                        onClick={(e) => { e.stopPropagation(); setJourneyTeam(team); }}
+                        aria-label="Team Development Plans"
+                        title="Development Plans"
+                      >
+                        <RouteIcon size={16} />
+                      </Button>
+                      {(teamPlanCounts[team.id] ?? 0) > 0 && (
+                        <span className="pointer-events-none absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[9px] font-bold text-white">
+                          {teamPlanCounts[team.id]}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Training Windows button with badge */}
+                    <div className="relative">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={teamWindowCounts[team.id] ? "text-blue-600 hover:text-blue-700" : "text-gray-500 hover:text-blue-600"}
+                        onClick={(e) => { e.stopPropagation(); setTrainingWindowsTeam(team); }}
+                        aria-label="Team Training Windows"
+                        title="Training Windows"
+                      >
+                        <CalendarDays size={16} />
+                      </Button>
+                      {(teamWindowCounts[team.id] ?? 0) > 0 && (
+                        <span className="pointer-events-none absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[9px] font-bold text-white">
+                          {teamWindowCounts[team.id]}
+                        </span>
+                      )}
+                    </div>
+
                     <Button
                       variant="ghost"
                       size="icon"
@@ -708,7 +741,7 @@ export default function TeamsPage() {
       {journeyTeam && (
         <TeamJourneyDialog
           team={journeyTeam}
-          onClose={() => setJourneyTeam(null)}
+          onClose={() => { const id = journeyTeam.id; setJourneyTeam(null); refreshTeamBadgeCounts(id); }}
         />
       )}
 
@@ -716,7 +749,7 @@ export default function TeamsPage() {
       {trainingWindowsTeam && (
         <TeamTrainingWindowsDialog
           team={trainingWindowsTeam}
-          onClose={() => setTrainingWindowsTeam(null)}
+          onClose={() => { const id = trainingWindowsTeam.id; setTrainingWindowsTeam(null); refreshTeamBadgeCounts(id); }}
         />
       )}
 
