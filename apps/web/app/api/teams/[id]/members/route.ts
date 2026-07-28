@@ -40,10 +40,10 @@ export async function POST(
   const body = await req.json();
   const newUserId: string = body.userId;
 
-  // ── 1. Add the member ────────────────────────────────────────────────────────
+  // 1. Add the member
   const addRes = await fetch(`${API_URL}/teams/${teamId}/members`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `******,
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
   });
   const addData = await addRes.json().catch(() => ({}));
@@ -51,28 +51,26 @@ export async function POST(
     return NextResponse.json(addData, { status: addRes.status });
   }
 
-  // ── 2. Identify existing team members (excluding the just-added one) ─────────
-  const updatedTeam = addData; // backend returns the updated team
+  // 2. Identify existing team members (excluding the just-added one)
+  const updatedTeam = addData;
   const allMembers: { userId: string }[] = updatedTeam?.members ?? [];
   const existingMembers = allMembers.filter((m) => m.userId !== newUserId);
 
   if (existingMembers.length === 0) {
-    // First member – nothing to fan out
     return NextResponse.json(addData, { status: addRes.status });
   }
 
   try {
-    // ── 3. Fan-out team training windows ──────────────────────────────────────
+    // 3. Fan-out team training windows
     const calResults = await Promise.all(
       existingMembers.map((m) =>
         fetch(`${API_URL}/calendar/player/${m.userId}`, {
-          headers: { Authorization: `******,
+          headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         }).then((r) => (r.ok ? r.json().catch(() => ({ slots: [] })) : { slots: [] }))
       )
     );
 
-    // Identify team slots: those present in ALL existing members (same title+startTime)
     const slotKeyCounts = new Map<string, { slot: RawSlot; count: number }>();
     calResults.forEach((cal) => {
       const seen = new Set<string>();
@@ -94,14 +92,13 @@ export async function POST(
       ({ count }) => count >= existingMembers.length
     );
 
-    // Create each team slot for the new member
     await Promise.allSettled(
       teamSlots.map(({ slot }) => {
         const firstOcc = slot.occurrences?.[0];
         if (!firstOcc) return Promise.resolve();
         return fetch(`${API_URL}/calendar/slots`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `******,
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({
             playerId: newUserId,
             title: slot.title,
@@ -114,17 +111,16 @@ export async function POST(
       })
     );
 
-    // ── 4. Fan-out team development plans ────────────────────────────────────
+    // 4. Fan-out team development plans
     const planResults = await Promise.all(
       existingMembers.map((m) =>
         fetch(`${API_URL}/development-plans/player/${m.userId}`, {
-          headers: { Authorization: `******,
+          headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         }).then((r) => (r.ok ? r.json().catch(() => []) : []))
       )
     );
 
-    // Identify team plans: those present in ALL existing members (same name)
     const planNameCounts = new Map<string, { plan: RawPlan; count: number }>();
     planResults.forEach((plans) => {
       const seen = new Set<string>();
@@ -145,12 +141,11 @@ export async function POST(
       ({ count }) => count >= existingMembers.length
     );
 
-    // Create each team plan for the new member
     await Promise.allSettled(
       teamPlans.map(({ plan }) =>
         fetch(`${API_URL}/development-plans`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `******,
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({
             playerId: newUserId,
             name: plan.name,
@@ -162,7 +157,6 @@ export async function POST(
       )
     );
   } catch (err) {
-    // Fan-out failures are non-fatal – the member was already added successfully.
     console.error("[/api/teams/[id]/members POST] fan-out error:", err);
   }
 

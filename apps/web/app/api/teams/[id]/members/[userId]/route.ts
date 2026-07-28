@@ -19,10 +19,6 @@ type RawPlan = {
   name: string;
 };
 
-/**
- * Returns the set of slot keys ("title__firstOccStart") that appear in every
- * calendar in `otherCals` – these are considered team-assigned slots.
- */
 function buildTeamSlotKeys(
   otherCals: { slots?: RawSlot[] }[],
   otherCount: number
@@ -45,10 +41,6 @@ function buildTeamSlotKeys(
   );
 }
 
-/**
- * Returns the set of plan names that appear for every member in `otherPlans` –
- * these are considered team-assigned development plans.
- */
 function buildTeamPlanNames(
   otherPlans: RawPlan[][],
   otherCount: number
@@ -75,7 +67,7 @@ function buildTeamPlanNames(
  *
  * Before removing the player it:
  *  1. Identifies the departing player's calendar slots that are team-assigned
- *     (identical slot exists in EVERY remaining member's calendar) and deletes them.
+ *     and deletes them.
  *  2. Does the same for development plans.
  *  3. Finally removes the player from the team.
  */
@@ -88,26 +80,23 @@ export async function DELETE(
   const { id: teamId, userId } = await params;
 
   try {
-    // ── 1. Snapshot current team membership ───────────────────────────────────
     const teamRes = await fetch(`${API_URL}/teams/${teamId}`, {
-      headers: { Authorization: `******,
+      headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
     const team = teamRes.ok ? await teamRes.json().catch(() => null) : null;
     const allMembers: { userId: string }[] = team?.members ?? [];
     const otherMembers = allMembers.filter((m) => m.userId !== userId);
 
-    // Only clean up when there are other members whose calendars we can compare against.
     if (otherMembers.length > 0) {
-      // ── 2. Calendar-slot cleanup ─────────────────────────────────────────────
       const calResults = await Promise.all([
         fetch(`${API_URL}/calendar/player/${userId}`, {
-          headers: { Authorization: `******,
+          headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         }).then((r) => (r.ok ? r.json().catch(() => ({ slots: [] })) : { slots: [] })),
         ...otherMembers.map((m) =>
           fetch(`${API_URL}/calendar/player/${m.userId}`, {
-            headers: { Authorization: `******,
+            headers: { Authorization: `Bearer ${token}` },
             cache: "no-store",
           }).then((r) => (r.ok ? r.json().catch(() => ({ slots: [] })) : { slots: [] }))
         ),
@@ -125,20 +114,19 @@ export async function DELETE(
         slotIdsToDelete.map((slotId) =>
           fetch(`${API_URL}/calendar/slots/${slotId}`, {
             method: "DELETE",
-            headers: { Authorization: `******,
+            headers: { Authorization: `Bearer ${token}` },
           })
         )
       );
 
-      // ── 3. Development-plan cleanup ───────────────────────────────────────────
       const planResults = await Promise.all([
         fetch(`${API_URL}/development-plans/player/${userId}`, {
-          headers: { Authorization: `******,
+          headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         }).then((r) => (r.ok ? r.json().catch(() => []) : [])),
         ...otherMembers.map((m) =>
           fetch(`${API_URL}/development-plans/player/${m.userId}`, {
-            headers: { Authorization: `******,
+            headers: { Authorization: `Bearer ${token}` },
             cache: "no-store",
           }).then((r) => (r.ok ? r.json().catch(() => []) : []))
         ),
@@ -159,16 +147,15 @@ export async function DELETE(
         planIdsToDelete.map((planId) =>
           fetch(`${API_URL}/development-plans/${planId}`, {
             method: "DELETE",
-            headers: { Authorization: `******,
+            headers: { Authorization: `Bearer ${token}` },
           })
         )
       );
     }
 
-    // ── 4. Remove the player from the team ────────────────────────────────────
     const res = await fetch(`${API_URL}/teams/${teamId}/members/${userId}`, {
       method: "DELETE",
-      headers: { Authorization: `******,
+      headers: { Authorization: `Bearer ${token}` },
     });
     const data = await res.json().catch(() => ({}));
     return NextResponse.json(data, { status: res.status });
