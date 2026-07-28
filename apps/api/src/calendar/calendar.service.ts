@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { OwnerType } from '@challengepoint/db';
 
 export interface SlotOccurrence {
   start: Date;
@@ -105,9 +106,9 @@ export class CalendarService {
     return this.prisma.practiceSlot.findMany({
       where: {
         OR: [
-          { ownerType: 'PLAYER', playerId: targetId },
+          { ownerType: OwnerType.PLAYER, playerId: targetId },
           ...(activeTeamIds.length > 0
-            ? [{ ownerType: 'TEAM', teamId: { in: activeTeamIds } }]
+            ? [{ ownerType: OwnerType.TEAM, teamId: { in: activeTeamIds } }]
             : []),
         ],
       },
@@ -128,7 +129,7 @@ export class CalendarService {
   ) {
     return this.prisma.practiceSlot.create({
       data: {
-        ownerType: 'PLAYER',
+        ownerType: OwnerType.PLAYER,
         playerId: userId,
         teamId: null,
         title: data.title,
@@ -149,7 +150,7 @@ export class CalendarService {
       await this.assertCoachOwnsTeam(userId, teamId);
     }
     return this.prisma.practiceSlot.findMany({
-      where: { ownerType: 'TEAM', teamId },
+      where: { ownerType: OwnerType.TEAM, teamId },
       include: {
         tasks: true,
         team: { select: { id: true, shortName: true, icon: true } },
@@ -176,7 +177,7 @@ export class CalendarService {
     }
     return this.prisma.practiceSlot.create({
       data: {
-        ownerType: 'TEAM',
+        ownerType: OwnerType.TEAM,
         playerId: null,
         teamId,
         title: data.title,
@@ -211,7 +212,7 @@ export class CalendarService {
       include: { team: true },
     });
     if (!slot) throw new NotFoundException('Practice slot not found');
-    if (slot.ownerType === 'TEAM') {
+    if (slot.ownerType === OwnerType.TEAM) {
       this.requireCoachOrAdmin(role);
       if (role !== 'ADMIN' && slot.teamId) {
         await this.assertCoachOwnsTeam(userId, slot.teamId);
@@ -251,7 +252,7 @@ export class CalendarService {
       include: { team: true },
     });
     if (!slot) throw new NotFoundException('Practice slot not found');
-    if (slot.ownerType === 'TEAM') {
+    if (slot.ownerType === OwnerType.TEAM) {
       this.requireCoachOrAdmin(role);
       if (role !== 'ADMIN' && slot.teamId) {
         await this.assertCoachOwnsTeam(userId, slot.teamId);
@@ -273,7 +274,7 @@ export class CalendarService {
     });
     if (!slot) throw new NotFoundException('Practice slot not found');
 
-    if (slot.ownerType === 'TEAM') {
+    if (slot.ownerType === OwnerType.TEAM) {
       const membership = slot.teamId
         ? await this.prisma.teamMember.findFirst({
             where: { teamId: slot.teamId, userId },
@@ -286,6 +287,9 @@ export class CalendarService {
         }
       }
     } else if (slot.playerId !== userId) {
+      if (!slot.playerId) {
+        throw new NotFoundException('Practice slot player not found');
+      }
       await this.assertCoachPlayerLink(userId, slot.playerId);
     }
 
@@ -314,7 +318,7 @@ export class CalendarService {
     });
     if (!slot) throw new NotFoundException('Practice slot not found');
 
-    if (slot.ownerType === 'TEAM') {
+    if (slot.ownerType === OwnerType.TEAM) {
       if (role !== 'ADMIN' && slot.teamId) {
         await this.assertCoachOwnsTeam(coachId, slot.teamId);
       }
@@ -457,9 +461,9 @@ export class CalendarService {
     const slots = await this.prisma.practiceSlot.findMany({
       where: {
         OR: [
-          { ownerType: 'PLAYER', playerId },
+          { ownerType: OwnerType.PLAYER, playerId },
           ...(activeTeamIds.length > 0
-            ? [{ ownerType: 'TEAM', teamId: { in: activeTeamIds } }]
+            ? [{ ownerType: OwnerType.TEAM, teamId: { in: activeTeamIds } }]
             : []),
         ],
       },
@@ -474,7 +478,7 @@ export class CalendarService {
     const limit = new Date();
     limit.setFullYear(limit.getFullYear() + 1);
 
-    const expandedSlots = slots.map((slot) => ({
+    const expandedSlots = slots.map((slot: any) => ({
       id: slot.id,
       ownerType: slot.ownerType,
       playerId: slot.playerId,

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { OwnerType } from '@challengepoint/db';
 
 @Injectable()
 export class DevelopmentPlansService {
@@ -73,9 +74,9 @@ export class DevelopmentPlansService {
       where: {
         ...(role === 'ADMIN' ? {} : { coachId }),
         OR: [
-          { ownerType: 'PLAYER', playerId },
+          { ownerType: OwnerType.PLAYER, playerId },
           ...(activeTeamIds.length > 0
-            ? [{ ownerType: 'TEAM', teamId: { in: activeTeamIds } }]
+            ? [{ ownerType: OwnerType.TEAM, teamId: { in: activeTeamIds } }]
             : []),
         ],
       },
@@ -89,9 +90,9 @@ export class DevelopmentPlansService {
     return this.prisma.playerDevelopmentPlan.findMany({
       where: {
         OR: [
-          { ownerType: 'PLAYER', playerId },
+          { ownerType: OwnerType.PLAYER, playerId },
           ...(activeTeamIds.length > 0
-            ? [{ ownerType: 'TEAM', teamId: { in: activeTeamIds } }]
+            ? [{ ownerType: OwnerType.TEAM, teamId: { in: activeTeamIds } }]
             : []),
         ],
       },
@@ -116,7 +117,7 @@ export class DevelopmentPlansService {
     }
     return this.prisma.playerDevelopmentPlan.findMany({
       where: {
-        ownerType: 'TEAM',
+        ownerType: OwnerType.TEAM,
         teamId,
         ...(role === 'ADMIN' ? {} : { coachId }),
       },
@@ -145,7 +146,7 @@ export class DevelopmentPlansService {
     return this.prisma.playerDevelopmentPlan.create({
       data: {
         coachId,
-        ownerType: data.teamId ? 'TEAM' : 'PLAYER',
+        ownerType: data.teamId ? OwnerType.TEAM : OwnerType.PLAYER,
         playerId: data.playerId ?? null,
         teamId: data.teamId ?? null,
         name: data.name,
