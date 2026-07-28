@@ -56,6 +56,8 @@ export function DevelopmentPlanManager({ playerId, teamId }: Props) {
   const [plans, setPlans] = useState<PlayerDevelopmentPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewPlan, setShowNewPlan] = useState(false);
+  // planName → teamShortName for plans that came via a team (coach view only)
+  const [teamSources, setTeamSources] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     try {
@@ -64,6 +66,11 @@ export function DevelopmentPlanManager({ playerId, teamId }: Props) {
         data = await api.listPlansForTeam(teamId);
       } else if (playerId) {
         data = await api.listPlansForPlayer(playerId);
+        // Also fetch team-source enrichment (returns {} for non-coaches)
+        fetch(`/api/development-plans/team-sources/${playerId}`)
+          .then((r) => (r.ok ? r.json() : {}))
+          .then((sources: Record<string, string>) => setTeamSources(sources))
+          .catch(() => {});
       } else {
         data = [];
       }
@@ -119,6 +126,7 @@ export function DevelopmentPlanManager({ playerId, teamId }: Props) {
               plan={plan}
               playerId={playerId}
               teamId={teamId}
+              teamSource={teamSources[plan.name]}
               onDeleted={() => setPlans((prev) => prev.filter((p) => p.id !== plan.id))}
               onUpdated={(updated) => setPlans((prev) => prev.map((p) => p.id === updated.id ? updated : p))}
             />
@@ -331,12 +339,15 @@ function PlanCard({
   plan,
   playerId,
   teamId,
+  teamSource,
   onDeleted,
   onUpdated,
 }: {
   plan: PlayerDevelopmentPlan;
   playerId?: string;
   teamId?: string;
+  /** If set, this plan was assigned via a team (value = team shortName) */
+  teamSource?: string;
   onDeleted: () => void;
   onUpdated: (plan: PlayerDevelopmentPlan) => void;
 }) {
@@ -385,7 +396,18 @@ function PlanCard({
       >
         <div className="min-w-0 flex-1">
           <p className="font-extrabold text-lg text-slate-900 leading-tight truncate">{plan.name}</p>
-          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            {teamSource ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                🏆 {teamSource}
+              </span>
+            ) : (
+              playerId && !teamId && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
+                  👤 Individual
+                </span>
+              )
+            )}
             {totalAssignments > 0 && (
               <span className="text-xs font-semibold text-blue-600">{progress}% complete</span>
             )}

@@ -325,9 +325,12 @@ function BlockCard({
 
 function PlanCard({
   plan,
+  teamSource,
   onAssignmentUpdated,
 }: {
   plan: PlayerDevelopmentPlan;
+  /** Set if this plan was assigned through a team (value = team shortName) */
+  teamSource?: string;
   onAssignmentUpdated: (blockId: string, updated: LessonAssignment) => void;
 }) {
   const allAssignments = plan.blocks.flatMap((b) => b.assignments);
@@ -344,11 +347,18 @@ function PlanCard({
     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       {/* Plan header */}
       <div className="flex items-start justify-between px-5 py-4">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h2 className="text-lg font-extrabold text-slate-900 leading-tight">{plan.name}</h2>
-          {coachName && (
-            <p className="text-sm text-slate-500 mt-0.5">{coachName}</p>
-          )}
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            {teamSource && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                🏆 {teamSource}
+              </span>
+            )}
+            {coachName && (
+              <span className="text-sm text-slate-500">{coachName}</span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -446,6 +456,8 @@ export default function PlayerJourney() {
   const [plans, setPlans] = useState<PlayerDevelopmentPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [playerName, setPlayerName] = useState<string>("");
+  // planName → teamShortName (populated if the user is also a coach with team access)
+  const [teamSources, setTeamSources] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -460,8 +472,19 @@ export default function PlayerJourney() {
 
   const loadPlans = useCallback(async () => {
     try {
-      const data = await api.getMyPlans();
+      const [data, me] = await Promise.all([
+        api.getMyPlans(),
+        fetch("/api/auth/me").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      ]);
       setPlans(Array.isArray(data) ? data : []);
+      // Fetch team-source enrichment using the caller's own userId (works for coaches only;
+      // returns {} for plain players — no team indicator shown in that case)
+      if (me?.id) {
+        fetch(`/api/development-plans/team-sources/${me.id}`)
+          .then((r) => (r.ok ? r.json() : {}))
+          .then((sources: Record<string, string>) => setTeamSources(sources))
+          .catch(() => {});
+      }
     } finally {
       setLoading(false);
     }
@@ -519,6 +542,7 @@ export default function PlayerJourney() {
         <PlanCard
           key={plan.id}
           plan={plan}
+          teamSource={teamSources[plan.name]}
           onAssignmentUpdated={(blockId, updated) =>
             handleAssignmentUpdated(plan.id, blockId, updated)
           }
