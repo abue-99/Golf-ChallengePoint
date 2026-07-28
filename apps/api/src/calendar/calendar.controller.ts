@@ -43,13 +43,21 @@ export class CalendarController {
       endTime: string;
       recurrence?: string;
       recurrenceEndDate?: string;
+      playerId?: string;
     },
   ) {
     const role = user.role as string;
-    if (role !== 'PLAYER') {
-      throw new ForbiddenException('Only players can create practice slots');
+    if (role === 'PLAYER') {
+      // Players create their own slots
+      return this.calendarService.createSlot(user.id, body);
     }
-    return this.calendarService.createSlot(user.id, body);
+    if ((role === 'COACH' || role === 'ADMIN') && body.playerId) {
+      // Coaches/admins create slots on behalf of a player (e.g. team fan-out)
+      return this.calendarService.createSlot(body.playerId, body);
+    }
+    throw new ForbiddenException(
+      'Only players can create practice slots, or coaches can create for a specified playerId',
+    );
   }
 
   @Patch('slots/:id')
