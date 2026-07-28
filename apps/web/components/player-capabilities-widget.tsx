@@ -34,11 +34,11 @@ const iconByCapability: Record<CapabilityKey, LucideIcon> = {
 };
 
 const ratingTone: Record<CapabilityScore["rating"], string> = {
-  Developing: "text-orange-600",
-  Intermediate: "text-amber-600",
-  Advanced: "text-cyan-600",
-  Proficient: "text-violet-600",
-  Elite: "text-emerald-600",
+  Beginner: "text-slate-400",
+  Foundation: "text-orange-500",
+  Intermediate: "text-yellow-500",
+  Advanced: "text-green-500",
+  Elite: "text-[#166534]",
 };
 
 const FULL_CIRCLE_RADIANS = Math.PI * 2;
@@ -57,11 +57,11 @@ function clamp(value: number, min: number, max: number) {
 }
 
 function scoreQualityColor(score: number) {
-  if (score >= 90) return "#fbbf24";
-  if (score >= 75) return "#22c55e";
-  if (score >= 60) return "#3b82f6";
-  if (score >= 40) return "#f97316";
-  return "#ef4444";
+  if (score >= 95) return "#166534";
+  if (score >= 80) return "#22C55E";
+  if (score >= 65) return "#FACC15";
+  if (score >= 50) return "#FB923C";
+  return "#CBD5E1";
 }
 
 function syntheticHistoricalOffsetByIndex(index: number) {
@@ -266,7 +266,7 @@ function SkillRadar2Chart({
   return (
     <div className="mx-auto w-full max-w-[460px] aspect-square">
       <svg viewBox={`0 0 ${size} ${size}`} className="h-full w-full" role="img" aria-labelledby={`${titleId} ${descId}`}>
-        <title id={titleId}>Skill Radar 2.0</title>
+        <title id={titleId}>Skill Radar</title>
         <desc id={descId}>Overall score {overall}, level {level}, current goal Improve {weakestCapabilityLabel}.</desc>
         {[20, 40, 60, 80, 100].map((ring) => {
           const ringPoints = buildPolygonPoints({
@@ -456,10 +456,14 @@ function CapabilityDetailPanel({
   capability,
   trend,
   onClose,
+  journeyLabel,
+  journeyHref,
 }: {
   capability: CapabilityScore;
   trend: number;
   onClose: () => void;
+  journeyLabel?: string;
+  journeyHref?: string;
 }) {
   const lessons = LESSONS_BY_CAPABILITY[capability.key] ?? [];
 
@@ -510,10 +514,10 @@ function CapabilityDetailPanel({
       </div>
 
       <Link
-        href="/player"
+        href={journeyHref ?? "/player"}
         className="mt-3 inline-flex items-center text-xs font-semibold text-blue-600 hover:text-blue-500"
       >
-        View Journey
+        {journeyLabel ?? "View Journey"}
       </Link>
     </div>
   );
@@ -567,7 +571,7 @@ function SubCapabilityPanel({
               >
                 <span
                   className="block h-full rounded-full"
-                  style={{ width: `${sub.score}%`, background: capability.color }}
+                style={{ width: `${sub.score}%`, background: scoreQualityColor(sub.score) }}
                 />
               </span>
             </div>
@@ -582,7 +586,7 @@ function SubCapabilityPanel({
                     <span className="h-1 w-10 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-600">
                       <span
                         className="block h-full rounded-full"
-                        style={{ width: `${ss.score}%`, background: capability.color + SUB_SUB_CAPABILITY_ALPHA }}
+                        style={{ width: `${ss.score}%`, background: scoreQualityColor(ss.score) }}
                       />
                     </span>
                   </div>
@@ -596,16 +600,20 @@ function SubCapabilityPanel({
   );
 }
 
-// ─── Skill Radar 2.0 Card ──────────────────────────────────────────────────────
+// ─── Skill Radar Card ──────────────────────────────────────────────────────────
 
 export function PlayerCapabilitiesRadarCard({
   playerId,
-  title = "Skill Radar 2.0",
+  title = "Skill Radar",
   onCapabilityClick,
+  journeyLabel,
+  journeyHref,
 }: {
   playerId: string;
   title?: string;
   onCapabilityClick?: (key: CapabilityKey) => void;
+  journeyLabel?: string;
+  journeyHref?: string;
 }) {
   const profile = useMemo(() => getPlayerCapabilityProfile(playerId), [playerId]);
   const [selectedCapability, setSelectedCapability] = useState<CapabilityKey | null>(null);
@@ -736,6 +744,8 @@ export function PlayerCapabilitiesRadarCard({
             capability={selected}
             trend={selectedTrend}
             onClose={() => setSelectedCapability(null)}
+            journeyLabel={journeyLabel}
+            journeyHref={journeyHref}
           />
         )}
       </CardContent>
@@ -816,7 +826,7 @@ export function PlayerCapabilitiesWidget({
                       className="h-full rounded-full"
                       style={{
                         width: animate ? `${capability.score}%` : "0%",
-                        background: `linear-gradient(90deg, ${capability.color}, ${capability.color}CC)`,
+                        background: scoreQualityColor(capability.score),
                         transition: "width 700ms ease",
                       }}
                     />
@@ -864,7 +874,7 @@ export function PlayerCapabilitiesWidget({
       {showRadar && (
         <PlayerCapabilitiesRadarCard
           playerId={playerId}
-          title="Skill Radar 2.0"
+          title="Skill Radar"
           onCapabilityClick={toggleCapability}
         />
       )}

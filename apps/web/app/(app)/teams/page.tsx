@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Trash2, SquarePen, Plus, UserPlus, X, Search, ExternalLink } from "lucide-react";
+import { Trash2, SquarePen, Plus, UserPlus, X, Search, ExternalLink, Route as RouteIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PlayerCapabilitiesRadarCard } from "@/components/player-capabilities-widget";
+import { DevelopmentPlanManager } from "@/components/DevelopmentPlanManager";
 
 // Common icons represented as emoji for team assignment
 const TEAM_ICONS = [
@@ -152,6 +153,7 @@ export default function TeamsPage() {
   const [teamPlayersLoading, setTeamPlayersLoading] = useState(false);
 
   const [selectedMemberPlayer, setSelectedMemberPlayer] = useState<Player | null>(null);
+  const [journeyTeam, setJourneyTeam] = useState<Team | null>(null);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -560,6 +562,16 @@ export default function TeamsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="text-gray-500 hover:text-emerald-600"
+                      onClick={(e) => { e.stopPropagation(); setJourneyTeam(team); }}
+                      aria-label="Team Journey"
+                      title="Journey"
+                    >
+                      <RouteIcon size={16} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className="text-gray-500 hover:text-blue-600"
                       onClick={(e) => { e.stopPropagation(); setEditingTeam(team); }}
                       aria-label="Edit team"
@@ -659,6 +671,14 @@ export default function TeamsPage() {
         <PlayerDetailDialog
           player={selectedMemberPlayer}
           onClose={() => setSelectedMemberPlayer(null)}
+        />
+      )}
+
+      {/* Team Journey Dialog */}
+      {journeyTeam && (
+        <TeamJourneyDialog
+          team={journeyTeam}
+          onClose={() => setJourneyTeam(null)}
         />
       )}
 
@@ -1067,7 +1087,12 @@ function PlayerDetailDialog({
           </div>
 
           <div>
-            <PlayerCapabilitiesRadarCard playerId={player.id} title="Skill Radar 2.0" />
+            <PlayerCapabilitiesRadarCard
+              playerId={player.id}
+              title="Skill Radar"
+              journeyLabel="Goto Development Plan"
+              journeyHref={`/coach/players/${player.id}`}
+            />
           </div>
         </div>
       </DialogContent>
@@ -1494,5 +1519,31 @@ function PlayersSection({
         />
       )}
     </div>
+  );
+}
+
+// ── Team Journey Dialog ───────────────────────────────────────────────────────
+
+function TeamJourneyDialog({
+  team,
+  onClose,
+}: {
+  team: Team;
+  onClose: () => void;
+}) {
+  return (
+    <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {team.icon && <TeamIcon icon={team.icon} size={18} />}
+            Development Plan — {team.shortName}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="pt-2">
+          <DevelopmentPlanManager teamId={team.id} />
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

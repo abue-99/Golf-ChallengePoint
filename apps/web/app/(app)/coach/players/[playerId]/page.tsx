@@ -53,7 +53,7 @@ export default async function CoachPlayerDashboardPage({
           <PlayerCapabilitiesWidget playerId={playerId} showRadar={false} />
         </div>
         <div className="lg:col-span-1">
-          <PlayerCapabilitiesRadarCard playerId={playerId} title="Skill Radar 2.0" />
+          <PlayerCapabilitiesRadarCard playerId={playerId} title="Skill Radar" />
         </div>
         <div className="lg:col-span-2">
           <DevelopmentPlanManager playerId={playerId} />

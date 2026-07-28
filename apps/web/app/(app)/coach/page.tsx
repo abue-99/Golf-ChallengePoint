@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Circle, Filter, Search } from "lucide-react";
+import { Circle, Filter, Route, Search, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
+import type { PlayerDevelopmentPlan } from "@/lib/lesson-types";
 
 type Player = {
   id: string;
@@ -15,18 +17,28 @@ type Player = {
   avatarUrl?: string | null;
 };
 
+type PlanSummary = {
+  id: string;
+  name: string;
+  playerId?: string | null;
+  teamId?: string | null;
+  playerName?: string;
+  teamName?: string;
+  updatedAt: string;
+};
+
 export default function CoachHome() {
   const [players, setPlayers] = useState<Player[] | null>(null);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | Player["status"]>("all");
   const [loading, setLoading] = useState(true);
+  const [plans, setPlans] = useState<PlanSummary[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
 
-  // TODO: ersetze das durch deinen echten API‑Call
   useEffect(() => {
     let ignore = false;
     (async () => {
       try {
-        // Beispiel-Daten
         const data: Player[] = [
           { id: "p_1", name: "Alex Johnson", handicap: 2.4, status: "active" },
           { id: "p_2", name: "Sam Walker", handicap: 5.8, status: "rehab" },
@@ -41,6 +53,32 @@ export default function CoachHome() {
     return () => { ignore = true; };
   }, []);
 
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      try {
+        const data: PlayerDevelopmentPlan[] = await api.getMyPlans().catch(() => []);
+        if (!ignore && Array.isArray(data)) {
+          const summaries: PlanSummary[] = data.map((p) => ({
+            id: p.id,
+            name: p.name,
+            playerId: p.playerId,
+            teamId: (p as any).teamId ?? null,
+            playerName: (p as any).player
+              ? [((p as any).player.firstName ?? ""), ((p as any).player.lastName ?? "")].filter(Boolean).join(" ") || ((p as any).player.email ?? "")
+              : undefined,
+            teamName: (p as any).team?.shortName ?? undefined,
+            updatedAt: p.updatedAt,
+          }));
+          setPlans(summaries);
+        }
+      } finally {
+        if (!ignore) setPlansLoading(false);
+      }
+    })();
+    return () => { ignore = true; };
+  }, []);
+
   const filtered = useMemo(() => {
     if (!players) return [];
     return players.filter((p) => {
@@ -49,6 +87,9 @@ export default function CoachHome() {
       return matchesQ && matchesStatus;
     });
   }, [players, q, status]);
+
+  const playerPlans = plans.filter((p) => p.playerId && !p.teamId);
+  const teamPlans = plans.filter((p) => p.teamId);
 
   return (
     <div className="space-y-6">
@@ -64,6 +105,76 @@ export default function CoachHome() {
           </Button>
         </div>
       </header>
+
+      {/* Development Plans Overview */}
+      {(plansLoading || plans.length > 0) && (
+        <section>
+          <h2 className="mb-3 text-lg font-semibold text-slate-800">Active Development Plans</h2>
+          {plansLoading ? (
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="border border-gray-200 bg-white">
+                  <CardContent className="p-4">
+                    <div className="h-4 w-32 animate-pulse rounded bg-slate-200 mb-2" />
+                    <div className="h-3 w-20 animate-pulse rounded bg-slate-200" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {playerPlans.length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Players</p>
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                    {playerPlans.map((plan) => (
+                      <Link key={plan.id} href={`/coach/players/${plan.playerId}`}>
+                        <Card className="border border-gray-200 bg-white hover:border-emerald-300 hover:shadow-sm transition-all cursor-pointer">
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50">
+                                <Route className="h-4 w-4 text-emerald-600" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-slate-800">{plan.playerName ?? plan.playerId}</p>
+                                <p className="truncate text-xs text-slate-500">{plan.name}</p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {teamPlans.length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Teams</p>
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                    {teamPlans.map((plan) => (
+                      <Link key={plan.id} href="/teams">
+                        <Card className="border border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer">
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50">
+                                <Users className="h-4 w-4 text-blue-600" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-slate-800">{plan.teamName ?? plan.teamId}</p>
+                                <p className="truncate text-xs text-slate-500">{plan.name}</p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Toolbar */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

@@ -20,7 +20,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface Props {
-  playerId: string;
+  playerId?: string;
+  teamId?: string;
 }
 
 const FOCUS_AREA_EMOJI: Record<string, string> = {
@@ -51,19 +52,26 @@ const STATUS_LABEL: Record<string, string> = {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function DevelopmentPlanManager({ playerId }: Props) {
+export function DevelopmentPlanManager({ playerId, teamId }: Props) {
   const [plans, setPlans] = useState<PlayerDevelopmentPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewPlan, setShowNewPlan] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const data = await api.listPlansForPlayer(playerId);
+      let data: PlayerDevelopmentPlan[];
+      if (teamId) {
+        data = await api.listPlansForTeam(teamId);
+      } else if (playerId) {
+        data = await api.listPlansForPlayer(playerId);
+      } else {
+        data = [];
+      }
       setPlans(Array.isArray(data) ? data : []);
     } finally {
       setLoading(false);
     }
-  }, [playerId]);
+  }, [playerId, teamId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -86,6 +94,7 @@ export function DevelopmentPlanManager({ playerId }: Props) {
       {showNewPlan && (
         <NewPlanForm
           playerId={playerId}
+          teamId={teamId}
           onCreated={(plan) => {
             setPlans((prev) => [plan, ...prev]);
             setShowNewPlan(false);
@@ -99,7 +108,7 @@ export function DevelopmentPlanManager({ playerId }: Props) {
           <CardContent className="p-8 text-center text-slate-500">
             <Target className="mx-auto mb-3 h-8 w-8 text-slate-300" />
             <p className="font-medium">No development plans yet</p>
-            <p className="text-sm">Create a structured training journey for this player.</p>
+            <p className="text-sm">{teamId ? "Create a structured training journey for this team." : "Create a structured training journey for this player."}</p>
           </CardContent>
         </Card>
       ) : (
@@ -109,6 +118,7 @@ export function DevelopmentPlanManager({ playerId }: Props) {
               key={plan.id}
               plan={plan}
               playerId={playerId}
+              teamId={teamId}
               onDeleted={() => setPlans((prev) => prev.filter((p) => p.id !== plan.id))}
               onUpdated={(updated) => setPlans((prev) => prev.map((p) => p.id === updated.id ? updated : p))}
             />
@@ -123,10 +133,12 @@ export function DevelopmentPlanManager({ playerId }: Props) {
 
 function NewPlanForm({
   playerId,
+  teamId,
   onCreated,
   onCancel,
 }: {
-  playerId: string;
+  playerId?: string;
+  teamId?: string;
   onCreated: (plan: PlayerDevelopmentPlan) => void;
   onCancel: () => void;
 }) {
@@ -141,13 +153,18 @@ function NewPlanForm({
     if (!name.trim()) return;
     setSaving(true);
     try {
-      const plan = await api.createPlan({
-        playerId,
+      const payload: Record<string, unknown> = {
         name: name.trim(),
         description: description.trim() || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
-      });
+      };
+      if (teamId) {
+        payload.teamId = teamId;
+      } else if (playerId) {
+        payload.playerId = playerId;
+      }
+      const plan = await api.createPlan(payload);
       if (plan?.id) {
         onCreated(plan);
         toast.success("Development plan created");
@@ -313,11 +330,13 @@ function EditPlanForm({
 function PlanCard({
   plan,
   playerId,
+  teamId,
   onDeleted,
   onUpdated,
 }: {
   plan: PlayerDevelopmentPlan;
-  playerId: string;
+  playerId?: string;
+  teamId?: string;
   onDeleted: () => void;
   onUpdated: (plan: PlayerDevelopmentPlan) => void;
 }) {

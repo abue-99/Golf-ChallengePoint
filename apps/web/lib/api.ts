@@ -67,6 +67,8 @@ export const api = {
   // Development Plans
   listPlansForPlayer: (playerId: string) =>
     fetch(`/api/development-plans/player/${playerId}`, { cache: "no-store" }).then((r) => r.json()),
+  listPlansForTeam: (teamId: string) =>
+    fetch(`/api/development-plans/team/${teamId}`, { cache: "no-store" }).then((r) => r.json()),
   getMyPlans: () =>
     fetch("/api/development-plans/my-plans", { cache: "no-store" }).then((r) => r.json()),
   createPlan: (payload: any) =>
