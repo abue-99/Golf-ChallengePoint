@@ -179,11 +179,16 @@ function PlayerCard({ player }: { player: Player }) {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <StatusBadge status={player.status} />
-          <Link href={`/coach/players/${player.id}/calendar`}>
-            <Button className="bg-blue-600 text-white hover:bg-blue-500">Open Calendar</Button>
-          </Link>
+          <div className="flex gap-1.5">
+            <Link href={`/coach/players/${player.id}/planning`}>
+              <Button size="sm" className="bg-green-600 text-white hover:bg-green-500 text-xs">Planning</Button>
+            </Link>
+            <Link href={`/coach/players/${player.id}/calendar`}>
+              <Button size="sm" variant="outline" className="text-xs">Calendar</Button>
+            </Link>
+          </div>
         </div>
       </CardContent>
     </Card>

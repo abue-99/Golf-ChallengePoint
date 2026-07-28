@@ -1,8 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { LayoutTemplate } from "lucide-react";
-import CoachPlayerCalendarView from "@/components/CoachPlayerCalendarView";
+import CoachPlanningBoard from "@/components/CoachPlanningBoard";
 
 async function getPlayer(token: string, playerId: string) {
   const apiUrl = process.env.API_URL || "http://golf_api:4000";
@@ -15,7 +13,7 @@ async function getPlayer(token: string, playerId: string) {
   return players.find((p: any) => p.id === playerId) ?? null;
 }
 
-export default async function CoachPlayerCalendarPage({
+export default async function CoachPlanningPage({
   params,
 }: {
   params: Promise<{ playerId: string }>;
@@ -35,32 +33,14 @@ export default async function CoachPlayerCalendarPage({
     <div className="space-y-4">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">
-          Calendar — {playerName}
+          Planning Board — {playerName}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Legacy calendar view
+          Drag lessons onto training windows to build the player's training plan
           {player?.country ? ` · ${player.country}` : ""}
         </p>
       </header>
-
-      {/* Link to new Planning Board */}
-      <Link
-        href={`/coach/players/${playerId}/planning`}
-        className="flex items-center gap-3 rounded-2xl border-2 border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 hover:bg-blue-100 transition-colors group"
-      >
-        <div className="rounded-xl bg-blue-600 p-2 group-hover:bg-blue-700 transition-colors">
-          <LayoutTemplate size={18} className="text-white" />
-        </div>
-        <div className="flex-1">
-          <p className="font-semibold">Open Planning Board</p>
-          <p className="text-xs text-blue-700">
-            Drag & drop lessons onto training windows to build this player's training plan.
-          </p>
-        </div>
-        <span className="text-blue-600 font-medium text-xs">Open →</span>
-      </Link>
-
-      <CoachPlayerCalendarView playerId={playerId} />
+      <CoachPlanningBoard playerId={playerId} />
     </div>
   );
 }
