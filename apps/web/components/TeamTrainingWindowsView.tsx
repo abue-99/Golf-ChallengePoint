@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Zap, Trash2, Clock, ChevronRight, Users } from "lucide-react";
+import { Plus, Zap, Trash2, Clock, Users, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -101,15 +101,16 @@ function formatDuration(min: number): string {
 
 function WindowCard({
   slot,
+  onView,
   onEdit,
   onDelete,
 }: {
   slot: TeamSlotData;
+  onView: (slot: TeamSlotData) => void;
   onEdit: (slot: TeamSlotData) => void;
   onDelete: (slot: TeamSlotData) => void;
 }) {
   const icon = slotToIcon(slot.title);
-  const colorKey = slotToColor(slot.id);
   const firstOcc = slot.occurrences[0];
   const totalMin = firstOcc ? getDurationMin(firstOcc) : 0;
   const memberCount = slot.memberSlotIds.length;
@@ -120,7 +121,7 @@ function WindowCard({
         "rounded-2xl border-2 p-4 space-y-3 transition-shadow hover:shadow-md cursor-pointer",
         "bg-white border-gray-100"
       )}
-      onClick={() => onEdit(slot)}
+      onClick={() => onView(slot)}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
@@ -161,10 +162,18 @@ function WindowCard({
         <span>{memberCount} member{memberCount !== 1 ? "s" : ""} assigned</span>
       </div>
 
-      {/* Edit hint */}
-      <div className="flex items-center justify-end gap-1 text-xs text-gray-400">
-        <span>Tap to edit</span>
-        <ChevronRight size={12} />
+      {/* Edit button */}
+      <div className="flex items-center justify-end">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(slot);
+          }}
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-green-100 hover:text-green-700 transition-colors"
+        >
+          <Pencil size={11} />
+          Edit
+        </button>
       </div>
     </div>
   );
@@ -201,7 +210,8 @@ export default function TeamTrainingWindowsView({ teamId, teamName }: Props) {
   const [slots, setSlots] = useState<TeamSlotData[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editSlot, setEditSlot] = useState<TeamSlotData | null>(null);
+  const [dialogMode, setDialogMode] = useState<"create" | "edit" | "view">("create");
+  const [activeSlot, setActiveSlot] = useState<TeamSlotData | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -229,9 +239,9 @@ export default function TeamTrainingWindowsView({ teamId, teamName }: Props) {
   };
 
   const handleEdit = async (data: TrainingWindowFormData) => {
-    if (!editSlot) return;
+    if (!activeSlot) return;
     await api.updateTeamPracticeSlot(teamId, {
-      memberSlotIds: editSlot.memberSlotIds,
+      memberSlotIds: activeSlot.memberSlotIds,
       title: data.title,
       startTime: data.startTime,
       endTime: data.endTime,
@@ -249,13 +259,21 @@ export default function TeamTrainingWindowsView({ teamId, teamName }: Props) {
     await load();
   };
 
+  const openView = (slot: TeamSlotData) => {
+    setActiveSlot(slot);
+    setDialogMode("view");
+    setDialogOpen(true);
+  };
+
   const openEdit = (slot: TeamSlotData) => {
-    setEditSlot(slot);
+    setActiveSlot(slot);
+    setDialogMode("edit");
     setDialogOpen(true);
   };
 
   const openCreate = () => {
-    setEditSlot(null);
+    setActiveSlot(null);
+    setDialogMode("create");
     setDialogOpen(true);
   };
 
@@ -283,6 +301,7 @@ export default function TeamTrainingWindowsView({ teamId, teamName }: Props) {
             <WindowCard
               key={slot.id}
               slot={slot}
+              onView={openView}
               onEdit={openEdit}
               onDelete={handleDelete}
             />
@@ -300,19 +319,20 @@ export default function TeamTrainingWindowsView({ teamId, teamName }: Props) {
 
       <TrainingWindowDialog
         open={dialogOpen}
-        onClose={() => { setDialogOpen(false); setEditSlot(null); }}
-        onSubmit={editSlot ? handleEdit : handleCreate}
-        mode={editSlot ? "edit" : "create"}
+        onClose={() => { setDialogOpen(false); setActiveSlot(null); }}
+        onSubmit={dialogMode === "edit" ? handleEdit : handleCreate}
+        onEdit={dialogMode === "view" && activeSlot ? () => openEdit(activeSlot) : undefined}
+        mode={dialogMode}
         defaultValues={
-          editSlot
+          activeSlot
             ? {
-                title: editSlot.title,
-                recurrence: editSlot.recurrence as TrainingWindowFormData["recurrence"],
-                startTime: firstOccOfSlot(editSlot)?.start ?? "",
-                endTime: firstOccOfSlot(editSlot)?.end ?? "",
-                recurrenceEndDate: editSlot.recurrenceEndDate ?? undefined,
+                title: activeSlot.title,
+                recurrence: activeSlot.recurrence as TrainingWindowFormData["recurrence"],
+                startTime: firstOccOfSlot(activeSlot)?.start ?? "",
+                endTime: firstOccOfSlot(activeSlot)?.end ?? "",
+                recurrenceEndDate: activeSlot.recurrenceEndDate ?? undefined,
                 focusAreas: [],
-                icon: slotToIcon(editSlot.title),
+                icon: slotToIcon(activeSlot.title),
                 color: "green",
               }
             : undefined

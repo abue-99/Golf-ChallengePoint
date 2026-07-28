@@ -82,10 +82,20 @@ export async function GET(
       });
     });
 
-    const teamSlots = Array.from(slotMap.values()).map(({ representative, memberSlotIds }) => ({
-      ...representative,
-      memberSlotIds,
-    }));
+    const memberCount = members.length;
+
+    // Only return slots that were assigned to ALL team members (i.e. team-wide slots).
+    // Individual player slots only appear in one member's calendar and are excluded.
+    const teamSlots = Array.from(slotMap.values())
+      .filter(({ memberSlotIds }) =>
+        // For single-member teams every slot looks like a team slot – include all.
+        // For multi-member teams only include slots present for every member.
+        memberCount <= 1 || memberSlotIds.length >= memberCount
+      )
+      .map(({ representative, memberSlotIds }) => ({
+        ...representative,
+        memberSlotIds,
+      }));
 
     return NextResponse.json(teamSlots);
   } catch (err) {

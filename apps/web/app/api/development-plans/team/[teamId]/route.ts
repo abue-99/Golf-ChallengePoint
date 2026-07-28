@@ -28,7 +28,7 @@ export async function GET(
     if (members.length === 0) return NextResponse.json([]);
 
     // Fetch plans for all members in parallel
-    const allPlans = await Promise.all(
+    const allMemberPlans = await Promise.all(
       members.map(async (m) => {
         const res = await fetch(`${API_URL}/development-plans/player/${m.userId}`, {
           headers: { Authorization: "Bearer " + token },
@@ -39,7 +39,30 @@ export async function GET(
       })
     );
 
-    return NextResponse.json(allPlans.flat());
+    const memberCount = members.length;
+
+    // Deduplicate: group plans by name. Only include plans present for ALL members
+    // (those created via the team fan-out). Individual player plans are excluded.
+    const planMap = new Map<string, { representative: Record<string, unknown>; count: number }>();
+
+    allMemberPlans.forEach((plans) => {
+      const planList = Array.isArray(plans) ? plans : [];
+      planList.forEach((plan: Record<string, unknown>) => {
+        const key = String(plan.name ?? "");
+        const existing = planMap.get(key);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          planMap.set(key, { representative: plan, count: 1 });
+        }
+      });
+    });
+
+    const teamPlans = Array.from(planMap.values())
+      .filter(({ count }) => memberCount <= 1 || count >= memberCount)
+      .map(({ representative }) => representative);
+
+    return NextResponse.json(teamPlans);
   } catch (err) {
     console.error("[/api/development-plans/team GET]", err);
     return NextResponse.json([], { status: 500 });

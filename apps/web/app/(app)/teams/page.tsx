@@ -157,6 +157,10 @@ export default function TeamsPage() {
   const [journeyTeam, setJourneyTeam] = useState<Team | null>(null);
   const [trainingWindowsTeam, setTrainingWindowsTeam] = useState<Team | null>(null);
 
+  // Badge counts: teamId → count (loaded in background after teams are fetched)
+  const [teamWindowCounts, setTeamWindowCounts] = useState<Record<string, number>>({});
+  const [teamPlanCounts, setTeamPlanCounts] = useState<Record<string, number>>({});
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
@@ -172,7 +176,8 @@ export default function TeamsPage() {
       fetch("/api/clubs/my").then((r) => r.ok ? r.json() : []),
       fetch("/api/players/my").then((r) => r.ok ? r.json() : []),
     ]).then(([t, c, p, clubs, myP]) => {
-      setTeams(Array.isArray(t) ? t : []);
+      const loadedTeams: Team[] = Array.isArray(t) ? t : [];
+      setTeams(loadedTeams);
       setCategories(Array.isArray(c) ? c : []);
       setAllPlayers(Array.isArray(p) ? p.filter(Boolean) : []);
       setMyPlayers(Array.isArray(myP) ? myP.filter(Boolean) : []);
@@ -181,6 +186,19 @@ export default function TeamsPage() {
         setMyClubs(clubs.map((uc: { club: ClubOption }) => uc.club).filter(Boolean));
       }
       setLoading(false);
+
+      // Load badge counts for all teams in the background
+      loadedTeams.forEach((team) => {
+        Promise.allSettled([
+          fetch(`/api/calendar/team-slots/${team.id}`, { cache: "no-store" }).then((r) => r.ok ? r.json() : []),
+          fetch(`/api/development-plans/team/${team.id}`, { cache: "no-store" }).then((r) => r.ok ? r.json() : []),
+        ]).then(([windowsResult, plansResult]) => {
+          const windowCount = windowsResult.status === "fulfilled" && Array.isArray(windowsResult.value) ? windowsResult.value.length : 0;
+          const planCount = plansResult.status === "fulfilled" && Array.isArray(plansResult.value) ? plansResult.value.length : 0;
+          setTeamWindowCounts((prev) => ({ ...prev, [team.id]: windowCount }));
+          setTeamPlanCounts((prev) => ({ ...prev, [team.id]: planCount }));
+        });
+      });
     }).catch(() => setLoading(false));
   }, [role]);
 
