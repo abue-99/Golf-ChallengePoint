@@ -2,352 +2,295 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Circle, Filter, Route, Search, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { api } from "@/lib/api";
-import type { PlayerDevelopmentPlan } from "@/lib/lesson-types";
+import { Input } from "@/components/ui/input";
+import { CalendarDays, Route, Search, Users } from "lucide-react";
+
+type Team = {
+  id: string;
+  shortName: string;
+  icon?: string | null;
+  members?: { userId: string }[];
+};
 
 type Player = {
   id: string;
-  name: string;
-  handicap?: number | null;
-  status?: "active" | "rest" | "rehab";
-  avatarUrl?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string;
+  profileImage?: string | null;
 };
 
-type PlanSummary = {
-  id: string;
-  name: string;
-  playerId?: string | null;
-  teamId?: string | null;
-  playerName?: string;
-  teamName?: string;
-  updatedAt: string;
+type ItemCount = {
+  plans: number;
+  windows: number;
 };
+
+function nameOfPlayer(player: Player) {
+  return [player.firstName, player.lastName].filter(Boolean).join(" ") || player.email || "—";
+}
+
+function initials(name: string) {
+  const parts = name.split(" ").filter(Boolean);
+  return `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`.toUpperCase() || "?";
+}
+
+function hasItems(count?: ItemCount) {
+  return Boolean(count && (count.plans > 0 || count.windows > 0));
+}
 
 export default function CoachHome() {
-  const [players, setPlayers] = useState<Player[] | null>(null);
-  const [q, setQ] = useState("");
-  const [status, setStatus] = useState<"all" | Player["status"]>("all");
+  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [plans, setPlans] = useState<PlanSummary[]>([]);
-  const [plansLoading, setPlansLoading] = useState(true);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [playerCounts, setPlayerCounts] = useState<Record<string, ItemCount>>({});
+  const [teamCounts, setTeamCounts] = useState<Record<string, ItemCount>>({});
 
   useEffect(() => {
     let ignore = false;
+
     (async () => {
       try {
-        const data: Player[] = [
-          { id: "p_1", name: "Alex Johnson", handicap: 2.4, status: "active" },
-          { id: "p_2", name: "Sam Walker", handicap: 5.8, status: "rehab" },
-          { id: "p_3", name: "Jamie Lee", handicap: 1.2, status: "rest" },
-          { id: "p_4", name: "Taylor Cruz", handicap: 3.7, status: "active" }
-        ];
-        if (!ignore) setPlayers(data);
+        const [playersRes, teamsRes] = await Promise.all([
+          fetch("/api/players/my", { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])),
+          fetch("/api/teams", { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])),
+        ]);
+
+        if (ignore) return;
+
+        const nextPlayers = Array.isArray(playersRes) ? playersRes : [];
+        const nextTeams = Array.isArray(teamsRes) ? teamsRes : [];
+        setPlayers(nextPlayers);
+        setTeams(nextTeams);
+
+        const [playerEntries, teamEntries] = await Promise.all([
+          Promise.all(
+            nextPlayers.map(async (player: Player) => {
+              const [plans, calendar] = await Promise.all([
+                fetch(`/api/development-plans/player/${player.id}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])),
+                fetch(`/api/calendar/player/${player.id}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : { slots: [] })),
+              ]);
+              return [
+                player.id,
+                {
+                  plans: Array.isArray(plans) ? plans.length : 0,
+                  windows: Array.isArray(calendar?.slots) ? calendar.slots.length : 0,
+                },
+              ] as const;
+            })
+          ),
+          Promise.all(
+            nextTeams.map(async (team: Team) => {
+              const [plans, windows] = await Promise.all([
+                fetch(`/api/development-plans/team/${team.id}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])),
+                fetch(`/api/calendar/team-slots/${team.id}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])),
+              ]);
+              return [
+                team.id,
+                {
+                  plans: Array.isArray(plans) ? plans.length : 0,
+                  windows: Array.isArray(windows) ? windows.length : 0,
+                },
+              ] as const;
+            })
+          ),
+        ]);
+
+        if (ignore) return;
+        setPlayerCounts(Object.fromEntries(playerEntries));
+        setTeamCounts(Object.fromEntries(teamEntries));
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
     })();
-    return () => { ignore = true; };
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
-  useEffect(() => {
-    let ignore = false;
-    (async () => {
-      try {
-        const data: PlayerDevelopmentPlan[] = await api.getMyPlans().catch(() => []);
-        if (!ignore && Array.isArray(data)) {
-          const summaries: PlanSummary[] = data.map((p) => ({
-            id: p.id,
-            name: p.name,
-            playerId: p.playerId,
-            teamId: (p as any).teamId ?? null,
-            playerName: (p as any).player
-              ? [((p as any).player.firstName ?? ""), ((p as any).player.lastName ?? "")].filter(Boolean).join(" ") || ((p as any).player.email ?? "")
-              : undefined,
-            teamName: (p as any).team?.shortName ?? undefined,
-            updatedAt: p.updatedAt,
-          }));
-          setPlans(summaries);
-        }
-      } finally {
-        if (!ignore) setPlansLoading(false);
-      }
-    })();
-    return () => { ignore = true; };
-  }, []);
+  const normalizedQuery = query.trim().toLowerCase();
 
-  const filtered = useMemo(() => {
-    if (!players) return [];
-    return players.filter((p) => {
-      const matchesQ = !q || p.name.toLowerCase().includes(q.toLowerCase());
-      const matchesStatus = status === "all" || p.status === status;
-      return matchesQ && matchesStatus;
-    });
-  }, [players, q, status]);
+  const visiblePlayers = useMemo(
+    () =>
+      players.filter((player) => {
+        if (!hasItems(playerCounts[player.id])) return false;
+        if (!normalizedQuery) return true;
+        return nameOfPlayer(player).toLowerCase().includes(normalizedQuery);
+      }),
+    [normalizedQuery, playerCounts, players]
+  );
 
-  const playerPlans = plans.filter((p) => p.playerId && !p.teamId);
-  const teamPlans = plans.filter((p) => p.teamId);
+  const visibleTeams = useMemo(
+    () =>
+      teams.filter((team) => {
+        if (!hasItems(teamCounts[team.id])) return false;
+        if (!normalizedQuery) return true;
+        return team.shortName.toLowerCase().includes(normalizedQuery);
+      }),
+    [normalizedQuery, teamCounts, teams]
+  );
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <header className="space-y-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Coach</h1>
-          <p className="text-sm text-slate-500">Select a player to open their calendar.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Coach Dashboard</h1>
+          <p className="text-sm text-slate-500">
+            Teams und Spieler mit aktuellem Development Plan oder Trainingsfenster.
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" className="text-slate-600 hover:text-blue-700 hover:bg-blue-50">
-            <Filter className="mr-2 h-4 w-4" /> Filters
-          </Button>
+        <div className="relative max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Suche Teams oder Spieler…"
+            className="pl-9"
+          />
         </div>
       </header>
 
-      {/* Development Plans Overview */}
-      {(plansLoading || plans.length > 0) && (
-        <section>
-          <h2 className="mb-3 text-lg font-semibold text-slate-800">Active Development Plans</h2>
-          {plansLoading ? (
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i} className="border border-gray-200 bg-white">
-                  <CardContent className="p-4">
-                    <div className="h-4 w-32 animate-pulse rounded bg-slate-200 mb-2" />
-                    <div className="h-3 w-20 animate-pulse rounded bg-slate-200" />
+      <section className="grid gap-4 md:grid-cols-2">
+        <SummaryCard
+          title="Teams"
+          icon={<Users className="h-4 w-4 text-emerald-600" />}
+          value={visibleTeams.length}
+          loading={loading}
+        />
+        <SummaryCard
+          title="Spieler"
+          icon={<Route className="h-4 w-4 text-blue-600" />}
+          value={visiblePlayers.length}
+          loading={loading}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-slate-800">Teams</h2>
+        {loading ? (
+          <SkeletonGrid />
+        ) : visibleTeams.length === 0 ? (
+          <EmptyState text="Keine Teams mit aktuellem Development Plan oder Trainingsfenster." />
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {visibleTeams.map((team) => (
+              <Link key={team.id} href="/teams">
+                <Card className="h-full border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+                  <CardContent className="flex flex-col items-center gap-3 p-4 text-center">
+                    <Avatar className="h-16 w-16">
+                      <AvatarFallback className="bg-emerald-100 text-xl text-emerald-700">
+                        {team.icon || initials(team.shortName)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="space-y-1">
+                      <p className="font-medium text-slate-800">{team.shortName}</p>
+                      <CountsBadge counts={teamCounts[team.id]} />
+                    </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {playerPlans.length > 0 && (
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Players</p>
-                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                    {playerPlans.map((plan) => (
-                      <Link key={plan.id} href={`/coach/players/${plan.playerId}`}>
-                        <Card className="border border-gray-200 bg-white hover:border-emerald-300 hover:shadow-sm transition-all cursor-pointer">
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50">
-                                <Route className="h-4 w-4 text-emerald-600" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-slate-800">{plan.playerName ?? plan.playerId}</p>
-                                <p className="truncate text-xs text-slate-500">{plan.name}</p>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {teamPlans.length > 0 && (
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Teams</p>
-                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                    {teamPlans.map((plan) => (
-                      <Link key={plan.id} href="/teams">
-                        <Card className="border border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer">
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50">
-                                <Users className="h-4 w-4 text-blue-600" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-slate-800">{plan.teamName ?? plan.teamId}</p>
-                                <p className="truncate text-xs text-slate-500">{plan.name}</p>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </section>
-      )}
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
 
-      {/* Toolbar */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        {/* Suche */}
-        <div className="relative w-full md:max-w-sm">
-          <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search players…"
-            className="w-full rounded-lg border border-gray-200 bg-white px-8 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-          />
-        </div>
-
-        {/* Status-Filter */}
-        <div className="flex flex-wrap items-center gap-2">
-          <FilterChip label="All" active={status === "all"} onClick={() => setStatus("all")} />
-          <FilterChip
-            label="Active"
-            dotClass="bg-emerald-500"
-            active={status === "active"}
-            onClick={() => setStatus("active")}
-          />
-          <FilterChip
-            label="Rest"
-            dotClass="bg-amber-500"
-            active={status === "rest"}
-            onClick={() => setStatus("rest")}
-          />
-          <FilterChip
-            label="Rehab"
-            dotClass="bg-rose-500"
-            active={status === "rehab"}
-            onClick={() => setStatus("rehab")}
-          />
-        </div>
-      </div>
-
-      {/* Content */}
-      {loading ? (
-        <SkeletonGrid />
-      ) : filtered.length === 0 ? (
-        <Card className="border border-dashed">
-          <CardContent className="p-8 text-center text-slate-500">
-            No players found. Try a different search or filter.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((p) => (
-            <PlayerCard key={p.id} player={p} />
-          ))}
-        </div>
-      )}
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-slate-800">Spieler</h2>
+        {loading ? (
+          <SkeletonGrid />
+        ) : visiblePlayers.length === 0 ? (
+          <EmptyState text="Keine Spieler mit aktuellem Development Plan oder Trainingsfenster." />
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {visiblePlayers.map((player) => {
+              const name = nameOfPlayer(player);
+              return (
+                <Link key={player.id} href={`/coach/players/${player.id}`}>
+                  <Card className="h-full border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+                    <CardContent className="flex flex-col items-center gap-3 p-4 text-center">
+                      <Avatar className="h-16 w-16">
+                        {player.profileImage ? <AvatarImage src={player.profileImage} alt={name} /> : null}
+                        <AvatarFallback className="bg-blue-100 text-xl text-blue-700">
+                          {initials(name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="space-y-1">
+                        <p className="font-medium text-slate-800">{name}</p>
+                        <CountsBadge counts={playerCounts[player.id]} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
 
-/* === kleine, wiederverwendbare UI‑Bausteine === */
-
-function FilterChip({
-  label,
-  active,
-  onClick,
-  dotClass
+function SummaryCard({
+  title,
+  icon,
+  value,
+  loading,
 }: {
-  label: string;
-  active?: boolean;
-  onClick?: () => void;
-  dotClass?: string;
+  title: string;
+  icon: React.ReactNode;
+  value: number;
+  loading: boolean;
 }) {
   return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm",
-        active
-          ? "border-blue-200 bg-blue-50 text-blue-700"
-          : "border-gray-200 bg-white text-slate-700 hover:bg-slate-50"
-      )}
-    >
-      {dotClass ? <span className={cn("h-2.5 w-2.5 rounded-full", dotClass)} /> : null}
-      {label}
-    </button>
-  );
-}
-
-function PlayerCard({ player }: { player: Player }) {
-  const color =
-    player.status === "active"
-      ? "bg-emerald-500"
-      : player.status === "rest"
-      ? "bg-amber-500"
-      : player.status === "rehab"
-      ? "bg-rose-500"
-      : "bg-slate-300";
-
-  return (
-    <Card className="group border border-gray-200 bg-white shadow-[0_10px_30px_-10px_rgba(2,6,23,.12)] transition-shadow hover:shadow-[0_16px_36px_-12px_rgba(2,6,23,.18)]">
-      <CardContent className="p-4">
-        {/* Kopfzeile */}
-        <div className="mb-4 flex items-center gap-3">
-          <div className="relative">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600" />
-            <span className={cn("absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full ring-2 ring-white", color)} />
-          </div>
-          <div>
-            <div className="font-medium text-slate-800">{player.name}</div>
-            <div className="text-xs text-slate-500">
-              Handicap {player.handicap != null ? player.handicap.toFixed(1) : "—"}
-            </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center justify-between gap-2">
-          <StatusBadge status={player.status} />
-          <div className="flex gap-1.5">
-            <Link href={`/coach/players/${player.id}/planning`}>
-              <Button size="sm" className="bg-green-600 text-white hover:bg-green-500 text-xs">Planning</Button>
-            </Link>
-            <Link href={`/coach/players/${player.id}/calendar`}>
-              <Button size="sm" variant="outline" className="text-xs">Calendar</Button>
-            </Link>
-          </div>
-        </div>
+    <Card className="border border-gray-200 bg-white">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm text-slate-500">
+          {icon}
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-semibold text-slate-900">{loading ? "…" : value}</div>
       </CardContent>
     </Card>
   );
 }
 
-function StatusBadge({ status }: { status?: Player["status"] }) {
-  const map: Record<NonNullable<Player["status"]>, { label: string; dot: string; tone: string }> = {
-    active: { label: "Active", dot: "bg-emerald-500", tone: "text-emerald-700 bg-emerald-50 ring-emerald-200" },
-    rest: { label: "Rest", dot: "bg-amber-500", tone: "text-amber-700 bg-amber-50 ring-amber-200" },
-    rehab: { label: "Rehab", dot: "bg-rose-500", tone: "text-rose-700 bg-rose-50 ring-rose-200" }
-  };
-
-  if (!status) {
-    return (
-      <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 ring-1 ring-inset ring-slate-200">
-        <Circle className="mr-1 h-3 w-3 text-slate-400" /> Unknown
-      </span>
-    );
-  }
-
+function CountsBadge({ counts }: { counts?: ItemCount }) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-xs ring-1 ring-inset",
-        map[status].tone
-      )}
-    >
-      <span className={cn("mr-1 h-2 w-2 rounded-full", map[status].dot)} />
-      {map[status].label}
-    </span>
+    <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">
+        <Route className="h-3 w-3" />
+        {counts?.plans ?? 0}
+      </span>
+      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-blue-700">
+        <CalendarDays className="h-3 w-3" />
+        {counts?.windows ?? 0}
+      </span>
+    </div>
+  );
+}
+
+function EmptyState({ text }: { text: string }) {
+  return (
+    <Card className="border border-dashed">
+      <CardContent className="p-8 text-center text-sm text-slate-500">{text}</CardContent>
+    </Card>
   );
 }
 
 function SkeletonGrid() {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <Card key={i} className="border border-gray-200 bg-white">
-          <CardContent className="p-4">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="h-10 w-10 animate-pulse rounded-full bg-slate-200" />
-              <div className="flex-1 space-y-2">
-                <div className="h-3 w-32 animate-pulse rounded bg-slate-200" />
-                <div className="h-2 w-20 animate-pulse rounded bg-slate-200" />
-              </div>
-            </div>
-            <div className="h-9 w-full animate-pulse rounded bg-slate-200" />
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <Card key={index} className="border border-gray-200 bg-white">
+          <CardContent className="flex flex-col items-center gap-3 p-4">
+            <div className="h-16 w-16 animate-pulse rounded-full bg-slate-200" />
+            <div className="h-4 w-24 animate-pulse rounded bg-slate-200" />
+            <div className="h-4 w-20 animate-pulse rounded bg-slate-200" />
           </CardContent>
         </Card>
       ))}

@@ -24,6 +24,11 @@ enum Recurrence {
   MONTHLY
 }
 
+enum OwnerType {
+  PLAYER
+  TEAM
+}
+
 enum LessonFocusArea {
   SETUP
   PUTTING
@@ -135,6 +140,8 @@ model Team {
   coach       User         @relation("CoachTeams", fields: [coachId], references: [id], onDelete: Cascade)
   club        Club?        @relation("TeamClub", fields: [clubId], references: [id])
   members     TeamMember[]
+  practiceSlots PracticeSlot[] @relation("TeamPracticeSlots")
+  developmentPlans PlayerDevelopmentPlan[] @relation("TeamDevelopmentPlans")
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -208,8 +215,11 @@ model Challenge {
 
 model PracticeSlot {
   id                String       @id @default(cuid())
-  playerId          String
-  player            User         @relation("PlayerSlots", fields: [playerId], references: [id], onDelete: Cascade)
+  ownerType         OwnerType    @default(PLAYER)
+  playerId          String?
+  player            User?        @relation("PlayerSlots", fields: [playerId], references: [id], onDelete: Cascade)
+  teamId            String?
+  team              Team?        @relation("TeamPracticeSlots", fields: [teamId], references: [id], onDelete: Cascade)
   title             String
   startTime         DateTime
   endTime           DateTime
@@ -293,8 +303,11 @@ model PlayerDevelopmentPlan {
   description String?
   coachId     String
   coach       User           @relation("CoachPlans", fields: [coachId], references: [id], onDelete: Cascade)
-  playerId    String
-  player      User           @relation("PlayerPlans", fields: [playerId], references: [id], onDelete: Cascade)
+  ownerType   OwnerType      @default(PLAYER)
+  playerId    String?
+  player      User?          @relation("PlayerPlans", fields: [playerId], references: [id], onDelete: Cascade)
+  teamId      String?
+  team        Team?          @relation("TeamDevelopmentPlans", fields: [teamId], references: [id], onDelete: Cascade)
   startDate   DateTime?
   endDate     DateTime?
   blocks      TrainingBlock[]

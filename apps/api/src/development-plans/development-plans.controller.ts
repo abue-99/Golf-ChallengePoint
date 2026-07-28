@@ -39,14 +39,25 @@ export class DevelopmentPlansController {
   /** Player retrieves their own plans */
   @Get('my-plans')
   getMyPlans(@CurrentUser() user: AuthenticatedUser) {
-    return this.service.getPlayerPlansAsPlayer(user.id);
+    if (user.role === 'PLAYER') {
+      return this.service.getPlayerPlansAsPlayer(user.id);
+    }
+    return this.service.getCoachPlans(user.id, user.role as string);
+  }
+
+  @Get('team/:teamId')
+  listPlansForTeam(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('teamId') teamId: string,
+  ) {
+    return this.service.listPlansForTeam(user.id, user.role as string, teamId);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   createPlan(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: { playerId: string; name: string; description?: string; startDate?: string; endDate?: string },
+    @Body() body: { playerId?: string; teamId?: string; name: string; description?: string; startDate?: string; endDate?: string },
   ) {
     return this.service.createPlan(user.id, user.role as string, body);
   }
