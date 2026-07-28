@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Trash2, SquarePen, Plus, UserPlus, X, Search, ExternalLink, Route as RouteIcon } from "lucide-react";
+import { Trash2, SquarePen, Plus, UserPlus, X, Search, ExternalLink, Route as RouteIcon, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { PlayerCapabilitiesRadarCard } from "@/components/player-capabilities-widget";
 import { DevelopmentPlanManager } from "@/components/DevelopmentPlanManager";
+import TeamTrainingWindowsView from "@/components/TeamTrainingWindowsView";
 
 // Common icons represented as emoji for team assignment
 const TEAM_ICONS = [
@@ -154,6 +155,7 @@ export default function TeamsPage() {
 
   const [selectedMemberPlayer, setSelectedMemberPlayer] = useState<Player | null>(null);
   const [journeyTeam, setJourneyTeam] = useState<Team | null>(null);
+  const [trainingWindowsTeam, setTrainingWindowsTeam] = useState<Team | null>(null);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -573,6 +575,16 @@ export default function TeamsPage() {
                       variant="ghost"
                       size="icon"
                       className="text-gray-500 hover:text-blue-600"
+                      onClick={(e) => { e.stopPropagation(); setTrainingWindowsTeam(team); }}
+                      aria-label="Team Training Windows"
+                      title="Training Windows"
+                    >
+                      <CalendarDays size={16} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-gray-500 hover:text-blue-600"
                       onClick={(e) => { e.stopPropagation(); setEditingTeam(team); }}
                       aria-label="Edit team"
                       title="Edit team"
@@ -679,6 +691,14 @@ export default function TeamsPage() {
         <TeamJourneyDialog
           team={journeyTeam}
           onClose={() => setJourneyTeam(null)}
+        />
+      )}
+
+      {/* Team Training Windows Dialog */}
+      {trainingWindowsTeam && (
+        <TeamTrainingWindowsDialog
+          team={trainingWindowsTeam}
+          onClose={() => setTrainingWindowsTeam(null)}
         />
       )}
 
@@ -1535,13 +1555,43 @@ function TeamJourneyDialog({
     <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {team.icon && <TeamIcon icon={team.icon} size={18} />}
-            Development Plan — {team.shortName}
+          <DialogTitle>
+            <span className="flex items-center gap-2">
+              {team.icon && <TeamIcon icon={team.icon} size={18} />}
+              Development Plan — {team.shortName}
+            </span>
           </DialogTitle>
         </DialogHeader>
         <div className="pt-2">
           <DevelopmentPlanManager teamId={team.id} />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Team Training Windows Dialog ──────────────────────────────────────────────
+
+function TeamTrainingWindowsDialog({
+  team,
+  onClose,
+}: {
+  team: Team;
+  onClose: () => void;
+}) {
+  return (
+    <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            <span className="flex items-center gap-2">
+              {team.icon && <TeamIcon icon={team.icon} size={18} />}
+              Training Windows — {team.shortName}
+            </span>
+          </DialogTitle>
+        </DialogHeader>
+        <div className="pt-2">
+          <TeamTrainingWindowsView teamId={team.id} teamName={team.shortName} />
         </div>
       </DialogContent>
     </Dialog>

@@ -629,7 +629,7 @@ function TrainingBlockCard({
   onUpdated,
 }: {
   block: TrainingBlock;
-  playerId: string;
+  playerId?: string;
   onDeleted: () => void;
   onUpdated: (block: TrainingBlock) => void;
 }) {
