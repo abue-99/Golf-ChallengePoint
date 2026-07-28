@@ -187,6 +187,30 @@ export class TeamsService {
     return this.getTeamWithMembers(teamId);
   }
 
+  async getTeamById(coachId: string, teamId: string) {
+    const team = await this.prisma.team.findUnique({
+      where: { id: teamId },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                profileImage: true,
+                role: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!team) throw new NotFoundException('Team not found');
+    if (team.coachId !== coachId) throw new ForbiddenException();
+    return team;
+  }
+
   private getTeamWithMembers(teamId: string) {
     return this.prisma.team.findUnique({
       where: { id: teamId },
