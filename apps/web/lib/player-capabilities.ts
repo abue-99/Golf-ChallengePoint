@@ -7,7 +7,7 @@ export type CapabilityKey =
   | "fitness"
   | "mental";
 
-export type SkillRating = "Developing" | "Intermediate" | "Advanced" | "Proficient" | "Elite";
+export type SkillRating = "Beginner" | "Foundation" | "Intermediate" | "Advanced" | "Elite";
 
 export type SubSubCapabilityDefinition = {
   key: string;
@@ -459,11 +459,11 @@ function hashToUnit(seed: string): number {
 }
 
 export function scoreToRating(score: number): SkillRating {
-  if (score >= 90) return "Elite";
-  if (score >= 75) return "Proficient";
-  if (score >= 60) return "Advanced";
-  if (score >= 40) return "Intermediate";
-  return "Developing";
+  if (score >= 95) return "Elite";
+  if (score >= 80) return "Advanced";
+  if (score >= 65) return "Intermediate";
+  if (score >= 50) return "Foundation";
+  return "Beginner";
 }
 
 function resolveArchetype(capabilities: CapabilityScore[]): string {

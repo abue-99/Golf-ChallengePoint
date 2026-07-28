@@ -187,7 +187,8 @@ export interface PlayerDevelopmentPlan {
   name: string;
   description?: string | null;
   coachId: string;
-  playerId: string;
+  playerId?: string | null;
+  teamId?: string | null;
   coach?: { id: string; firstName?: string | null; lastName?: string | null; email: string } | null;
   startDate?: string | null;
   endDate?: string | null;

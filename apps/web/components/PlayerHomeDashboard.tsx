@@ -368,7 +368,7 @@ export default function PlayerHomeDashboard({
       ) : (
         <div className="space-y-4">
           <PlayerCapabilitiesWidget playerId={playerId} showRadar={false} />
-          <PlayerCapabilitiesRadarCard playerId={playerId} title="Skill Radar 2.0" />
+          <PlayerCapabilitiesRadarCard playerId={playerId} title="Skill Radar" />
         </div>
       )}
 

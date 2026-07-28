@@ -128,7 +128,12 @@ function PlayerDetailDialog({
             </div>
           </div>
 
-          <PlayerCapabilitiesRadarCard playerId={player.id} title="Skill Radar 2.0" />
+          <PlayerCapabilitiesRadarCard
+            playerId={player.id}
+            title="Skill Radar"
+            journeyLabel="Goto Development Plan"
+            journeyHref={`/coach/players/${player.id}`}
+          />
         </div>
 
         <div className="mt-4 flex flex-col gap-2">

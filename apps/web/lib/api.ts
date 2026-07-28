@@ -37,6 +37,16 @@ export const api = {
   getPlayerCalendar: (playerId: string) =>
     fetch(`/api/calendar/player/${playerId}`, { cache: "no-store" }).then((r) => r.json()),
 
+  // Calendar – team training windows (fan-out to all members)
+  getTeamTrainingWindows: (teamId: string) =>
+    fetch(`/api/calendar/team-slots/${teamId}`, { cache: "no-store" }).then((r) => r.json()),
+  createTeamPracticeSlot: (teamId: string, payload: object) =>
+    fetch(`/api/calendar/team-slots/${teamId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
+  updateTeamPracticeSlot: (teamId: string, payload: object) =>
+    fetch(`/api/calendar/team-slots/${teamId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
+  deleteTeamPracticeSlot: (teamId: string, memberSlotIds: string[]) =>
+    fetch(`/api/calendar/team-slots/${teamId}`, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ memberSlotIds }) }).then((r) => r.json()),
+
   // Lessons
   listLessons: (params?: { status?: string; focusArea?: string; subCapability?: string; subSubCapability?: string; visibility?: string }) => {
     const qs = params
@@ -67,6 +77,8 @@ export const api = {
   // Development Plans
   listPlansForPlayer: (playerId: string) =>
     fetch(`/api/development-plans/player/${playerId}`, { cache: "no-store" }).then((r) => r.json()),
+  listPlansForTeam: (teamId: string) =>
+    fetch(`/api/development-plans/team/${teamId}`, { cache: "no-store" }).then((r) => r.json()),
   getMyPlans: () =>
     fetch("/api/development-plans/my-plans", { cache: "no-store" }).then((r) => r.json()),
   createPlan: (payload: any) =>
