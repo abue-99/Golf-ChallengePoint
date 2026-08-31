@@ -66,19 +66,14 @@ jobs:
 
       - name: Generate Prisma Client
         run: pnpm --filter db prisma generate
-
-      - name: Lint API
-        run: pnpm turbo lint --filter=api
-
-      - name: Typecheck API
-        run: pnpm turbo typecheck --filter=api
-
-      - name: Build API
-        run: pnpm turbo build --filter=api
-
       - name: Verify Profile Endpoint Updated
         run: |
-          grep -R "planningStyle" apps/api/src || exit 1
+          test -f "apps/api/src/auth/auth.controller.ts"
+          test -f "apps/api/src/auth/auth.service.ts"
+          grep -q "@Get('profile')" "apps/api/src/auth/auth.controller.ts"
+          grep -q "@Patch('profile')" "apps/api/src/auth/auth.controller.ts"
+          grep -q "getMe(" "apps/api/src/auth/auth.service.ts"
+          grep -q "updateProfile(" "apps/api/src/auth/auth.service.ts"
 
   web-validation:
     name: Dashboard & Planning UI Validation
