@@ -107,10 +107,20 @@ export default function CoachPlayerCalendarView({ playerId }: Props) {
     return result;
   }, [slots]);
 
+  type CalendarEventExtendedProps = {
+    type: "slot" | "task";
+    slotId: string;
+    occurrenceStart: string;
+    occurrenceEnd: string;
+    title: string;
+    description: string;
+    durationMinutes: number;
+  };
+
   const handleEventClick = useCallback(
     (arg: EventClickArg) => {
       const { type, slotId, occurrenceStart, occurrenceEnd } =
-        arg.event.extendedProps as any;
+        arg.event.extendedProps as CalendarEventExtendedProps;
 
       if (type === "slot") {
         const slot = slots.find((s) => s.id === slotId);
@@ -127,7 +137,7 @@ export default function CoachPlayerCalendarView({ playerId }: Props) {
 
       if (type === "task") {
         const { title, description, durationMinutes } =
-          arg.event.extendedProps as any;
+          arg.event.extendedProps as CalendarEventExtendedProps;
         toast.info(
           <div>
             <p className="font-medium">{title}</p>

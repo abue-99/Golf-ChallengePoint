@@ -24,6 +24,18 @@ type EventType = {
   end: string;
 };
 
+type EventReceiveInfo = {
+  draggedEl: HTMLElement;
+  date: Date;
+  event: { setProp: (name: string, value: unknown) => void };
+  revert: () => void;
+};
+
+type EventChangeInfo = {
+  event: { id: string; start: Date; end: Date | null };
+  revert: () => void;
+};
+
 export default function PlayerCalendar({ playerId }: { playerId: string }) {
   const [events, setEvents] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +67,7 @@ export default function PlayerCalendar({ playerId }: { playerId: string }) {
     };
   }, [playerId]);
 
-  const handleReceive = async (info: any) => {
+  const handleReceive = async (info: EventReceiveInfo) => {
     try {
       const created = await api.createEvent({
         playerId,
@@ -70,7 +82,7 @@ export default function PlayerCalendar({ playerId }: { playerId: string }) {
     }
   };
 
-  const handleDropOrResize = async (info: any) => {
+  const handleDropOrResize = async (info: EventChangeInfo) => {
     try {
       await api.updateEvent(info.event.id, {
         start: info.event.start.toISOString(),
