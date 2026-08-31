@@ -227,12 +227,6 @@ function SkillRadar2Chart({
       }
     };
 
-    if (duration === 0) {
-      setAnimatedScores(capabilities.map((capability) => capability.score));
-      previousScoresRef.current = capabilities.map((capability) => capability.score);
-      return;
-    }
-
     raf = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(raf);
   }, [capabilities, prefersReducedMotion]);

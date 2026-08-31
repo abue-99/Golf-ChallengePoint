@@ -30,8 +30,8 @@ export function LogDialog({
   const [open, setOpen] = useState(false);
   const { register, handleSubmit, reset } = useForm();
 
-  const onSubmit = async (data: any) => {
-    const payload: any = { eventId, type: schema };
+  const onSubmit = async (data: Record<string, string>) => {
+    const payload: Record<string, unknown> = { eventId, type: schema };
 
     if (schema === 'numeric_success') {
       payload.attempts = Number(data.attempts);

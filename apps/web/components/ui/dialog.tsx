@@ -14,7 +14,7 @@ export function Dialog({ open, onOpenChange, children }: { open?: boolean; onOpe
 export function DialogTrigger({ asChild, children }: { asChild?: boolean; children: React.ReactNode }) {
   const ctx = React.useContext(Ctx)!;
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children as any, { onClick: () => ctx.setOpen(true) });
+    return React.cloneElement(children as React.ReactElement<{ onClick: () => void }>, { onClick: () => ctx.setOpen(true) });
   }
   return <button onClick={() => ctx.setOpen(true)}>{children}</button>;
 }

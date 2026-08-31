@@ -9,16 +9,16 @@ async function req(path: string, init?: RequestInit) {
 export const api = {
   listTemplates: () => req("/task-templates"),
   listEvents: (playerId: string) => req(`/calendar/events?playerId=${playerId}`),
-  createEvent: (payload: any) => req("/calendar/events", { method: "POST", body: JSON.stringify(payload) }),
-  updateEvent: (id: string, payload: any) => req(`/calendar/events/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
-  createLog: (payload: any) => req("/task-logs", { method: "POST", body: JSON.stringify(payload) }),
+  createEvent: (payload: Record<string, unknown>) => req("/calendar/events", { method: "POST", body: JSON.stringify(payload) }),
+  updateEvent: (id: string, payload: Record<string, unknown>) => req(`/calendar/events/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  createLog: (payload: Record<string, unknown>) => req("/task-logs", { method: "POST", body: JSON.stringify(payload) }),
 
   // Calendar – practice slots
   listPracticeSlots: (playerId?: string) =>
     fetch(`/api/calendar/slots${playerId ? `?playerId=${encodeURIComponent(playerId)}` : ""}`, { cache: "no-store" }).then((r) => r.json()),
-  createPracticeSlot: (payload: any) =>
+  createPracticeSlot: (payload: Record<string, unknown>) =>
     fetch("/api/calendar/slots", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
-  updatePracticeSlot: (id: string, payload: any) =>
+  updatePracticeSlot: (id: string, payload: Record<string, unknown>) =>
     fetch(`/api/calendar/slots/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
   deletePracticeSlot: (id: string) =>
     fetch(`/api/calendar/slots/${id}`, { method: "DELETE" }).then((r) => r.json()),
@@ -26,9 +26,9 @@ export const api = {
   // Calendar – slot tasks
   listSlotTasks: (slotId: string) =>
     fetch(`/api/calendar/slots/${slotId}/tasks`, { cache: "no-store" }).then((r) => r.json()),
-  assignTask: (slotId: string, payload: any) =>
+  assignTask: (slotId: string, payload: Record<string, unknown>) =>
     fetch(`/api/calendar/slots/${slotId}/tasks`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
-  updateTask: (id: string, payload: any) =>
+  updateTask: (id: string, payload: Record<string, unknown>) =>
     fetch(`/api/calendar/tasks/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
   deleteTask: (id: string) =>
     fetch(`/api/calendar/tasks/${id}`, { method: "DELETE" }).then((r) => r.json()),
@@ -58,9 +58,9 @@ export const api = {
   },
   getLesson: (id: string) =>
     fetch(`/api/lessons/${id}`, { cache: "no-store" }).then((r) => r.json()),
-  createLesson: (payload: any) =>
+  createLesson: (payload: Record<string, unknown>) =>
     fetch("/api/lessons", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
-  updateLesson: (id: string, payload: any) =>
+  updateLesson: (id: string, payload: Record<string, unknown>) =>
     fetch(`/api/lessons/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
   deleteLesson: (id: string) =>
     fetch(`/api/lessons/${id}`, { method: "DELETE" }).then((r) => r.json()),
@@ -81,25 +81,25 @@ export const api = {
     fetch(`/api/development-plans/team/${teamId}`, { cache: "no-store" }).then((r) => r.json()),
   getMyPlans: () =>
     fetch("/api/development-plans/my-plans", { cache: "no-store" }).then((r) => r.json()),
-  createPlan: (payload: any) =>
+  createPlan: (payload: Record<string, unknown>) =>
     fetch("/api/development-plans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
-  updatePlan: (planId: string, payload: any) =>
+  updatePlan: (planId: string, payload: Record<string, unknown>) =>
     fetch(`/api/development-plans/${planId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
   deletePlan: (planId: string) =>
     fetch(`/api/development-plans/${planId}`, { method: "DELETE" }).then((r) => r.json()),
 
   // Training Blocks
-  createBlock: (planId: string, payload: any) =>
+  createBlock: (planId: string, payload: Record<string, unknown>) =>
     fetch(`/api/development-plans/${planId}/blocks`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
-  updateBlock: (blockId: string, payload: any) =>
+  updateBlock: (blockId: string, payload: Record<string, unknown>) =>
     fetch(`/api/development-plans/blocks/${blockId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
   deleteBlock: (blockId: string) =>
     fetch(`/api/development-plans/blocks/${blockId}`, { method: "DELETE" }).then((r) => r.json()),
 
   // Lesson Assignments
-  addAssignment: (blockId: string, payload: any) =>
+  addAssignment: (blockId: string, payload: Record<string, unknown>) =>
     fetch(`/api/development-plans/blocks/${blockId}/assignments`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
-  updateAssignment: (assignmentId: string, payload: any) =>
+  updateAssignment: (assignmentId: string, payload: Record<string, unknown>) =>
     fetch(`/api/development-plans/assignments/${assignmentId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()),
   removeAssignment: (assignmentId: string) =>
     fetch(`/api/development-plans/assignments/${assignmentId}`, { method: "DELETE" }).then((r) => r.json()),
