@@ -59,6 +59,7 @@ export default function CoachPlayerCalendarView({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
   const [compareWithCoach, setCompareWithCoach] = useState(Boolean(coachId));
+  const [comparisonNowMs] = useState<number>(() => Date.now());
   const [activeView, setActiveView] =
     useState<keyof typeof VIEW_TO_FULLCALENDAR>(() =>
       typeof window !== "undefined" && window.innerWidth >= 1024
@@ -125,13 +126,20 @@ export default function CoachPlayerCalendarView({
     return [...playerEvents, ...coachEvents];
   }, [calendarData.activities, coachActivities, compareWithCoach]);
 
-  const nowMs = Date.now();
-  const playerNext = [...calendarData.activities]
-    .filter((activity) => new Date(activity.end).getTime() >= nowMs)
-    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())[0];
-  const coachNext = [...coachActivities]
-    .filter((activity) => new Date(activity.end).getTime() >= nowMs)
-    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())[0];
+  const playerNext = useMemo(
+    () =>
+      [...calendarData.activities]
+        .filter((activity) => new Date(activity.end).getTime() >= comparisonNowMs)
+        .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())[0],
+    [calendarData.activities, comparisonNowMs],
+  );
+  const coachNext = useMemo(
+    () =>
+      [...coachActivities]
+        .filter((activity) => new Date(activity.end).getTime() >= comparisonNowMs)
+        .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())[0],
+    [coachActivities, comparisonNowMs],
+  );
 
   const handleEventClick = useCallback(
     (arg: EventClickArg) => {

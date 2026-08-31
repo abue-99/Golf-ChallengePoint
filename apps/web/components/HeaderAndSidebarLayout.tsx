@@ -31,9 +31,9 @@ export default function HeaderAndSidebarLayout({
    ? [
        { href: '/', icon: Home, label: 'Dashboard' },
        { href: '/teams', icon: Users, label: 'Teams' },
-      { href: '/calendar', icon: CalendarDays, label: 'Calendar' },
-      { href: '/coach/lessons', icon: BookOpen, label: 'Lessons' },
-      { href: '/settings', icon: Settings, label: 'Settings' },
+       { href: '/calendar', icon: CalendarDays, label: 'Calendar' },
+       { href: '/coach/lessons', icon: BookOpen, label: 'Lessons' },
+       { href: '/settings', icon: Settings, label: 'Settings' },
      ]
    : role === 'PLAYER'
    ? [

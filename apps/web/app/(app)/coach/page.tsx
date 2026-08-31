@@ -61,9 +61,12 @@ export default function CoachHome() {
 
     (async () => {
       try {
-        const [playersRes, teamsRes] = await Promise.all([
+        const [playersRes, teamsRes, me] = await Promise.all([
           fetch("/api/players/my", { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])),
           fetch("/api/teams", { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])),
+          fetch("/api/auth/me", { cache: "no-store" }).then((r) =>
+            r.ok ? r.json() : null,
+          ),
         ]);
 
         if (ignore) return;
@@ -73,9 +76,6 @@ export default function CoachHome() {
         setPlayers(nextPlayers);
         setTeams(nextTeams);
 
-        const me = await fetch("/api/auth/me", { cache: "no-store" }).then((r) =>
-          r.ok ? r.json() : null,
-        );
         if (me?.id) {
           const coachCalendar = await fetch(`/api/calendar/player/${me.id}`, {
             cache: "no-store",
