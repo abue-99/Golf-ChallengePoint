@@ -75,6 +75,9 @@ jobs:
       - name: Lint Journey Files
         run: pnpm --dir apps/web exec eslint "components/PlayerJourney.tsx" "components/PlayerCalendarView.tsx" "components/CoachPlayerCalendarView.tsx" "components/calendar.tsx" "types/calendar.ts"
 
+      - name: Generate Prisma Client
+        run: pnpm --filter db prisma generate
+
       - name: Typecheck Web
         run: pnpm turbo typecheck --filter=golf-challenge-point-web
 
