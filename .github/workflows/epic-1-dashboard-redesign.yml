@@ -38,13 +38,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint Web App
-        run: pnpm turbo lint --filter=web
+        run: pnpm turbo lint --filter=golf-challenge-point-web
 
       - name: Type Check Web App
-        run: pnpm turbo typecheck --filter=web
+        run: pnpm turbo typecheck --filter=golf-challenge-point-web
 
       - name: Build Web App
-        run: pnpm turbo build --filter=web
+        run: pnpm turbo build --filter=golf-challenge-point-web
 
       - name: Verify Dashboard Routes
         run: |
