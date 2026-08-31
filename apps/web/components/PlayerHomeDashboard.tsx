@@ -44,15 +44,11 @@ type GamificationProfile = {
   level: number;
   currentStreak: number;
   longestStreak: number;
+  levelProgress: number;
+  nextLevelXp: number;
 };
 
-function progressToNextLevel(xp: number) {
-  return xp % 100;
-}
-
-function findActiveAssignment(
-  plans: PlayerDevelopmentPlan[],
-): {
+function findActiveAssignment(plans: PlayerDevelopmentPlan[]): {
   assignment: LessonAssignment;
   planName: string;
   blockName: string;
@@ -101,15 +97,17 @@ function HeroLevelCard({
   firstName,
   xp,
   level,
+  levelProgress,
+  nextLevelXp,
   currentStreak,
 }: {
   firstName: string;
   xp: number;
   level: number;
+  levelProgress: number;
+  nextLevelXp: number;
   currentStreak: number;
 }) {
-  const progress = progressToNextLevel(xp);
-
   return (
     <div className="rounded-2xl bg-gradient-to-br from-green-700 via-green-800 to-emerald-900 px-5 py-5 text-white shadow-lg">
       <div className="flex items-start justify-between">
@@ -143,13 +141,13 @@ function HeroLevelCard({
             {xp} XP
           </span>
           <span className="text-green-300">
-            {progress}% to Level {level + 1}
+            {levelProgress}% of {nextLevelXp} XP to Level {level + 1}
           </span>
         </div>
         <div className="h-2.5 w-full rounded-full bg-white/20">
           <div
             className="h-2.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-300 transition-all duration-700"
-            style={{ width: `${progress}%` }}
+            style={{ width: `${levelProgress}%` }}
           />
         </div>
       </div>
@@ -380,8 +378,7 @@ function WeeklyCompletionCard({
           />
         </div>
         <p className="text-xs text-slate-500">
-          Completed calendar sessions are counted from the coach-assignment
-          completion signal.
+          Sessions you mark complete on your calendar count toward this total.
         </p>
       </div>
     </div>
@@ -403,6 +400,8 @@ export default function PlayerHomeDashboard({
     level: 1,
     currentStreak: 0,
     longestStreak: 0,
+    levelProgress: 0,
+    nextLevelXp: 100,
   });
   const [weeklyCompletion, setWeeklyCompletion] = useState({
     completed: 0,
@@ -424,6 +423,8 @@ export default function PlayerHomeDashboard({
           level: profile.level ?? 1,
           currentStreak: profile.currentStreak ?? 0,
           longestStreak: profile.longestStreak ?? 0,
+          levelProgress: profile.levelProgress ?? 0,
+          nextLevelXp: profile.nextLevelXp ?? 100,
         });
       }
       setWeeklyCompletion(
@@ -448,6 +449,8 @@ export default function PlayerHomeDashboard({
         firstName={firstName}
         xp={gamification.xp}
         level={gamification.level}
+        levelProgress={gamification.levelProgress}
+        nextLevelXp={gamification.nextLevelXp}
         currentStreak={gamification.currentStreak}
       />
 

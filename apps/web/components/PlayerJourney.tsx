@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
+import { splitChecklist as missionChecklist } from "@/lib/calendar-activity";
 import {
   ASSIGNMENT_STATUSES,
   getFocusAreaPath,
@@ -23,13 +24,6 @@ const FOCUS_AREA_EMOJI: Record<string, string> = {
   FITNESS: "🏃",
   MENTAL: "🧘",
 };
-
-function missionChecklist(value?: string | null) {
-  return (value ?? "")
-    .split(/\r?\n/)
-    .map((item) => item.replace(/^[-*\d.)\s]+/, "").trim())
-    .filter(Boolean);
-}
 
 // ─── Status Configuration ─────────────────────────────────────────────────────
 

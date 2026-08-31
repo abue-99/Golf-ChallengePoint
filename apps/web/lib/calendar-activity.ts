@@ -81,6 +81,13 @@ export function getActivityLabel(activity: CalendarActivity) {
   }
 }
 
+export function splitChecklist(value?: string | null) {
+  return (value ?? "")
+    .split(/\r?\n/)
+    .map((item) => item.replace(/^[-*\d.)\s]+/, "").trim())
+    .filter(Boolean);
+}
+
 export function activityToEventInput(activity: CalendarActivity): EventInput {
   if (activity.type === "practice-slot") {
     return {

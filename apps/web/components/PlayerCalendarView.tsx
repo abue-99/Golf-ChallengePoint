@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { activityToEventInput } from "@/lib/calendar-activity";
+import { activityToEventInput, splitChecklist } from "@/lib/calendar-activity";
 import { api } from "@/lib/api";
 import type {
   AvailabilityBlockType,
@@ -87,13 +87,6 @@ function formatDateTime(iso: string) {
 
 function formatRange(start: string, end: string) {
   return `${formatDateTime(start)} → ${new Date(end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}`;
-}
-
-function splitChecklist(value?: string | null) {
-  return (value ?? "")
-    .split(/\r?\n/)
-    .map((item) => item.replace(/^[-*\d.)\s]+/, "").trim())
-    .filter(Boolean);
 }
 
 function blackoutBadge(type: AvailabilityBlockType) {
