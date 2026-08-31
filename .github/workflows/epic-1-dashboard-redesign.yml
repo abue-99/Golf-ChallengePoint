@@ -46,11 +46,9 @@ jobs:
       - name: Build Web App
         run: pnpm turbo build --filter=golf-challenge-point-web
 
-      - name: Verify Dashboard Routes
+      - name: Verify Dashboard Directory
         run: |
           echo "Checking dashboard related routes..."
-
-          test -d apps/web || exit 1
 
           if [ ! -d "apps/web" ]; then
             echo "apps/web not found"
