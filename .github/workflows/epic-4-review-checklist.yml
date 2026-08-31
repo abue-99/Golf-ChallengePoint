@@ -1,0 +1,43 @@
+name: Epic 4 Review Checklist
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Gamification Review Checklist
+        run: |
+          echo "Epic 4 Review Checklist"
+
+          echo "[ ] XP field implemented"
+          echo "[ ] Level field implemented"
+          echo "[ ] Current streak implemented"
+          echo "[ ] Longest streak implemented"
+
+          echo "[ ] Migration created"
+          echo "[ ] Prisma valid"
+
+          echo "[ ] XP calculation implemented"
+          echo "[ ] Streak calculation implemented"
+
+          echo "[ ] Dashboard displays streak"
+          echo "[ ] Dashboard displays level"
+          echo "[ ] Dashboard displays XP progress"
+
+          echo "[ ] Mobile experience verified"
+
+          echo "[ ] No leaderboard feature"
+          echo "[ ] No ranking feature"
+          echo "[ ] No player comparison feature"
+
+          echo "[ ] Existing architecture preserved"
