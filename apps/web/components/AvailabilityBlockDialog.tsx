@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
   Dialog,
   DialogContent,
@@ -52,7 +52,11 @@ type Props = {
 };
 
 function toLocalDate(iso: string) {
-  return new Date(iso).toISOString().slice(0, 10);
+  const date = new Date(iso);
+  const offsetDate = new Date(
+    date.getTime() - date.getTimezoneOffset() * 60000,
+  );
+  return offsetDate.toISOString().slice(0, 10);
 }
 
 function toUTCTime(iso: string) {
@@ -70,10 +74,10 @@ export default function AvailabilityBlockDialog({
   selectedDate,
 }: Props) {
   const {
+    control,
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { isSubmitting },
   } = useForm<FormValues>({
     defaultValues: {
@@ -120,7 +124,7 @@ export default function AvailabilityBlockDialog({
     }
   }, [defaultValues, open, reset, selectedDate]);
 
-  const recurrence = watch("recurrence");
+  const recurrence = useWatch({ control, name: "recurrence" });
 
   const submit = handleSubmit(async (values) => {
     await onSubmit({

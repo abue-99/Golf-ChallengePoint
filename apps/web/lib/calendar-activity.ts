@@ -1,6 +1,12 @@
 import type { EventInput } from "@fullcalendar/core";
 import type { CalendarActivity } from "@/types/calendar";
 
+export const VIEW_TO_FULLCALENDAR = {
+  today: "timeGridDay",
+  week: "timeGridWeek",
+  month: "dayGridMonth",
+} as const;
+
 const FOCUS_AREA_COLORS: Record<
   string,
   { solid: string; border: string; text: string; soft: string }
@@ -78,7 +84,20 @@ export function getActivityLabel(activity: CalendarActivity) {
       return `🏆 ${activity.title}`;
     case "milestone":
       return `🚩 ${activity.title}`;
+    default:
+      return activity.title;
   }
+}
+
+export function formatCalendarDateTime(value: string) {
+  return new Date(value).toLocaleString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
 export function splitChecklist(value?: string | null) {

@@ -10,7 +10,11 @@ import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AssignTaskDialog, { type AssignTaskPayload } from "./AssignTaskDialog";
-import { activityToEventInput } from "@/lib/calendar-activity";
+import {
+  activityToEventInput,
+  formatCalendarDateTime,
+  VIEW_TO_FULLCALENDAR,
+} from "@/lib/calendar-activity";
 import { api } from "@/lib/api";
 import type {
   CalendarActivity,
@@ -36,23 +40,6 @@ type CalendarPayload = {
   activities: CalendarActivity[];
   slots: SlotData[];
 };
-
-const VIEW_TO_FULLCALENDAR = {
-  today: "timeGridDay",
-  week: "timeGridWeek",
-  month: "dayGridMonth",
-} as const;
-
-function formatDateTime(value: string) {
-  return new Date(value).toLocaleString([], {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-}
 
 export default function CoachPlayerCalendarView({
   playerId,
@@ -131,7 +118,8 @@ export default function CoachPlayerCalendarView({
         <div>
           <p className="font-medium">{activity.title}</p>
           <p className="text-sm">
-            {formatDateTime(activity.start)} → {formatDateTime(activity.end)}
+            {formatCalendarDateTime(activity.start)} →{" "}
+            {formatCalendarDateTime(activity.end)}
           </p>
           {activity.description ? (
             <p className="mt-1 text-sm">{activity.description}</p>

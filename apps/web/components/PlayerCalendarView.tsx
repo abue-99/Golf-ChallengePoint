@@ -17,7 +17,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { activityToEventInput, splitChecklist } from "@/lib/calendar-activity";
+import {
+  activityToEventInput,
+  formatCalendarDateTime,
+  splitChecklist,
+  VIEW_TO_FULLCALENDAR,
+} from "@/lib/calendar-activity";
 import { api } from "@/lib/api";
 import type {
   AvailabilityBlockType,
@@ -68,25 +73,8 @@ type CalendarPayload = {
   summary?: { weeklyCompletion?: { completed: number; total: number } };
 };
 
-const VIEW_TO_FULLCALENDAR = {
-  today: "timeGridDay",
-  week: "timeGridWeek",
-  month: "dayGridMonth",
-} as const;
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString([], {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-}
-
 function formatRange(start: string, end: string) {
-  return `${formatDateTime(start)} → ${new Date(end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+  return `${formatCalendarDateTime(start)} → ${new Date(end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}`;
 }
 
 function blackoutBadge(type: AvailabilityBlockType) {

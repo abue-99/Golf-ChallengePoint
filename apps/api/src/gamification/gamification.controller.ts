@@ -1,4 +1,11 @@
-import { Controller, Get, Post, Param, UseGuards, ForbiddenException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  UseGuards,
+  ForbiddenException,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
@@ -10,7 +17,10 @@ export class GamificationController {
   constructor(private readonly gamificationService: GamificationService) {}
 
   @Get(':userId')
-  getProfile(@Param('userId') userId: string, @CurrentUser() caller: AuthenticatedUser) {
+  getProfile(
+    @Param('userId') userId: string,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
     if (caller.id !== userId) {
       throw new ForbiddenException();
     }
@@ -18,7 +28,10 @@ export class GamificationController {
   }
 
   @Post(':userId/activity')
-  recordActivity(@Param('userId') userId: string, @CurrentUser() caller: AuthenticatedUser) {
+  recordActivity(
+    @Param('userId') userId: string,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
     if (caller.id !== userId) {
       throw new ForbiddenException();
     }
