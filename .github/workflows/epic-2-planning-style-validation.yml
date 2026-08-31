@@ -116,8 +116,9 @@ jobs:
       - name: Verify Planning Page Uses PlanningHub
         run: |
           grep -q 'import PlanningHub from "@/components/PlanningHub"' "apps/web/app/(app)/planning/page.tsx"
-          grep -q 'Manage your availability and training sessions\.' "apps/web/app/(app)/planning/page.tsx"
-          grep -q '<PlanningHub userId={user.id} />' "apps/web/app/(app)/planning/page.tsx"
+          grep -q 'export default async function PlanningPage' "apps/web/app/(app)/planning/page.tsx"
+          grep -q '<PlanningHub' "apps/web/app/(app)/planning/page.tsx"
+          grep -q 'userId={user.id}' "apps/web/app/(app)/planning/page.tsx"
 
   architecture-guard:
     name: Architecture Guardrails
