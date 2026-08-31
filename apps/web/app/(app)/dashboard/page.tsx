@@ -41,7 +41,9 @@ export default function Dashboard() {
   const [coachCalendarActivities, setCoachCalendarActivities] = useState<
     CalendarActivity[]
   >([]);
-  const [coachNowIso, setCoachNowIso] = useState<string>("");
+  const [coachNowIso, setCoachNowIso] = useState<string>(() =>
+    new Date().toISOString(),
+  );
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -83,7 +85,7 @@ export default function Dashboard() {
   }, [role, playerId]);
 
   const isCoachOrAdmin = role === "COACH" || role === "ADMIN";
-  const coachNowMs = coachNowIso ? new Date(coachNowIso).getTime() : Date.now();
+  const coachNowMs = new Date(coachNowIso).getTime();
   const upcomingCoachItems = coachCalendarActivities
     .filter((activity) => new Date(activity.end).getTime() >= coachNowMs)
     .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
