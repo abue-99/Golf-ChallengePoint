@@ -1,0 +1,62 @@
+name: Epic 1 - Dashboard Redesign Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+    paths:
+      - "apps/web/**"
+      - "packages/**"
+      - ".github/workflows/**"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dashboard-validation:
+    name: Dashboard Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify Dashboard Route
+        run: |
+          echo "Checking dashboard route..."
+
+          if [ ! -f "apps/web/app/(app)/dashboard/page.tsx" ]; then
+            echo "Dashboard route file not found: apps/web/app/(app)/dashboard/page.tsx"
+            exit 1
+          fi
+
+          if [ ! -f "apps/web/components/PlayerHomeDashboard.tsx" ]; then
+            echo "Dashboard component file not found: apps/web/components/PlayerHomeDashboard.tsx"
+            exit 1
+          fi
+
+          if ! grep -q 'import PlayerHomeDashboard from "@/components/PlayerHomeDashboard"' "apps/web/app/(app)/dashboard/page.tsx"; then
+            echo "Dashboard route does not import PlayerHomeDashboard"
+            exit 1
+          fi
+
+          echo "Dashboard route and component files found"
+
+      - name: Lint Dashboard Files
+        run: pnpm --dir apps/web exec eslint "app/(app)/dashboard/page.tsx" "components/PlayerHomeDashboard.tsx"

@@ -1,0 +1,29 @@
+name: Epic 1 Review Checklist
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+
+jobs:
+  review-checklist:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Dashboard Review Checklist
+        run: |
+          echo "Epic 1 Review"
+
+          echo "[ ] Player Dashboard redesigned"
+          echo "[ ] Coach Dashboard redesigned"
+          echo "[ ] Today section implemented"
+          echo "[ ] Active Journey section implemented"
+          echo "[ ] Planning Style toggle added"
+          echo "[ ] Calendar prominently displayed"
+          echo "[ ] Mobile-first layout verified"
+          echo "[ ] Skill spider removed from dashboard"
