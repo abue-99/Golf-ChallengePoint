@@ -25,6 +25,9 @@ export async function POST(
     return NextResponse.json(data, { status: res.status });
   } catch (err) {
     console.error("[/api/gamification/[userId]/activity POST]", err);
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

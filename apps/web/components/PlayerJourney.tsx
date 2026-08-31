@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import {
-  FOCUS_AREAS,
   ASSIGNMENT_STATUSES,
   getFocusAreaPath,
   type PlayerDevelopmentPlan,
@@ -36,15 +35,41 @@ function missionChecklist(value?: string | null) {
 
 type StatusKey = "OUTSTANDING" | "STARTED" | "FINISHED" | "REVIEWED" | "LOCKED";
 
-const STATUS_STYLE: Record<StatusKey, { label: string; badge: string; dot: string }> = {
-  OUTSTANDING: { label: "Open", badge: "bg-slate-100 text-slate-600", dot: "bg-slate-300" },
-  STARTED: { label: "In Progress", badge: "bg-blue-100 text-blue-700", dot: "bg-blue-500" },
-  FINISHED: { label: "Completed", badge: "bg-green-100 text-green-700", dot: "bg-green-500" },
-  REVIEWED: { label: "Reviewed", badge: "bg-amber-100 text-amber-700", dot: "bg-amber-400" },
-  LOCKED: { label: "Locked", badge: "bg-slate-100 text-slate-400", dot: "bg-slate-200" },
+const STATUS_STYLE: Record<
+  StatusKey,
+  { label: string; badge: string; dot: string }
+> = {
+  OUTSTANDING: {
+    label: "Open",
+    badge: "bg-slate-100 text-slate-600",
+    dot: "bg-slate-300",
+  },
+  STARTED: {
+    label: "In Progress",
+    badge: "bg-blue-100 text-blue-700",
+    dot: "bg-blue-500",
+  },
+  FINISHED: {
+    label: "Completed",
+    badge: "bg-green-100 text-green-700",
+    dot: "bg-green-500",
+  },
+  REVIEWED: {
+    label: "Reviewed",
+    badge: "bg-amber-100 text-amber-700",
+    dot: "bg-amber-400",
+  },
+  LOCKED: {
+    label: "Locked",
+    badge: "bg-slate-100 text-slate-400",
+    dot: "bg-slate-200",
+  },
 };
 
-function resolveStatus(assignment: LessonAssignment, isLocked: boolean): StatusKey {
+function resolveStatus(
+  assignment: LessonAssignment,
+  isLocked: boolean,
+): StatusKey {
   if (isLocked) return "LOCKED";
   return assignment.status as StatusKey;
 }
@@ -56,10 +81,11 @@ function computeXp(plans: PlayerDevelopmentPlan[]): number {
   for (const plan of plans) {
     for (const block of plan.blocks) {
       const done = block.assignments.filter(
-        (a) => a.status === "FINISHED" || a.status === "REVIEWED"
+        (a) => a.status === "FINISHED" || a.status === "REVIEWED",
       ).length;
       xp += done * 50;
-      if (done === block.assignments.length && block.assignments.length > 0) xp += 500;
+      if (done === block.assignments.length && block.assignments.length > 0)
+        xp += 500;
     }
   }
   return xp;
@@ -103,7 +129,9 @@ function CompletionCelebration({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-5xl mb-3 animate-bounce">🎉</div>
-        <h2 className="text-2xl font-extrabold tracking-tight">LESSON COMPLETED</h2>
+        <h2 className="text-2xl font-extrabold tracking-tight">
+          LESSON COMPLETED
+        </h2>
         <p className="mt-1 text-green-200 font-medium">{lessonName}</p>
 
         <div className="mt-5 flex items-center justify-center gap-4">
@@ -156,7 +184,7 @@ function LessonCard({
   const focusPath = getFocusAreaPath(
     assignment.lesson.focusArea,
     assignment.lesson.subCapability,
-    assignment.lesson.subSubCapability
+    assignment.lesson.subSubCapability,
   );
 
   return (
@@ -168,25 +196,33 @@ function LessonCard({
         statusKey === "REVIEWED" && "border-amber-200 bg-amber-50/60",
         statusKey === "OUTSTANDING" && "border-gray-200 bg-white",
         statusKey === "LOCKED" && "border-slate-100 bg-slate-50/60 opacity-60",
-        !isLocked && "cursor-pointer hover:shadow-sm active:scale-[0.99]"
+        !isLocked && "cursor-pointer hover:shadow-sm active:scale-[0.99]",
       )}
       onClick={!isLocked ? onTap : undefined}
     >
       {/* Icon circle */}
-      <div className={cn(
-        "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-base border-2",
-        statusKey === "STARTED" && "border-blue-300 bg-blue-100",
-        statusKey === "FINISHED" && "border-green-300 bg-green-100",
-        statusKey === "REVIEWED" && "border-amber-300 bg-amber-100",
-        statusKey === "OUTSTANDING" && "border-slate-200 bg-slate-100",
-        statusKey === "LOCKED" && "border-slate-100 bg-slate-50",
-      )}>
-        {statusKey === "FINISHED" ? "✅" : statusKey === "REVIEWED" ? "⭐" : focusEmoji}
+      <div
+        className={cn(
+          "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-base border-2",
+          statusKey === "STARTED" && "border-blue-300 bg-blue-100",
+          statusKey === "FINISHED" && "border-green-300 bg-green-100",
+          statusKey === "REVIEWED" && "border-amber-300 bg-amber-100",
+          statusKey === "OUTSTANDING" && "border-slate-200 bg-slate-100",
+          statusKey === "LOCKED" && "border-slate-100 bg-slate-50",
+        )}
+      >
+        {statusKey === "FINISHED"
+          ? "✅"
+          : statusKey === "REVIEWED"
+            ? "⭐"
+            : focusEmoji}
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-slate-800 truncate">{assignment.lesson.name}</p>
+        <p className="text-sm font-semibold text-slate-800 truncate">
+          {assignment.lesson.name}
+        </p>
         <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
           <span className="flex items-center gap-0.5">
             <Clock className="h-3 w-3" />
@@ -198,7 +234,12 @@ function LessonCard({
       </div>
 
       {/* Status badge */}
-      <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold flex-shrink-0", style.badge)}>
+      <span
+        className={cn(
+          "rounded-full px-2.5 py-0.5 text-xs font-semibold flex-shrink-0",
+          style.badge,
+        )}
+      >
         {style.label}
       </span>
     </div>
@@ -218,15 +259,23 @@ function BlockCard({
 }) {
   const total = block.assignments.length;
   const done = block.assignments.filter(
-    (a) => a.status === "FINISHED" || a.status === "REVIEWED"
+    (a) => a.status === "FINISHED" || a.status === "REVIEWED",
   ).length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const blockDone = done === total && total > 0;
-  const blockStarted = block.assignments.some((a) => a.status !== "OUTSTANDING");
+  const blockStarted = block.assignments.some(
+    (a) => a.status !== "OUTSTANDING",
+  );
 
-  const [expanded, setExpanded] = useState(isFirst || blockStarted || !blockDone);
-  const [selectedAssignment, setSelectedAssignment] = useState<LessonAssignment | null>(null);
-  const [celebration, setCelebration] = useState<{ lessonName: string; nextLesson?: string } | null>(null);
+  const [expanded, setExpanded] = useState(
+    isFirst || blockStarted || !blockDone,
+  );
+  const [selectedAssignment, setSelectedAssignment] =
+    useState<LessonAssignment | null>(null);
+  const [celebration, setCelebration] = useState<{
+    lessonName: string;
+    nextLesson?: string;
+  } | null>(null);
 
   function handleStatusChange(updated: LessonAssignment) {
     onAssignmentUpdated(updated);
@@ -234,16 +283,21 @@ function BlockCard({
     if (updated.status === "FINISHED") {
       const idx = block.assignments.findIndex((a) => a.id === updated.id);
       const nextAssignment = block.assignments[idx + 1];
-      setCelebration({ lessonName: updated.lesson.name, nextLesson: nextAssignment?.lesson.name });
+      setCelebration({
+        lessonName: updated.lesson.name,
+        nextLesson: nextAssignment?.lesson.name,
+      });
     }
   }
 
   return (
     <>
-      <div className={cn(
-        "rounded-2xl border overflow-hidden",
-        blockDone ? "border-green-200" : "border-gray-200"
-      )}>
+      <div
+        className={cn(
+          "rounded-2xl border overflow-hidden",
+          blockDone ? "border-green-200" : "border-gray-200",
+        )}
+      >
         {/* Block header */}
         <button
           className="flex w-full items-center justify-between px-4 py-3 text-left bg-white hover:bg-slate-50/50 transition-colors"
@@ -252,14 +306,23 @@ function BlockCard({
           <div className="min-w-0">
             <p className="font-semibold text-slate-800 text-sm">{block.name}</p>
             {blockStarted && !blockDone && (
-              <p className="text-xs text-blue-600 font-medium mt-0.5">In Progress</p>
+              <p className="text-xs text-blue-600 font-medium mt-0.5">
+                In Progress
+              </p>
             )}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0 ml-3">
             {/* Circular progress */}
             <div className="relative h-8 w-8">
               <svg className="h-8 w-8 -rotate-90" viewBox="0 0 32 32">
-                <circle cx="16" cy="16" r="12" fill="none" stroke="#e2e8f0" strokeWidth="3" />
+                <circle
+                  cx="16"
+                  cy="16"
+                  r="12"
+                  fill="none"
+                  stroke="#e2e8f0"
+                  strokeWidth="3"
+                />
                 <circle
                   cx="16"
                   cy="16"
@@ -287,14 +350,17 @@ function BlockCard({
         {expanded && (
           <div className="border-t border-gray-100 bg-slate-50/30 px-4 py-3 space-y-2">
             {block.assignments.length === 0 ? (
-              <p className="text-xs text-slate-400 text-center py-2">No lessons in this block yet.</p>
+              <p className="text-xs text-slate-400 text-center py-2">
+                No lessons in this block yet.
+              </p>
             ) : (
               block.assignments.map((assignment, idx) => {
                 const prevDone =
                   idx === 0 ||
                   block.assignments[idx - 1].status === "FINISHED" ||
                   block.assignments[idx - 1].status === "REVIEWED";
-                const isLocked = !prevDone && assignment.status === "OUTSTANDING";
+                const isLocked =
+                  !prevDone && assignment.status === "OUTSTANDING";
                 return (
                   <LessonCard
                     key={assignment.id}
@@ -337,12 +403,6 @@ function PlanCard({
   plan: PlayerDevelopmentPlan;
   onAssignmentUpdated: (blockId: string, updated: LessonAssignment) => void;
 }) {
-  const allAssignments = plan.blocks.flatMap((b) => b.assignments);
-  const total = allAssignments.length;
-  const done = allAssignments.filter(
-    (a) => a.status === "FINISHED" || a.status === "REVIEWED"
-  ).length;
-
   const coachName = plan.coach
     ? `Coach ${plan.coach.firstName ?? plan.coach.email}`
     : null;
@@ -352,7 +412,9 @@ function PlanCard({
       {/* Plan header */}
       <div className="flex items-start justify-between px-5 py-4">
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-extrabold text-slate-900 leading-tight">{plan.name}</h2>
+          <h2 className="text-lg font-extrabold text-slate-900 leading-tight">
+            {plan.name}
+          </h2>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             {plan.ownerType === "TEAM" ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
@@ -377,11 +439,15 @@ function PlanCard({
             key={block.id}
             block={block}
             isFirst={blockIdx === 0}
-            onAssignmentUpdated={(updated) => onAssignmentUpdated(block.id, updated)}
+            onAssignmentUpdated={(updated) =>
+              onAssignmentUpdated(block.id, updated)
+            }
           />
         ))}
         {plan.blocks.length === 0 && (
-          <p className="text-sm text-slate-400 text-center py-4">No training blocks yet.</p>
+          <p className="text-sm text-slate-400 text-center py-4">
+            No training blocks yet.
+          </p>
         )}
       </div>
     </div>
@@ -397,10 +463,12 @@ function JourneyHeader({
   playerName: string;
   plans: PlayerDevelopmentPlan[];
 }) {
-  const allAssignments = plans.flatMap((p) => p.blocks.flatMap((b) => b.assignments));
+  const allAssignments = plans.flatMap((p) =>
+    p.blocks.flatMap((b) => b.assignments),
+  );
   const total = allAssignments.length;
   const done = allAssignments.filter(
-    (a) => a.status === "FINISHED" || a.status === "REVIEWED"
+    (a) => a.status === "FINISHED" || a.status === "REVIEWED",
   ).length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const xp = computeXp(plans);
@@ -431,7 +499,9 @@ function JourneyHeader({
 
       <div className="mt-4">
         <div className="mb-1 flex items-center justify-between text-xs">
-          <span className="text-slate-400">{done} of {total} lessons complete</span>
+          <span className="text-slate-400">
+            {done} of {total} lessons complete
+          </span>
           <span className="font-bold text-white">{pct}%</span>
         </div>
         <div className="h-2 w-full rounded-full bg-white/15">
@@ -445,7 +515,9 @@ function JourneyHeader({
       <div className="mt-2">
         <div className="mb-1 flex items-center justify-between text-xs">
           <span className="text-slate-500">Level {level} XP</span>
-          <span className="text-slate-500">{progress}% to Level {level + 1}</span>
+          <span className="text-slate-500">
+            {progress}% to Level {level + 1}
+          </span>
         </div>
         <div className="h-1 w-full rounded-full bg-white/10">
           <div
@@ -492,7 +564,7 @@ export default function PlayerJourney() {
   function handleAssignmentUpdated(
     planId: string,
     blockId: string,
-    updated: LessonAssignment
+    updated: LessonAssignment,
   ) {
     setPlans((prev) =>
       prev.map((plan) =>
@@ -506,12 +578,12 @@ export default function PlayerJourney() {
                   : {
                       ...block,
                       assignments: block.assignments.map((a) =>
-                        a.id === updated.id ? updated : a
+                        a.id === updated.id ? updated : a,
                       ),
-                    }
+                    },
               ),
-            }
-      )
+            },
+      ),
     );
   }
 
@@ -521,9 +593,12 @@ export default function PlayerJourney() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center px-6">
         <div className="mb-4 text-6xl">⛳</div>
-        <h2 className="text-xl font-bold text-slate-800">No Training Plans Yet</h2>
+        <h2 className="text-xl font-bold text-slate-800">
+          No Training Plans Yet
+        </h2>
         <p className="mt-2 max-w-sm text-sm text-slate-500">
-          Your coach hasn&apos;t set up a development plan for you yet. Check back soon!
+          Your coach hasn&apos;t set up a development plan for you yet. Check
+          back soon!
         </p>
       </div>
     );
@@ -560,14 +635,14 @@ function LessonDetailModal({
   const [status, setStatus] = useState(assignment.status);
   const [notes, setNotes] = useState(assignment.playerNotes ?? "");
   const [selfAssessment, setSelfAssessment] = useState<string>(
-    assignment.selfAssessment != null ? String(assignment.selfAssessment) : ""
+    assignment.selfAssessment != null ? String(assignment.selfAssessment) : "",
   );
   const [saving, setSaving] = useState(false);
 
   const focusPath = getFocusAreaPath(
     assignment.lesson.focusArea,
     assignment.lesson.subCapability,
-    assignment.lesson.subSubCapability
+    assignment.lesson.subSubCapability,
   );
   const focusEmoji = FOCUS_AREA_EMOJI[assignment.lesson.focusArea] ?? "📋";
   const exercises = missionChecklist(assignment.lesson.plannedExercises);
@@ -608,7 +683,9 @@ function LessonDetailModal({
             <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">
               {focusEmoji} {focusPath}
             </p>
-            <h2 className="text-lg font-bold text-slate-800">{assignment.lesson.name}</h2>
+            <h2 className="text-lg font-bold text-slate-800">
+              {assignment.lesson.name}
+            </h2>
           </div>
           <button
             onClick={onClose}
@@ -631,7 +708,9 @@ function LessonDetailModal({
                 <Clock className="mr-1 inline h-3 w-3" />
                 {assignment.lesson.durationMinutes} minutes
               </span>
-              <span className="rounded-full bg-white/15 px-3 py-1">{status}</span>
+              <span className="rounded-full bg-white/15 px-3 py-1">
+                {status}
+              </span>
               {assignment.dueDate && (
                 <span className="rounded-full bg-white/15 px-3 py-1">
                   Due {new Date(assignment.dueDate).toLocaleDateString()}
@@ -642,7 +721,9 @@ function LessonDetailModal({
 
           {exercises.length > 0 && (
             <div>
-              <h3 className="mb-2 text-sm font-semibold text-slate-700">Exercises checklist</h3>
+              <h3 className="mb-2 text-sm font-semibold text-slate-700">
+                Exercises checklist
+              </h3>
               <div className="space-y-2">
                 {exercises.map((exercise, index) => (
                   <div
@@ -659,7 +740,9 @@ function LessonDetailModal({
 
           {assignment.lesson.successCriteria && (
             <div>
-              <h3 className="mb-2 text-sm font-semibold text-slate-700">Success criteria</h3>
+              <h3 className="mb-2 text-sm font-semibold text-slate-700">
+                Success criteria
+              </h3>
               <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
                 {assignment.lesson.successCriteria}
               </div>
@@ -668,22 +751,30 @@ function LessonDetailModal({
 
           {/* Status */}
           <div>
-            <h3 className="mb-2 text-sm font-semibold text-slate-700">Completion flow</h3>
+            <h3 className="mb-2 text-sm font-semibold text-slate-700">
+              Completion flow
+            </h3>
             <div className="grid grid-cols-3 gap-2">
-              {ASSIGNMENT_STATUSES.filter((s) => s.value !== "REVIEWED").map((s) => (
-                <button
-                  key={s.value}
-                  onClick={() => setStatus(s.value)}
-                  className={cn(
-                    "rounded-2xl border-2 py-3 text-xs font-semibold transition-all",
-                    status === s.value
-                      ? "border-blue-500 bg-blue-500 text-white"
-                      : "border-gray-200 text-slate-500 hover:border-slate-300"
-                  )}
-                >
-                  {s.value === "OUTSTANDING" ? "Open" : s.value === "STARTED" ? "Start" : "Complete"}
-                </button>
-              ))}
+              {ASSIGNMENT_STATUSES.filter((s) => s.value !== "REVIEWED").map(
+                (s) => (
+                  <button
+                    key={s.value}
+                    onClick={() => setStatus(s.value)}
+                    className={cn(
+                      "rounded-2xl border-2 py-3 text-xs font-semibold transition-all",
+                      status === s.value
+                        ? "border-blue-500 bg-blue-500 text-white"
+                        : "border-gray-200 text-slate-500 hover:border-slate-300",
+                    )}
+                  >
+                    {s.value === "OUTSTANDING"
+                      ? "Open"
+                      : s.value === "STARTED"
+                        ? "Start"
+                        : "Complete"}
+                  </button>
+                ),
+              )}
             </div>
           </div>
 
@@ -697,13 +788,15 @@ function LessonDetailModal({
                 <button
                   key={n}
                   onClick={() =>
-                    setSelfAssessment(selfAssessment === String(n) ? "" : String(n))
+                    setSelfAssessment(
+                      selfAssessment === String(n) ? "" : String(n),
+                    )
                   }
                   className={cn(
                     "h-10 w-10 rounded-full border-2 text-sm font-semibold transition-all",
                     selfAssessment === String(n)
                       ? "border-blue-500 bg-blue-500 text-white"
-                      : "border-gray-200 text-slate-600 hover:border-blue-300"
+                      : "border-gray-200 text-slate-600 hover:border-blue-300",
                   )}
                 >
                   {n}
@@ -722,7 +815,7 @@ function LessonDetailModal({
                     "h-4 w-4",
                     i < parseInt(selfAssessment, 10)
                       ? "fill-amber-400 text-amber-400"
-                      : "text-slate-200"
+                      : "text-slate-200",
                   )}
                 />
               ))}
@@ -751,7 +844,11 @@ function LessonDetailModal({
             onClick={handleSave}
             disabled={saving}
           >
-            {saving ? "Saving…" : status === "FINISHED" ? "✅ Complete Mission" : "Save Mission"}
+            {saving
+              ? "Saving…"
+              : status === "FINISHED"
+                ? "✅ Complete Mission"
+                : "Save Mission"}
           </Button>
         </div>
       </div>
@@ -766,7 +863,10 @@ function JourneySkeleton() {
     <div className="space-y-4 max-w-lg mx-auto">
       <div className="h-36 animate-pulse rounded-2xl bg-slate-800/10" />
       {Array.from({ length: 2 }).map((_, i) => (
-        <div key={i} className="rounded-2xl border border-gray-200 p-5 space-y-3">
+        <div
+          key={i}
+          className="rounded-2xl border border-gray-200 p-5 space-y-3"
+        >
           <div className="flex items-center justify-between">
             <div className="space-y-2">
               <div className="h-4 w-36 animate-pulse rounded-full bg-slate-200" />
@@ -776,7 +876,10 @@ function JourneySkeleton() {
           </div>
           <div className="space-y-2">
             {Array.from({ length: 2 }).map((_, j) => (
-              <div key={j} className="h-14 animate-pulse rounded-xl bg-slate-100" />
+              <div
+                key={j}
+                className="h-14 animate-pulse rounded-xl bg-slate-100"
+              />
             ))}
           </div>
         </div>

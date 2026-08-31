@@ -9,7 +9,12 @@ export type CalendarActivityType =
   | "milestone";
 
 export type CalendarTaskStatus = "PLANNED" | "COMPLETED";
-export type AvailabilityBlockType = "SCHOOL" | "WORK" | "HOLIDAY" | "TRAVEL" | "CUSTOM";
+export type AvailabilityBlockType =
+  | "SCHOOL"
+  | "WORK"
+  | "HOLIDAY"
+  | "TRAVEL"
+  | "CUSTOM";
 export type TournamentPriority = "PRIORITY_1" | "PRIORITY_2" | "PRIORITY_3";
 
 export type CalendarLessonSummary = {

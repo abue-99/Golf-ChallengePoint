@@ -2,7 +2,12 @@
 
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -91,8 +96,11 @@ export default function AvailabilityBlockDialog({
         date: toLocalDate(defaultValues.startTime),
         startTime: toUTCTime(defaultValues.startTime),
         endTime: toUTCTime(defaultValues.endTime),
-        recurrence: (defaultValues.recurrence as FormValues["recurrence"]) ?? "NONE",
-        recurrenceEndDate: defaultValues.recurrenceEndDate ? toLocalDate(defaultValues.recurrenceEndDate) : "",
+        recurrence:
+          (defaultValues.recurrence as FormValues["recurrence"]) ?? "NONE",
+        recurrenceEndDate: defaultValues.recurrenceEndDate
+          ? toLocalDate(defaultValues.recurrenceEndDate)
+          : "",
         notes: defaultValues.notes ?? "",
       });
       return;
@@ -118,7 +126,9 @@ export default function AvailabilityBlockDialog({
     await onSubmit({
       title: values.title,
       type: values.type,
-      startTime: new Date(`${values.date}T${values.startTime}:00Z`).toISOString(),
+      startTime: new Date(
+        `${values.date}T${values.startTime}:00Z`,
+      ).toISOString(),
       endTime: new Date(`${values.date}T${values.endTime}:00Z`).toISOString(),
       recurrence: values.recurrence,
       recurrenceEndDate:
@@ -131,16 +141,27 @@ export default function AvailabilityBlockDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={(value) => { if (!value) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        if (!value) onClose();
+      }}
+    >
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{mode === "edit" ? "Edit blackout time" : "Add blackout time"}</DialogTitle>
+          <DialogTitle>
+            {mode === "edit" ? "Edit blackout time" : "Add blackout time"}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={submit} className="mt-2 space-y-4">
           <div className="space-y-1">
             <Label htmlFor="ab-title">Title</Label>
-            <Input id="ab-title" placeholder="School, work, holiday, travel…" {...register("title", { required: true })} />
+            <Input
+              id="ab-title"
+              placeholder="School, work, holiday, travel…"
+              {...register("title", { required: true })}
+            />
           </div>
 
           <div className="space-y-1">
@@ -160,17 +181,29 @@ export default function AvailabilityBlockDialog({
 
           <div className="space-y-1">
             <Label htmlFor="ab-date">Date</Label>
-            <Input id="ab-date" type="date" {...register("date", { required: true })} />
+            <Input
+              id="ab-date"
+              type="date"
+              {...register("date", { required: true })}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label htmlFor="ab-start">Start time</Label>
-              <Input id="ab-start" type="time" {...register("startTime", { required: true })} />
+              <Input
+                id="ab-start"
+                type="time"
+                {...register("startTime", { required: true })}
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="ab-end">End time</Label>
-              <Input id="ab-end" type="time" {...register("endTime", { required: true })} />
+              <Input
+                id="ab-end"
+                type="time"
+                {...register("endTime", { required: true })}
+              />
             </div>
           </div>
 
@@ -191,7 +224,11 @@ export default function AvailabilityBlockDialog({
           {recurrence !== "NONE" && (
             <div className="space-y-1">
               <Label htmlFor="ab-recurrence-end">Recurrence end date</Label>
-              <Input id="ab-recurrence-end" type="date" {...register("recurrenceEndDate")} />
+              <Input
+                id="ab-recurrence-end"
+                type="date"
+                {...register("recurrenceEndDate")}
+              />
             </div>
           )}
 
@@ -223,9 +260,15 @@ export default function AvailabilityBlockDialog({
             )}
 
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving…" : mode === "edit" ? "Save changes" : "Add blackout"}
+                {isSubmitting
+                  ? "Saving…"
+                  : mode === "edit"
+                    ? "Save changes"
+                    : "Add blackout"}
               </Button>
             </div>
           </div>

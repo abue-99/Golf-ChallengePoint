@@ -5,13 +5,43 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { OwnerType } from '@challengepoint/db';
+import {
+  AvailabilityBlockType,
+  CalendarTaskStatus,
+  OwnerType,
+  Prisma,
+  Recurrence,
+  TournamentPriority,
+} from '@challengepoint/db';
 
-type RecurrenceValue = 'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY';
-type AvailabilityType = 'SCHOOL' | 'WORK' | 'HOLIDAY' | 'TRAVEL' | 'CUSTOM';
-type TournamentPriority = 'PRIORITY_1' | 'PRIORITY_2' | 'PRIORITY_3';
-type CalendarTaskStatus = 'PLANNED' | 'COMPLETED';
-type DevelopmentMilestoneStatus = 'PLANNED' | 'COMPLETED';
+type TeamSummarySelect = { id: true; shortName: true; icon: true };
+const TEAM_SELECT = {
+  id: true,
+  shortName: true,
+  icon: true,
+} satisfies TeamSummarySelect;
+const CALENDAR_LESSON_SELECT = {
+  id: true,
+  name: true,
+  focusArea: true,
+  durationMinutes: true,
+  trainingObjective: true,
+  successCriteria: true,
+  plannedExercises: true,
+  subCapability: true,
+  subSubCapability: true,
+} satisfies Prisma.TrainingLessonSelect;
+
+type CalendarTaskWithLesson = Prisma.CalendarTaskGetPayload<{
+  include: { lesson: { select: typeof CALENDAR_LESSON_SELECT } };
+}>;
+
+type PracticeSlotWithTasks = Prisma.PracticeSlotGetPayload<{
+  include: {
+    tasks: { include: { lesson: { select: typeof CALENDAR_LESSON_SELECT } } };
+    team: { select: typeof TEAM_SELECT };
+  };
+}>;
 
 export interface SlotOccurrence {
   start: Date;
@@ -29,7 +59,7 @@ interface RawSlot {
   recurrenceEndDate: Date | null;
   startTime: Date;
   endTime: Date;
-  tasks: unknown[];
+  tasks: CalendarTaskWithLesson[];
 }
 
 function overlaps(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
@@ -91,8 +121,16 @@ function getDefaultExpansionLimit(base: Date) {
 
 function formatWindow(start: Date, end: Date) {
   const date = start.toLocaleDateString();
-  const startTime = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-  const endTime = end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  const startTime = start.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  const endTime = end.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
   return `${date} ${startTime}-${endTime}`;
 }
 
@@ -109,8 +147,17 @@ function startOfWeek(date: Date) {
 export class CalendarService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private validateDateRange(start: Date, end: Date, message = 'Start time must be before end time') {
-    if (!(start instanceof Date) || Number.isNaN(start.getTime()) || !(end instanceof Date) || Number.isNaN(end.getTime())) {
+  private validateDateRange(
+    start: Date,
+    end: Date,
+    message = 'Start time must be before end time',
+  ) {
+    if (
+      !(start instanceof Date) ||
+      Number.isNaN(start.getTime()) ||
+      !(end instanceof Date) ||
+      Number.isNaN(end.getTime())
+    ) {
       throw new BadRequestException('Invalid date value');
     }
     if (start >= end) {
@@ -129,7 +176,9 @@ export class CalendarService {
 
   private requireCoachOrAdmin(role: string) {
     if (role !== 'COACH' && role !== 'ADMIN') {
-      throw new ForbiddenException('Only coaches and admins can manage team training windows');
+      throw new ForbiddenException(
+        'Only coaches and admins can manage team training windows',
+      );
     }
   }
 
@@ -140,7 +189,11 @@ export class CalendarService {
     return team;
   }
 
-  private async assertCanAccessPlayer(userId: string, role: string, playerId: string) {
+  private async assertCanAccessPlayer(
+    userId: string,
+    role: string,
+    playerId: string,
+  ) {
     if (userId === playerId || role === 'ADMIN') return;
     await this.assertCoachPlayerLink(userId, playerId);
   }
@@ -185,14 +238,17 @@ export class CalendarService {
     if (playerIds.length === 0 || intervals.length === 0) return;
 
     const latestEnd = intervals.reduce(
-      (max, interval) => (interval.end.getTime() > max.getTime() ? interval.end : max),
+      (max, interval) =>
+        interval.end.getTime() > max.getTime() ? interval.end : max,
       intervals[0].end,
     );
 
     const blocks = await this.prisma.availabilityBlock.findMany({
       where: {
         playerId: { in: playerIds },
-        ...(ignoreAvailabilityBlockId ? { id: { not: ignoreAvailabilityBlockId } } : {}),
+        ...(ignoreAvailabilityBlockId
+          ? { id: { not: ignoreAvailabilityBlockId } }
+          : {}),
       },
       select: {
         id: true,
@@ -213,11 +269,18 @@ export class CalendarService {
       const occurrences = expandRecurringOccurrences(block, latestEnd);
       for (const occurrence of occurrences) {
         const interval = intervals.find((candidate) =>
-          overlaps(candidate.start, candidate.end, occurrence.start, occurrence.end),
+          overlaps(
+            candidate.start,
+            candidate.end,
+            occurrence.start,
+            occurrence.end,
+          ),
         );
         if (!interval) continue;
         const playerName =
-          [block.player.firstName, block.player.lastName].filter(Boolean).join(' ') || block.player.email;
+          [block.player.firstName, block.player.lastName]
+            .filter(Boolean)
+            .join(' ') || block.player.email;
         conflictMessages.push(
           `${playerName}: ${block.title} (${block.type}) at ${formatWindow(occurrence.start, occurrence.end)}`,
         );
@@ -227,7 +290,9 @@ export class CalendarService {
     }
 
     if (conflictMessages.length > 0) {
-      throw new BadRequestException(`Scheduling conflict with blackout time: ${conflictMessages.join('; ')}`);
+      throw new BadRequestException(
+        `Scheduling conflict with blackout time: ${conflictMessages.join('; ')}`,
+      );
     }
   }
 
@@ -243,10 +308,7 @@ export class CalendarService {
     return slot.teamId ? this.getActivePlayerIdsForTeam(slot.teamId) : [];
   }
 
-  private buildTaskIntervals(
-    starts: Date[],
-    durationMinutes: number,
-  ) {
+  private buildTaskIntervals(starts: Date[], durationMinutes: number) {
     return starts.map((start) => ({
       start,
       end: new Date(start.getTime() + durationMinutes * 60_000),
@@ -269,18 +331,10 @@ export class CalendarService {
         ],
       },
       include: {
-        team: { select: { id: true, shortName: true, icon: true } },
+        team: { select: TEAM_SELECT },
         tasks: {
           include: {
-            lesson: {
-              select: {
-                id: true,
-                focusArea: true,
-                trainingObjective: true,
-                successCriteria: true,
-                plannedExercises: true,
-              },
-            },
+            lesson: { select: CALENDAR_LESSON_SELECT },
           },
         },
       },
@@ -294,7 +348,7 @@ export class CalendarService {
       title: string;
       startTime: string;
       endTime: string;
-      recurrence?: RecurrenceValue;
+      recurrence?: string;
       recurrenceEndDate?: string;
     },
   ) {
@@ -302,13 +356,16 @@ export class CalendarService {
     const endTime = new Date(data.endTime);
     this.validateDateRange(startTime, endTime);
 
-    const recurrenceEndDate = data.recurrenceEndDate ? new Date(data.recurrenceEndDate) : null;
-    const conflictLimit = recurrenceEndDate ?? getDefaultExpansionLimit(startTime);
+    const recurrenceEndDate = data.recurrenceEndDate
+      ? new Date(data.recurrenceEndDate)
+      : null;
+    const conflictLimit =
+      recurrenceEndDate ?? getDefaultExpansionLimit(startTime);
     const intervals = expandRecurringOccurrences(
       {
         startTime,
         endTime,
-        recurrence: data.recurrence ?? 'NONE',
+        recurrence: (data.recurrence ?? Recurrence.NONE) as Recurrence,
         recurrenceEndDate,
       },
       conflictLimit,
@@ -323,10 +380,10 @@ export class CalendarService {
         title: data.title,
         startTime,
         endTime,
-        recurrence: data.recurrence ?? 'NONE',
+        recurrence: (data.recurrence ?? Recurrence.NONE) as Recurrence,
         recurrenceEndDate,
       },
-      include: { team: { select: { id: true, shortName: true, icon: true } } },
+      include: { team: { select: TEAM_SELECT } },
     });
   }
 
@@ -340,18 +397,10 @@ export class CalendarService {
       include: {
         tasks: {
           include: {
-            lesson: {
-              select: {
-                id: true,
-                focusArea: true,
-                trainingObjective: true,
-                successCriteria: true,
-                plannedExercises: true,
-              },
-            },
+            lesson: { select: CALENDAR_LESSON_SELECT },
           },
         },
-        team: { select: { id: true, shortName: true, icon: true } },
+        team: { select: TEAM_SELECT },
       },
       orderBy: { startTime: 'asc' },
     });
@@ -366,7 +415,7 @@ export class CalendarService {
       title: string;
       startTime: string;
       endTime: string;
-      recurrence?: RecurrenceValue;
+      recurrence?: string;
       recurrenceEndDate?: string;
     },
   ) {
@@ -379,13 +428,16 @@ export class CalendarService {
     const endTime = new Date(data.endTime);
     this.validateDateRange(startTime, endTime);
 
-    const recurrenceEndDate = data.recurrenceEndDate ? new Date(data.recurrenceEndDate) : null;
-    const conflictLimit = recurrenceEndDate ?? getDefaultExpansionLimit(startTime);
+    const recurrenceEndDate = data.recurrenceEndDate
+      ? new Date(data.recurrenceEndDate)
+      : null;
+    const conflictLimit =
+      recurrenceEndDate ?? getDefaultExpansionLimit(startTime);
     const intervals = expandRecurringOccurrences(
       {
         startTime,
         endTime,
-        recurrence: data.recurrence ?? 'NONE',
+        recurrence: (data.recurrence ?? Recurrence.NONE) as Recurrence,
         recurrenceEndDate,
       },
       conflictLimit,
@@ -401,12 +453,16 @@ export class CalendarService {
         title: data.title,
         startTime,
         endTime,
-        recurrence: data.recurrence ?? 'NONE',
+        recurrence: (data.recurrence ?? Recurrence.NONE) as Recurrence,
         recurrenceEndDate,
       },
       include: {
-        tasks: true,
-        team: { select: { id: true, shortName: true, icon: true } },
+        tasks: {
+          include: {
+            lesson: { select: CALENDAR_LESSON_SELECT },
+          },
+        },
+        team: { select: TEAM_SELECT },
       },
     });
     return this.expandSlot(slot);
@@ -420,7 +476,7 @@ export class CalendarService {
       title?: string;
       startTime?: string;
       endTime?: string;
-      recurrence?: RecurrenceValue;
+      recurrence?: string;
       recurrenceEndDate?: string | null;
     },
   ) {
@@ -438,10 +494,12 @@ export class CalendarService {
       throw new ForbiddenException('Not your practice slot');
     }
 
-    const startTime = data.startTime ? new Date(data.startTime) : slot.startTime;
+    const startTime = data.startTime
+      ? new Date(data.startTime)
+      : slot.startTime;
     const endTime = data.endTime ? new Date(data.endTime) : slot.endTime;
     this.validateDateRange(startTime, endTime);
-    const recurrence = data.recurrence ?? (slot.recurrence as RecurrenceValue);
+    const recurrence = (data.recurrence ?? slot.recurrence) as Recurrence;
     const recurrenceEndDate =
       data.recurrenceEndDate !== undefined
         ? data.recurrenceEndDate
@@ -449,7 +507,8 @@ export class CalendarService {
           : null
         : slot.recurrenceEndDate;
 
-    const conflictLimit = recurrenceEndDate ?? getDefaultExpansionLimit(startTime);
+    const conflictLimit =
+      recurrenceEndDate ?? getDefaultExpansionLimit(startTime);
     const intervals = expandRecurringOccurrences(
       {
         startTime,
@@ -476,7 +535,7 @@ export class CalendarService {
         ...(data.recurrence !== undefined ? { recurrence } : {}),
         ...(data.recurrenceEndDate !== undefined ? { recurrenceEndDate } : {}),
       },
-      include: { team: { select: { id: true, shortName: true, icon: true } } },
+      include: { team: { select: TEAM_SELECT } },
     });
   }
 
@@ -499,7 +558,11 @@ export class CalendarService {
     return { ok: true };
   }
 
-  async listAvailabilityBlocks(userId: string, role: string, playerId?: string) {
+  async listAvailabilityBlocks(
+    userId: string,
+    role: string,
+    playerId?: string,
+  ) {
     const targetPlayerId = playerId ?? userId;
     await this.assertCanAccessPlayer(userId, role, targetPlayerId);
     return this.prisma.availabilityBlock.findMany({
@@ -514,10 +577,10 @@ export class CalendarService {
     data: {
       playerId?: string;
       title: string;
-      type?: AvailabilityType;
+      type?: string;
       startTime: string;
       endTime: string;
-      recurrence?: RecurrenceValue;
+      recurrence?: string;
       recurrenceEndDate?: string;
       notes?: string;
     },
@@ -532,11 +595,14 @@ export class CalendarService {
       data: {
         playerId,
         title: data.title,
-        type: data.type ?? 'CUSTOM',
+        type: (data.type ??
+          AvailabilityBlockType.CUSTOM) as AvailabilityBlockType,
         startTime,
         endTime,
-        recurrence: data.recurrence ?? 'NONE',
-        recurrenceEndDate: data.recurrenceEndDate ? new Date(data.recurrenceEndDate) : null,
+        recurrence: (data.recurrence ?? Recurrence.NONE) as Recurrence,
+        recurrenceEndDate: data.recurrenceEndDate
+          ? new Date(data.recurrenceEndDate)
+          : null,
         notes: data.notes,
       },
     });
@@ -548,19 +614,23 @@ export class CalendarService {
     blockId: string,
     data: {
       title?: string;
-      type?: AvailabilityType;
+      type?: string;
       startTime?: string;
       endTime?: string;
-      recurrence?: RecurrenceValue;
+      recurrence?: string;
       recurrenceEndDate?: string | null;
       notes?: string | null;
     },
   ) {
-    const block = await this.prisma.availabilityBlock.findUnique({ where: { id: blockId } });
+    const block = await this.prisma.availabilityBlock.findUnique({
+      where: { id: blockId },
+    });
     if (!block) throw new NotFoundException('Availability block not found');
     await this.assertCanAccessPlayer(userId, role, block.playerId);
 
-    const startTime = data.startTime ? new Date(data.startTime) : block.startTime;
+    const startTime = data.startTime
+      ? new Date(data.startTime)
+      : block.startTime;
     const endTime = data.endTime ? new Date(data.endTime) : block.endTime;
     this.validateDateRange(startTime, endTime);
 
@@ -568,10 +638,14 @@ export class CalendarService {
       where: { id: blockId },
       data: {
         ...(data.title !== undefined ? { title: data.title } : {}),
-        ...(data.type !== undefined ? { type: data.type } : {}),
+        ...(data.type !== undefined
+          ? { type: data.type as AvailabilityBlockType }
+          : {}),
         ...(data.startTime !== undefined ? { startTime } : {}),
         ...(data.endTime !== undefined ? { endTime } : {}),
-        ...(data.recurrence !== undefined ? { recurrence: data.recurrence } : {}),
+        ...(data.recurrence !== undefined
+          ? { recurrence: data.recurrence as Recurrence }
+          : {}),
         ...(data.recurrenceEndDate !== undefined
           ? {
               recurrenceEndDate: data.recurrenceEndDate
@@ -585,7 +659,9 @@ export class CalendarService {
   }
 
   async deleteAvailabilityBlock(userId: string, role: string, blockId: string) {
-    const block = await this.prisma.availabilityBlock.findUnique({ where: { id: blockId } });
+    const block = await this.prisma.availabilityBlock.findUnique({
+      where: { id: blockId },
+    });
     if (!block) throw new NotFoundException('Availability block not found');
     await this.assertCanAccessPlayer(userId, role, block.playerId);
     await this.prisma.availabilityBlock.delete({ where: { id: blockId } });
@@ -623,7 +699,9 @@ export class CalendarService {
     const endTime = new Date(data.endTime);
     this.validateDateRange(startTime, endTime);
     const playerIds = await this.getActivePlayerIdsForTeam(data.teamId);
-    await this.ensureNoAvailabilityConflicts(playerIds, [{ start: startTime, end: endTime }]);
+    await this.ensureNoAvailabilityConflicts(playerIds, [
+      { start: startTime, end: endTime },
+    ]);
 
     return this.prisma.teamEvent.create({
       data: {
@@ -650,22 +728,30 @@ export class CalendarService {
       endTime?: string;
     },
   ) {
-    const event = await this.prisma.teamEvent.findUnique({ where: { id: eventId } });
+    const event = await this.prisma.teamEvent.findUnique({
+      where: { id: eventId },
+    });
     if (!event) throw new NotFoundException('Team event not found');
     if (role !== 'ADMIN') {
       await this.assertCoachOwnsTeam(userId, event.teamId);
     }
-    const startTime = data.startTime ? new Date(data.startTime) : event.startTime;
+    const startTime = data.startTime
+      ? new Date(data.startTime)
+      : event.startTime;
     const endTime = data.endTime ? new Date(data.endTime) : event.endTime;
     this.validateDateRange(startTime, endTime);
     const playerIds = await this.getActivePlayerIdsForTeam(event.teamId);
-    await this.ensureNoAvailabilityConflicts(playerIds, [{ start: startTime, end: endTime }]);
+    await this.ensureNoAvailabilityConflicts(playerIds, [
+      { start: startTime, end: endTime },
+    ]);
 
     return this.prisma.teamEvent.update({
       where: { id: eventId },
       data: {
         ...(data.title !== undefined ? { title: data.title } : {}),
-        ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.description !== undefined
+          ? { description: data.description }
+          : {}),
         ...(data.location !== undefined ? { location: data.location } : {}),
         ...(data.startTime !== undefined ? { startTime } : {}),
         ...(data.endTime !== undefined ? { endTime } : {}),
@@ -674,7 +760,9 @@ export class CalendarService {
   }
 
   async deleteTeamEvent(userId: string, role: string, eventId: string) {
-    const event = await this.prisma.teamEvent.findUnique({ where: { id: eventId } });
+    const event = await this.prisma.teamEvent.findUnique({
+      where: { id: eventId },
+    });
     if (!event) throw new NotFoundException('Team event not found');
     if (role !== 'ADMIN') {
       await this.assertCoachOwnsTeam(userId, event.teamId);
@@ -702,7 +790,7 @@ export class CalendarService {
       location?: string;
       startTime: string;
       endTime: string;
-      priority?: TournamentPriority;
+      priority?: string;
     },
   ) {
     const playerId = data.playerId ?? userId;
@@ -710,7 +798,10 @@ export class CalendarService {
     const startTime = new Date(data.startTime);
     const endTime = new Date(data.endTime);
     this.validateDateRange(startTime, endTime);
-    await this.ensureNoAvailabilityConflicts([playerId], [{ start: startTime, end: endTime }]);
+    await this.ensureNoAvailabilityConflicts(
+      [playerId],
+      [{ start: startTime, end: endTime }],
+    );
 
     return this.prisma.tournament.create({
       data: {
@@ -720,7 +811,8 @@ export class CalendarService {
         location: data.location,
         startTime,
         endTime,
-        priority: data.priority ?? 'PRIORITY_2',
+        priority: (data.priority ??
+          TournamentPriority.PRIORITY_2) as TournamentPriority,
       },
     });
   }
@@ -735,32 +827,45 @@ export class CalendarService {
       location?: string | null;
       startTime?: string;
       endTime?: string;
-      priority?: TournamentPriority;
+      priority?: string;
     },
   ) {
-    const tournament = await this.prisma.tournament.findUnique({ where: { id: tournamentId } });
+    const tournament = await this.prisma.tournament.findUnique({
+      where: { id: tournamentId },
+    });
     if (!tournament) throw new NotFoundException('Tournament not found');
     await this.assertCanAccessPlayer(userId, role, tournament.playerId);
-    const startTime = data.startTime ? new Date(data.startTime) : tournament.startTime;
+    const startTime = data.startTime
+      ? new Date(data.startTime)
+      : tournament.startTime;
     const endTime = data.endTime ? new Date(data.endTime) : tournament.endTime;
     this.validateDateRange(startTime, endTime);
-    await this.ensureNoAvailabilityConflicts([tournament.playerId], [{ start: startTime, end: endTime }]);
+    await this.ensureNoAvailabilityConflicts(
+      [tournament.playerId],
+      [{ start: startTime, end: endTime }],
+    );
 
     return this.prisma.tournament.update({
       where: { id: tournamentId },
       data: {
         ...(data.title !== undefined ? { title: data.title } : {}),
-        ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.description !== undefined
+          ? { description: data.description }
+          : {}),
         ...(data.location !== undefined ? { location: data.location } : {}),
         ...(data.startTime !== undefined ? { startTime } : {}),
         ...(data.endTime !== undefined ? { endTime } : {}),
-        ...(data.priority !== undefined ? { priority: data.priority } : {}),
+        ...(data.priority !== undefined
+          ? { priority: data.priority as TournamentPriority }
+          : {}),
       },
     });
   }
 
   async deleteTournament(userId: string, role: string, tournamentId: string) {
-    const tournament = await this.prisma.tournament.findUnique({ where: { id: tournamentId } });
+    const tournament = await this.prisma.tournament.findUnique({
+      where: { id: tournamentId },
+    });
     if (!tournament) throw new NotFoundException('Tournament not found');
     await this.assertCanAccessPlayer(userId, role, tournament.playerId);
     await this.prisma.tournament.delete({ where: { id: tournamentId } });
@@ -797,13 +902,7 @@ export class CalendarService {
       where: { practiceSlotId: slotId },
       include: {
         lesson: {
-          select: {
-            id: true,
-            focusArea: true,
-            trainingObjective: true,
-            successCriteria: true,
-            plannedExercises: true,
-          },
+          select: CALENDAR_LESSON_SELECT,
         },
       },
       orderBy: { scheduledDate: 'asc' },
@@ -839,22 +938,35 @@ export class CalendarService {
     }
 
     const scheduledDate = new Date(data.scheduledDate);
-    const scheduledEnd = new Date(scheduledDate.getTime() + data.durationMinutes * 60_000);
-    this.validateDateRange(scheduledDate, scheduledEnd, 'Task duration must be positive');
+    const scheduledEnd = new Date(
+      scheduledDate.getTime() + data.durationMinutes * 60_000,
+    );
+    this.validateDateRange(
+      scheduledDate,
+      scheduledEnd,
+      'Task duration must be positive',
+    );
 
-    const slotStartMins = slot.startTime.getUTCHours() * 60 + slot.startTime.getUTCMinutes();
-    const slotEndMins = slot.endTime.getUTCHours() * 60 + slot.endTime.getUTCMinutes();
-    const taskStartMins = scheduledDate.getUTCHours() * 60 + scheduledDate.getUTCMinutes();
+    const slotStartMins =
+      slot.startTime.getUTCHours() * 60 + slot.startTime.getUTCMinutes();
+    const slotEndMins =
+      slot.endTime.getUTCHours() * 60 + slot.endTime.getUTCMinutes();
+    const taskStartMins =
+      scheduledDate.getUTCHours() * 60 + scheduledDate.getUTCMinutes();
     const taskEndMins = taskStartMins + data.durationMinutes;
 
     if (taskStartMins < slotStartMins || taskEndMins > slotEndMins) {
-      throw new BadRequestException('Task time must be within the practice slot window');
+      throw new BadRequestException(
+        'Task time must be within the practice slot window',
+      );
     }
 
     const affectedPlayerIds = await this.getPlayerIdsForSlot(slotId);
 
     if (!data.recurrenceCount || !data.recurrenceWeeks) {
-      await this.ensureNoAvailabilityConflicts(affectedPlayerIds, [{ start: scheduledDate, end: scheduledEnd }]);
+      await this.ensureNoAvailabilityConflicts(affectedPlayerIds, [
+        { start: scheduledDate, end: scheduledEnd },
+      ]);
       return [
         await this.prisma.calendarTask.create({
           data: {
@@ -867,15 +979,7 @@ export class CalendarService {
             lessonId: data.lessonId ?? null,
           },
           include: {
-            lesson: {
-              select: {
-                id: true,
-                focusArea: true,
-                trainingObjective: true,
-                successCriteria: true,
-                plannedExercises: true,
-              },
-            },
+            lesson: { select: CALENDAR_LESSON_SELECT },
           },
         }),
       ];
@@ -889,10 +993,15 @@ export class CalendarService {
     );
 
     if (occurrences.length === 0) {
-      throw new BadRequestException('No practice slot occurrences found in the specified window');
+      throw new BadRequestException(
+        'No practice slot occurrences found in the specified window',
+      );
     }
 
-    const step = Math.max(1, Math.floor(occurrences.length / data.recurrenceCount));
+    const step = Math.max(
+      1,
+      Math.floor(occurrences.length / data.recurrenceCount),
+    );
     const selected = occurrences
       .filter((_, index) => index % step === 0)
       .slice(0, data.recurrenceCount);
@@ -923,15 +1032,7 @@ export class CalendarService {
             lessonId: data.lessonId ?? null,
           },
           include: {
-            lesson: {
-              select: {
-                id: true,
-                focusArea: true,
-                trainingObjective: true,
-                successCriteria: true,
-                plannedExercises: true,
-              },
-            },
+            lesson: { select: CALENDAR_LESSON_SELECT },
           },
         }),
       ),
@@ -947,14 +1048,22 @@ export class CalendarService {
       description?: string;
       durationMinutes?: number;
       scheduledDate?: string;
-      status?: CalendarTaskStatus;
+      status?: string;
       lessonId?: string | null;
     },
   ) {
     const task = await this.prisma.calendarTask.findUnique({
       where: { id: taskId },
       include: {
-        practiceSlot: { select: { ownerType: true, playerId: true, teamId: true, startTime: true, endTime: true } },
+        practiceSlot: {
+          select: {
+            ownerType: true,
+            playerId: true,
+            teamId: true,
+            startTime: true,
+            endTime: true,
+          },
+        },
       },
     });
     if (!task) throw new NotFoundException('Task not found');
@@ -967,55 +1076,74 @@ export class CalendarService {
     }
 
     if (!isCoach) {
-      const forbiddenFields = ['title', 'description', 'durationMinutes', 'scheduledDate', 'lessonId'].some(
-        (field) => Object.prototype.hasOwnProperty.call(data, field),
-      );
+      const forbiddenFields = [
+        'title',
+        'description',
+        'durationMinutes',
+        'scheduledDate',
+        'lessonId',
+      ].some((field) => Object.prototype.hasOwnProperty.call(data, field));
       if (forbiddenFields) {
-        throw new ForbiddenException('Players can only update task completion status');
+        throw new ForbiddenException(
+          'Players can only update task completion status',
+        );
       }
     }
 
     const durationMinutes = data.durationMinutes ?? task.durationMinutes;
-    const scheduledDate = data.scheduledDate ? new Date(data.scheduledDate) : task.scheduledDate;
-    const scheduledEnd = new Date(scheduledDate.getTime() + durationMinutes * 60_000);
-    this.validateDateRange(scheduledDate, scheduledEnd, 'Task duration must be positive');
+    const scheduledDate = data.scheduledDate
+      ? new Date(data.scheduledDate)
+      : task.scheduledDate;
+    const scheduledEnd = new Date(
+      scheduledDate.getTime() + durationMinutes * 60_000,
+    );
+    this.validateDateRange(
+      scheduledDate,
+      scheduledEnd,
+      'Task duration must be positive',
+    );
 
-    const slotStartMins = task.practiceSlot.startTime.getUTCHours() * 60 + task.practiceSlot.startTime.getUTCMinutes();
-    const slotEndMins = task.practiceSlot.endTime.getUTCHours() * 60 + task.practiceSlot.endTime.getUTCMinutes();
-    const taskStartMins = scheduledDate.getUTCHours() * 60 + scheduledDate.getUTCMinutes();
+    const slotStartMins =
+      task.practiceSlot.startTime.getUTCHours() * 60 +
+      task.practiceSlot.startTime.getUTCMinutes();
+    const slotEndMins =
+      task.practiceSlot.endTime.getUTCHours() * 60 +
+      task.practiceSlot.endTime.getUTCMinutes();
+    const taskStartMins =
+      scheduledDate.getUTCHours() * 60 + scheduledDate.getUTCMinutes();
     const taskEndMins = taskStartMins + durationMinutes;
     if (taskStartMins < slotStartMins || taskEndMins > slotEndMins) {
-      throw new BadRequestException('Task time must be within the practice slot window');
+      throw new BadRequestException(
+        'Task time must be within the practice slot window',
+      );
     }
 
     if (isCoach) {
-      await this.ensureNoAvailabilityConflicts(playerIds, [{ start: scheduledDate, end: scheduledEnd }]);
+      await this.ensureNoAvailabilityConflicts(playerIds, [
+        { start: scheduledDate, end: scheduledEnd },
+      ]);
     }
 
     return this.prisma.calendarTask.update({
       where: { id: taskId },
       data: {
         ...(data.title !== undefined ? { title: data.title } : {}),
-        ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.description !== undefined
+          ? { description: data.description }
+          : {}),
         ...(data.durationMinutes !== undefined ? { durationMinutes } : {}),
         ...(data.scheduledDate !== undefined ? { scheduledDate } : {}),
         ...(data.lessonId !== undefined ? { lessonId: data.lessonId } : {}),
         ...(data.status !== undefined
           ? {
-              status: data.status,
+              status: data.status as CalendarTaskStatus,
               completedAt: data.status === 'COMPLETED' ? new Date() : null,
             }
           : {}),
       },
       include: {
         lesson: {
-          select: {
-            id: true,
-            focusArea: true,
-            trainingObjective: true,
-            successCriteria: true,
-            plannedExercises: true,
-          },
+          select: CALENDAR_LESSON_SELECT,
         },
       },
     });
@@ -1024,11 +1152,19 @@ export class CalendarService {
   async deleteTask(userId: string, role: string, taskId: string) {
     const task = await this.prisma.calendarTask.findUnique({
       where: { id: taskId },
-      include: { practiceSlot: { select: { playerId: true, teamId: true, ownerType: true } } },
+      include: {
+        practiceSlot: {
+          select: { playerId: true, teamId: true, ownerType: true },
+        },
+      },
     });
     if (!task) throw new NotFoundException('Task not found');
     if (task.coachId !== userId) throw new ForbiddenException('Not your task');
-    if (task.practiceSlot.ownerType === OwnerType.TEAM && task.practiceSlot.teamId && role !== 'ADMIN') {
+    if (
+      task.practiceSlot.ownerType === OwnerType.TEAM &&
+      task.practiceSlot.teamId &&
+      role !== 'ADMIN'
+    ) {
       await this.assertCoachOwnsTeam(userId, task.practiceSlot.teamId);
     }
 
@@ -1052,18 +1188,10 @@ export class CalendarService {
       include: {
         tasks: {
           include: {
-            lesson: {
-              select: {
-                id: true,
-                focusArea: true,
-                trainingObjective: true,
-                successCriteria: true,
-                plannedExercises: true,
-              },
-            },
+            lesson: { select: CALENDAR_LESSON_SELECT },
           },
         },
-        team: { select: { id: true, shortName: true, icon: true } },
+        team: { select: TEAM_SELECT },
       },
       orderBy: { startTime: 'asc' },
     });
@@ -1090,17 +1218,7 @@ export class CalendarService {
       where: { playerId, dueDate: { not: null } },
       include: {
         lesson: {
-          select: {
-            id: true,
-            name: true,
-            focusArea: true,
-            durationMinutes: true,
-            trainingObjective: true,
-            successCriteria: true,
-            plannedExercises: true,
-            subCapability: true,
-            subSubCapability: true,
-          },
+          select: CALENDAR_LESSON_SELECT,
         },
       },
       orderBy: { dueDate: 'asc' },
@@ -1127,7 +1245,7 @@ export class CalendarService {
     const limit = new Date();
     limit.setFullYear(limit.getFullYear() + 1);
 
-    const expandedSlots = slots.map((slot: RawSlot & { tasks: any[] }) => ({
+    const expandedSlots = (slots as PracticeSlotWithTasks[]).map((slot) => ({
       id: slot.id,
       ownerType: slot.ownerType,
       playerId: slot.playerId,
@@ -1147,7 +1265,10 @@ export class CalendarService {
         activities.push({
           id: `slot-${slot.id}-${occurrence.start.toISOString()}`,
           sourceId: slot.id,
-          type: slot.ownerType === OwnerType.TEAM ? 'team-practice' : 'practice-slot',
+          type:
+            slot.ownerType === OwnerType.TEAM
+              ? 'team-practice'
+              : 'practice-slot',
           title: slot.title,
           start: occurrence.start.toISOString(),
           end: occurrence.end.toISOString(),
@@ -1156,7 +1277,7 @@ export class CalendarService {
         });
       }
 
-      for (const task of slot.tasks as any[]) {
+      for (const task of slot.tasks) {
         const start = new Date(task.scheduledDate);
         const end = new Date(start.getTime() + task.durationMinutes * 60_000);
         activities.push({
@@ -1222,7 +1343,9 @@ export class CalendarService {
 
     for (const assignment of assignments) {
       const start = new Date(assignment.dueDate as Date);
-      const end = new Date(start.getTime() + assignment.lesson.durationMinutes * 60_000);
+      const end = new Date(
+        start.getTime() + assignment.lesson.durationMinutes * 60_000,
+      );
       activities.push({
         id: `assignment-${assignment.id}`,
         sourceId: assignment.id,
@@ -1261,12 +1384,15 @@ export class CalendarService {
     const weekStart = startOfWeek(new Date());
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 7);
-    const weekTasks = activities.filter((activity) =>
-      activity.type === 'coach-assignment' &&
-      new Date(String(activity.start)) >= weekStart &&
-      new Date(String(activity.start)) < weekEnd,
+    const weekTasks = activities.filter(
+      (activity) =>
+        activity.type === 'coach-assignment' &&
+        new Date(String(activity.start)) >= weekStart &&
+        new Date(String(activity.start)) < weekEnd,
     );
-    const completedWeekTasks = weekTasks.filter((activity) => activity.status === 'COMPLETED');
+    const completedWeekTasks = weekTasks.filter(
+      (activity) => activity.status === 'COMPLETED',
+    );
 
     return {
       slots: expandedSlots,

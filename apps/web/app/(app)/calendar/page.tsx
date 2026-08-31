@@ -39,20 +39,30 @@ export default async function CalendarPage() {
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">Calendar</h1>
         <p className="text-sm text-muted-foreground">
-          Unified scheduling for practice, missions, events, tournaments, milestones, and blackout times.
+          Unified scheduling for practice, missions, events, tournaments,
+          milestones, and blackout times.
         </p>
       </header>
 
       {!editable ? (
         <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-          Coaches and admins can review their personal schedule here, while player-specific assignment workflows remain available from the coach dashboard.
-          <Link href="/coach" className="ml-2 font-semibold underline underline-offset-2">
+          Coaches and admins can review their personal schedule here, while
+          player-specific assignment workflows remain available from the coach
+          dashboard.
+          <Link
+            href="/coach"
+            className="ml-2 font-semibold underline underline-offset-2"
+          >
             Open coach dashboard
           </Link>
         </div>
       ) : null}
 
-      <PlayerCalendarView userId={user.id} country={user.country ?? null} editable={editable} />
+      <PlayerCalendarView
+        userId={user.id}
+        country={user.country ?? null}
+        editable={editable}
+      />
     </div>
   );
 }
