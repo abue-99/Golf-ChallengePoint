@@ -49,7 +49,7 @@ export default function Header({ user, onToggleSidebar }: HeaderProps) {
         priority
         className="ml-1"
       />
-      <span className="text-base font-bold">Challengepoint</span>
+      <span className="text-lg font-bold">Golf Challenge Point</span>
       <div className="ml-auto flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

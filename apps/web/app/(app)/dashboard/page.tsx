@@ -101,7 +101,7 @@ export default function Dashboard() {
       ) : null}
 
       {role === "COACH" ? (
-        <Link href="/calendar">
+        <Link href="/calendar" className="block">
           <Card className="border border-slate-200 shadow-sm transition-shadow hover:shadow-md">
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">

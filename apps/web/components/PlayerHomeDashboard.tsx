@@ -359,7 +359,7 @@ function CalendarSummaryCard({
     .slice(0, 3);
 
   return (
-    <Link href="/calendar">
+    <Link href="/calendar" className="block">
       <div className="rounded-2xl bg-white border border-slate-200 shadow-sm px-5 py-4 hover:shadow-md transition-shadow space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -507,7 +507,7 @@ export default function PlayerHomeDashboard({
   const activePlan = loading ? null : getActivePlan(plans);
 
   return (
-    <div className="space-y-4 max-w-lg mx-auto pb-4">
+    <div className="mx-auto max-w-lg space-y-6 pb-4">
       {/* Hero level card */}
       <HeroLevelCard
         firstName={firstName}
