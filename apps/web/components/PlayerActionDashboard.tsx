@@ -93,12 +93,12 @@ function getPriorityIcon(priority: string): ReactNode {
   return <span className="text-slate-300 flex-shrink-0 text-sm leading-none">○</span>;
 }
 
-function getSlotStatus(slot: TodaySlot): "done" | "overdue" | "open" {
+function getSlotStatus(slot: TodaySlot): "done" | "active" | "open" {
   const now = new Date();
   const end = new Date(slot.endTime);
   const start = new Date(slot.startTime);
   if (now > end) return "done";
-  if (now > start) return "overdue";
+  if (now >= start) return "active";
   return "open";
 }
 
@@ -161,7 +161,7 @@ function StructuredToday({ slots }: { slots: TodaySlot[] }) {
               {slot.title}
             </span>
             <span className="text-lg flex-shrink-0">
-              {status === "done" ? "✅" : status === "overdue" ? "⚠️" : "⏳"}
+              {status === "done" ? "✅" : status === "active" ? "▶️" : "⏳"}
             </span>
           </li>
         );

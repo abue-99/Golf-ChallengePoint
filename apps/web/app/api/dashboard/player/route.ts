@@ -68,7 +68,7 @@ export async function GET() {
 
     const nextSlot =
       allSlots
-        .filter((s) => new Date(s.startTime) > now && !isSameDay(new Date(s.startTime), today))
+        .filter((s) => new Date(s.startTime) > now)
         .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())[0] ?? null;
 
     // Find the active plan and active block

@@ -116,8 +116,8 @@ function AttentionCard({ items, totalPlayers }: { items: AttentionItems; totalPl
       </div>
       <ul className="divide-y divide-slate-50">
         {alerts.map((alert) => (
-          <Link key={alert.label} href={alert.href}>
-            <li className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors">
+          <li key={alert.label}>
+            <Link href={alert.href} className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors">
               <div className="flex items-center gap-2">
                 <span className="text-base">⚠️</span>
                 <span className="text-sm text-slate-700">{alert.label}</span>
@@ -128,8 +128,8 @@ function AttentionCard({ items, totalPlayers }: { items: AttentionItems; totalPl
                 </span>
                 <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
               </div>
-            </li>
-          </Link>
+            </Link>
+          </li>
         ))}
       </ul>
     </div>
@@ -167,18 +167,19 @@ interface QuickAction {
   href: string;
 }
 
+const QUICK_ACTIONS: QuickAction[] = [
+  { label: "Training planen", icon: <CalendarDays className="h-4 w-4" />, href: "/planning" },
+  { label: "Lesson erstellen", icon: <BookOpen className="h-4 w-4" />, href: "/coach/lessons" },
+  { label: "Spieler hinzufügen", icon: <UserPlus className="h-4 w-4" />, href: "/teams" },
+  { label: "Teamtraining", icon: <Users className="h-4 w-4" />, href: "/training-windows" },
+];
+
 function QuickActionsInline() {
   const router = useRouter();
-  const actions: QuickAction[] = [
-    { label: "Training planen", icon: <CalendarDays className="h-4 w-4" />, href: "/planning" },
-    { label: "Lesson erstellen", icon: <BookOpen className="h-4 w-4" />, href: "/coach/lessons" },
-    { label: "Spieler hinzufügen", icon: <UserPlus className="h-4 w-4" />, href: "/teams" },
-    { label: "Teamtraining", icon: <Users className="h-4 w-4" />, href: "/planning" },
-  ];
 
   return (
     <div className="grid grid-cols-2 gap-2">
-      {actions.map((action) => (
+      {QUICK_ACTIONS.map((action) => (
         <button
           key={action.label}
           onClick={() => router.push(action.href)}
@@ -197,13 +198,6 @@ function MobileFAB() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const actions: QuickAction[] = [
-    { label: "Training planen", icon: <CalendarDays className="h-4 w-4" />, href: "/planning" },
-    { label: "Lesson erstellen", icon: <BookOpen className="h-4 w-4" />, href: "/coach/lessons" },
-    { label: "Spieler hinzufügen", icon: <UserPlus className="h-4 w-4" />, href: "/teams" },
-    { label: "Teamtraining", icon: <Users className="h-4 w-4" />, href: "/planning" },
-  ];
-
   // Close on outside click
   useEffect(() => {
     if (!open) return;
@@ -219,7 +213,7 @@ function MobileFAB() {
       {/* Action items */}
       {open && (
         <div className="absolute bottom-14 right-0 flex flex-col gap-2 items-end">
-          {actions.map((action) => (
+          {QUICK_ACTIONS.map((action) => (
             <button
               key={action.label}
               onClick={() => { setOpen(false); router.push(action.href); }}
