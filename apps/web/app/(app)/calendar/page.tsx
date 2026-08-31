@@ -40,7 +40,7 @@ export default async function CalendarPage() {
         <h1 className="text-2xl font-semibold tracking-tight">Calendar</h1>
         <p className="text-sm text-muted-foreground">
           Unified scheduling for practice, missions, events, tournaments,
-          milestones, and blackout times.
+          milestones, and unavailable periods.
         </p>
       </header>
 

@@ -54,7 +54,7 @@ export default function Dashboard() {
       {/* Header */}
       <header>
         <h1 className="text-2xl font-semibold tracking-tight text-[var(--golf-heading)]">
-          Dashboard
+          {role === "PLAYER" ? "Home" : "Dashboard"}
         </h1>
       </header>
 

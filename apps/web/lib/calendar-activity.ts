@@ -2,7 +2,8 @@ import type { EventInput } from "@fullcalendar/core";
 import type { CalendarActivity } from "@/types/calendar";
 
 export const VIEW_TO_FULLCALENDAR = {
-  today: "timeGridDay",
+  agenda: "listWeek",
+  day: "timeGridDay",
   week: "timeGridWeek",
   month: "dayGridMonth",
 } as const;
@@ -77,7 +78,7 @@ export function getActivityLabel(activity: CalendarActivity) {
     case "lesson-mission":
       return `🎯 ${activity.title}`;
     case "availability-block":
-      return `⛔ ${activity.title}`;
+      return `🚫 ${activity.title}`;
     case "team-event":
       return `📣 ${activity.title}`;
     case "tournament":
@@ -169,9 +170,9 @@ export function activityToEventInput(activity: CalendarActivity): EventInput {
       title: getActivityLabel(activity),
       start: activity.start,
       end: activity.end,
-      backgroundColor: "#f1f5f9",
-      borderColor: "#94a3b8",
-      textColor: "#334155",
+      backgroundColor: "#fee2e2",
+      borderColor: "#dc2626",
+      textColor: "#991b1b",
       extendedProps: activity,
     };
   }

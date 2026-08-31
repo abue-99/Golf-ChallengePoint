@@ -38,7 +38,7 @@ export default function HeaderAndSidebarLayout({
    ? [
        { href: '/', icon: Home, label: 'Home' },
        { href: '/player', icon: RouteIcon, label: 'Journey' },
-       { href: '/planning', icon: CalendarDays, label: 'Planning' },
+       { href: '/calendar', icon: CalendarDays, label: 'Calendar' },
        { href: '/settings/profile', icon: User, label: 'Profile' },
      ]
    : defaultNavItems;

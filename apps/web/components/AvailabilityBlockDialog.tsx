@@ -12,6 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+type AvailabilityCategory =
+  | "SCHOOL"
+  | "WORK"
+  | "HOLIDAY"
+  | "TRAVEL"
+  | "FAMILY"
+  | "OTHER";
+
 export type AvailabilityBlockFormData = {
   title: string;
   type: "SCHOOL" | "WORK" | "HOLIDAY" | "TRAVEL" | "CUSTOM";
@@ -24,8 +32,10 @@ export type AvailabilityBlockFormData = {
 
 type FormValues = {
   title: string;
-  type: AvailabilityBlockFormData["type"];
-  date: string;
+  category: AvailabilityCategory;
+  allDay: boolean;
+  startDate: string;
+  endDate: string;
   startTime: string;
   endTime: string;
   recurrence: AvailabilityBlockFormData["recurrence"];
@@ -64,6 +74,32 @@ function toUTCTime(iso: string) {
   return `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
 }
 
+function isAllDayBlock(startIso: string, endIso: string) {
+  const start = new Date(startIso);
+  const end = new Date(endIso);
+  const startsAtMidnight =
+    start.getUTCHours() === 0 && start.getUTCMinutes() === 0;
+  const endsAtDayEnd =
+    end.getUTCHours() === 23 &&
+    end.getUTCMinutes() === 59 &&
+    end.getUTCSeconds() <= 59;
+  return startsAtMidnight && endsAtDayEnd;
+}
+
+function normalizeCategory(
+  category: AvailabilityCategory,
+): AvailabilityBlockFormData["type"] {
+  if (
+    category === "SCHOOL" ||
+    category === "WORK" ||
+    category === "HOLIDAY" ||
+    category === "TRAVEL"
+  ) {
+    return category;
+  }
+  return "CUSTOM";
+}
+
 export default function AvailabilityBlockDialog({
   open,
   onClose,
@@ -82,8 +118,10 @@ export default function AvailabilityBlockDialog({
   } = useForm<FormValues>({
     defaultValues: {
       title: "",
-      type: "CUSTOM",
-      date: selectedDate ?? new Date().toISOString().slice(0, 10),
+      category: "OTHER",
+      allDay: false,
+      startDate: selectedDate ?? new Date().toISOString().slice(0, 10),
+      endDate: selectedDate ?? new Date().toISOString().slice(0, 10),
       startTime: "09:00",
       endTime: "17:00",
       recurrence: "NONE",
@@ -96,8 +134,13 @@ export default function AvailabilityBlockDialog({
     if (open && defaultValues) {
       reset({
         title: defaultValues.title,
-        type: defaultValues.type,
-        date: toLocalDate(defaultValues.startTime),
+        category:
+          defaultValues.type === "CUSTOM"
+            ? "OTHER"
+            : (defaultValues.type as AvailabilityCategory),
+        allDay: isAllDayBlock(defaultValues.startTime, defaultValues.endTime),
+        startDate: toLocalDate(defaultValues.startTime),
+        endDate: toLocalDate(defaultValues.endTime),
         startTime: toUTCTime(defaultValues.startTime),
         endTime: toUTCTime(defaultValues.endTime),
         recurrence:
@@ -113,8 +156,10 @@ export default function AvailabilityBlockDialog({
     if (open) {
       reset({
         title: "",
-        type: "CUSTOM",
-        date: selectedDate ?? new Date().toISOString().slice(0, 10),
+        category: "OTHER",
+        allDay: false,
+        startDate: selectedDate ?? new Date().toISOString().slice(0, 10),
+        endDate: selectedDate ?? new Date().toISOString().slice(0, 10),
         startTime: "09:00",
         endTime: "17:00",
         recurrence: "NONE",
@@ -125,15 +170,21 @@ export default function AvailabilityBlockDialog({
   }, [defaultValues, open, reset, selectedDate]);
 
   const recurrence = useWatch({ control, name: "recurrence" });
+  const allDay = useWatch({ control, name: "allDay" });
 
   const submit = handleSubmit(async (values) => {
+    const startTime = values.allDay
+      ? new Date(`${values.startDate}T00:00:00Z`).toISOString()
+      : new Date(`${values.startDate}T${values.startTime}:00Z`).toISOString();
+    const endTime = values.allDay
+      ? new Date(`${values.endDate}T23:59:59Z`).toISOString()
+      : new Date(`${values.endDate}T${values.endTime}:00Z`).toISOString();
+
     await onSubmit({
       title: values.title,
-      type: values.type,
-      startTime: new Date(
-        `${values.date}T${values.startTime}:00Z`,
-      ).toISOString(),
-      endTime: new Date(`${values.date}T${values.endTime}:00Z`).toISOString(),
+      type: normalizeCategory(values.category),
+      startTime,
+      endTime,
       recurrence: values.recurrence,
       recurrenceEndDate:
         values.recurrence !== "NONE" && values.recurrenceEndDate
@@ -154,7 +205,7 @@ export default function AvailabilityBlockDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {mode === "edit" ? "Edit blackout time" : "Add blackout time"}
+            {mode === "edit" ? "Edit Unavailable Time" : "Add Unavailable Time"}
           </DialogTitle>
         </DialogHeader>
 
@@ -169,50 +220,73 @@ export default function AvailabilityBlockDialog({
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="ab-type">Type</Label>
+            <Label htmlFor="ab-category">Category</Label>
             <select
-              id="ab-type"
-              {...register("type")}
+              id="ab-category"
+              {...register("category")}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="SCHOOL">School</option>
               <option value="WORK">Work</option>
               <option value="HOLIDAY">Holiday</option>
               <option value="TRAVEL">Travel</option>
-              <option value="CUSTOM">Custom</option>
+              <option value="FAMILY">Family</option>
+              <option value="OTHER">Other</option>
             </select>
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="ab-date">Date</Label>
-            <Input
-              id="ab-date"
-              type="date"
-              {...register("date", { required: true })}
+          <div className="flex items-center gap-2">
+            <input
+              id="ab-all-day"
+              type="checkbox"
+              {...register("allDay")}
+              className="h-4 w-4 rounded border-input"
             />
+            <Label htmlFor="ab-all-day">All day</Label>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label htmlFor="ab-start">Start time</Label>
+              <Label htmlFor="ab-start-date">Start date</Label>
               <Input
-                id="ab-start"
-                type="time"
-                {...register("startTime", { required: true })}
+                id="ab-start-date"
+                type="date"
+                {...register("startDate", { required: true })}
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="ab-end">End time</Label>
+              <Label htmlFor="ab-end-date">End date</Label>
               <Input
-                id="ab-end"
-                type="time"
-                {...register("endTime", { required: true })}
+                id="ab-end-date"
+                type="date"
+                {...register("endDate", { required: true })}
               />
             </div>
           </div>
 
+          {!allDay ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="ab-start">Start time</Label>
+                <Input
+                  id="ab-start"
+                  type="time"
+                  {...register("startTime", { required: true })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="ab-end">End time</Label>
+                <Input
+                  id="ab-end"
+                  type="time"
+                  {...register("endTime", { required: true })}
+                />
+              </div>
+            </div>
+          ) : null}
+
           <div className="space-y-1">
-            <Label htmlFor="ab-recurrence">Recurrence</Label>
+            <Label htmlFor="ab-recurrence">Repeat</Label>
             <select
               id="ab-recurrence"
               {...register("recurrence")}
@@ -227,7 +301,7 @@ export default function AvailabilityBlockDialog({
 
           {recurrence !== "NONE" && (
             <div className="space-y-1">
-              <Label htmlFor="ab-recurrence-end">Recurrence end date</Label>
+              <Label htmlFor="ab-recurrence-end">Repeat until</Label>
               <Input
                 id="ab-recurrence-end"
                 type="date"
@@ -272,7 +346,7 @@ export default function AvailabilityBlockDialog({
                   ? "Saving…"
                   : mode === "edit"
                     ? "Save changes"
-                    : "Add blackout"}
+                    : "Add Unavailable Time"}
               </Button>
             </div>
           </div>

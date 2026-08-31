@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
+import listPlugin from "@fullcalendar/list";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { EventClickArg, EventInput } from "@fullcalendar/core";
@@ -54,7 +55,11 @@ export default function CoachPlayerCalendarView({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
   const [activeView, setActiveView] =
-    useState<keyof typeof VIEW_TO_FULLCALENDAR>("month");
+    useState<keyof typeof VIEW_TO_FULLCALENDAR>(() =>
+      typeof window !== "undefined" && window.innerWidth >= 1024
+        ? "week"
+        : "agenda",
+    );
   const calendarRef = useRef<FullCalendar>(null);
 
   const loadCalendar = useCallback(async () => {
@@ -163,7 +168,7 @@ export default function CoachPlayerCalendarView({
           <div>
             <p className="font-semibold">Coach scheduling view</p>
             <p>
-              Every view includes blackout times, so assigning over school,
+              Every view includes unavailable periods, so assigning over school,
               work, holiday, or travel windows now fails with a conflict
               message.
             </p>
@@ -177,9 +182,9 @@ export default function CoachPlayerCalendarView({
             Player calendar
           </p>
           <p className="text-sm text-slate-500">
-            Today, week, and month tabs share one unified feed across practices,
-            assignments, missions, events, tournaments, milestones, and blackout
-            times.
+            Agenda, day, week, and month tabs share one unified feed across
+            practices, assignments, missions, events, tournaments, milestones,
+            and unavailable periods.
           </p>
         </div>
         <Tabs
@@ -189,7 +194,8 @@ export default function CoachPlayerCalendarView({
           }
         >
           <TabsList>
-            <TabsTrigger value="today">Today</TabsTrigger>
+            <TabsTrigger value="agenda">Agenda</TabsTrigger>
+            <TabsTrigger value="day">Day</TabsTrigger>
             <TabsTrigger value="week">Week</TabsTrigger>
             <TabsTrigger value="month">Month</TabsTrigger>
           </TabsList>
@@ -199,7 +205,12 @@ export default function CoachPlayerCalendarView({
       <div className="rounded-2xl border bg-white p-3 shadow-sm [&_.fc-button]:!rounded [&_.fc-button-primary]:!bg-blue-600 [&_.fc-button-primary]:!border-blue-700 [&_.fc-button-primary.fc-button-active]:!bg-blue-800">
         <FullCalendar
           ref={calendarRef}
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          plugins={[
+            dayGridPlugin,
+            timeGridPlugin,
+            interactionPlugin,
+            listPlugin,
+          ]}
           initialView={VIEW_TO_FULLCALENDAR[activeView]}
           headerToolbar={{
             left: "prev,next today",

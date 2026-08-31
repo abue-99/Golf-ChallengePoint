@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import type { CalendarActivity } from "@/types/calendar";
 import {
   FOCUS_AREAS,
   type PlayerDevelopmentPlan,
@@ -47,6 +48,14 @@ type GamificationProfile = {
   levelProgress: number;
   nextLevelXp: number;
 };
+
+function formatScheduleTime(value: string) {
+  return new Date(value).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
 
 function findActiveAssignment(plans: PlayerDevelopmentPlan[]): {
   assignment: LessonAssignment;
@@ -325,24 +334,69 @@ function CurrentJourneyCard({ plan }: { plan: PlayerDevelopmentPlan | null }) {
   );
 }
 
-// ─── Next Coach Session Placeholder ──────────────────────────────────────────
+function CalendarSummaryCard({
+  activities,
+}: {
+  activities: CalendarActivity[];
+}) {
+  const now = Date.now();
+  const upcoming = [...activities]
+    .filter((activity) => new Date(activity.end).getTime() >= now)
+    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+  const nextUp = upcoming[0] ?? null;
+  const todayItems = upcoming
+    .filter((activity) => {
+      const date = new Date(activity.start);
+      const today = new Date();
+      return (
+        date.getFullYear() === today.getFullYear() &&
+        date.getMonth() === today.getMonth() &&
+        date.getDate() === today.getDate()
+      );
+    })
+    .slice(0, 3);
 
-function NextSessionCard() {
   return (
     <Link href="/calendar">
-      <div className="rounded-2xl bg-white border border-slate-200 shadow-sm px-5 py-4 flex items-center justify-between hover:shadow-md transition-shadow">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 flex-shrink-0 rounded-full bg-blue-100 flex items-center justify-center">
-            <CalendarDays className="h-5 w-5 text-blue-600" />
+      <div className="rounded-2xl bg-white border border-slate-200 shadow-sm px-5 py-4 hover:shadow-md transition-shadow space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 flex-shrink-0 rounded-full bg-blue-100 flex items-center justify-center">
+              <CalendarDays className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Next Up
+              </p>
+              <p className="font-semibold text-slate-700">
+                {nextUp ? nextUp.title : "No scheduled items"}
+              </p>
+              {nextUp ? (
+                <p className="text-xs text-slate-500">
+                  {formatScheduleTime(nextUp.start)}
+                </p>
+              ) : null}
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Next Coach Session
-            </p>
-            <p className="font-semibold text-slate-700">View Calendar</p>
+          <span className="text-sm font-semibold text-blue-700">Open Calendar</span>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Today&apos;s Schedule
+          </p>
+          <div className="mt-2 space-y-1.5">
+            {todayItems.length === 0 ? (
+              <p className="text-sm text-slate-500">No items scheduled today.</p>
+            ) : (
+              todayItems.map((item) => (
+                <div key={item.id} className="text-sm text-slate-600">
+                  {formatScheduleTime(item.start)} {item.title}
+                </div>
+              ))
+            )}
           </div>
         </div>
-        <ChevronRight className="h-5 w-5 text-slate-400" />
       </div>
     </Link>
   );
@@ -407,6 +461,9 @@ export default function PlayerHomeDashboard({
     completed: 0,
     total: 0,
   });
+  const [calendarActivities, setCalendarActivities] = useState<CalendarActivity[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
 
   const loadPlans = useCallback(async () => {
@@ -430,6 +487,9 @@ export default function PlayerHomeDashboard({
       setWeeklyCompletion(
         calendar?.summary?.weeklyCompletion ?? { completed: 0, total: 0 },
       );
+      setCalendarActivities(
+        Array.isArray(calendar?.activities) ? calendar.activities : [],
+      );
     } finally {
       setLoading(false);
     }
@@ -444,6 +504,12 @@ export default function PlayerHomeDashboard({
 
   return (
     <div className="space-y-4 max-w-lg mx-auto pb-4">
+      {loading ? (
+        <div className="rounded-2xl bg-slate-100 animate-pulse h-36" />
+      ) : (
+        <CalendarSummaryCard activities={calendarActivities} />
+      )}
+
       {/* Hero level card */}
       <HeroLevelCard
         firstName={firstName}
@@ -494,8 +560,6 @@ export default function PlayerHomeDashboard({
         </div>
       )}
 
-      {/* Next coach session */}
-      <NextSessionCard />
     </div>
   );
 }
