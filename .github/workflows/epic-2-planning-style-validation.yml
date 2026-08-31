@@ -99,13 +99,13 @@ jobs:
         run: pnpm --filter db prisma generate
 
       - name: Lint Web
-        run: pnpm turbo lint --filter=web
+        run: pnpm turbo lint --filter=golf-challenge-point-web
 
       - name: Typecheck Web
-        run: pnpm turbo typecheck --filter=web
+        run: pnpm turbo typecheck --filter=golf-challenge-point-web
 
       - name: Build Web
-        run: pnpm turbo build --filter=web
+        run: pnpm turbo build --filter=golf-challenge-point-web
 
       - name: Verify Planning Toggle Exists
         run: |
