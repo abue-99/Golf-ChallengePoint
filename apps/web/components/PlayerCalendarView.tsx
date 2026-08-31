@@ -481,147 +481,149 @@ export default function PlayerCalendarView({
     <div className="space-y-4">
       <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
         <div className="space-y-4">
-          <div className="flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-slate-800">
-                Unified Calendar
-              </p>
-              <p className="text-sm text-slate-500">
-                Agenda, day, week, and month views for sessions, events,
-                milestones, and unavailable periods.
-              </p>
-            </div>
-            <div className="flex flex-col items-start gap-2 sm:items-end">
-              {editable ? (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setSelectedAvailability(null);
-                    setAvailabilityOpen(true);
-                  }}
+          <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+            <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">
+                  Unified Calendar
+                </p>
+                <p className="text-sm text-slate-500">
+                  Agenda, day, week, and month views for sessions, events,
+                  milestones, and unavailable periods.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Tabs
+                  value={activeView}
+                  onValueChange={(value) =>
+                    setActiveView(value as keyof typeof VIEW_TO_FULLCALENDAR)
+                  }
                 >
-                  <Plus className="mr-1 h-4 w-4" /> Add Unavailable Time
-                </Button>
-              ) : null}
-              <Tabs
-                value={activeView}
-                onValueChange={(value) =>
-                  setActiveView(value as keyof typeof VIEW_TO_FULLCALENDAR)
-                }
-              >
-                <TabsList>
-                  <TabsTrigger value="agenda">Agenda</TabsTrigger>
-                  <TabsTrigger value="day">Day</TabsTrigger>
-                  <TabsTrigger value="week">Week</TabsTrigger>
-                  <TabsTrigger value="month">Month</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-          </div>
-
-          {country ? (
-            <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-              Calendar region: <span className="font-semibold">{country}</span>.
-              Add player-specific unavailable periods below when local school
-              or travel calendars differ.
-            </div>
-          ) : null}
-
-          {activeView === "agenda" ? (
-            <div className="rounded-2xl border bg-white p-4 shadow-sm">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-slate-800">Upcoming</p>
-                {upcomingActivities.length > 5 ? (
+                  <TabsList>
+                    <TabsTrigger value="agenda">Agenda</TabsTrigger>
+                    <TabsTrigger value="day">Day</TabsTrigger>
+                    <TabsTrigger value="week">Week</TabsTrigger>
+                    <TabsTrigger value="month">Month</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                {editable ? (
                   <Button
                     size="sm"
-                    variant="outline"
-                    onClick={() => setAgendaExpanded((current) => !current)}
+                    onClick={() => {
+                      setSelectedAvailability(null);
+                      setAvailabilityOpen(true);
+                    }}
                   >
-                    {agendaExpanded ? "Show Less" : "Show More"}
+                    <Plus className="mr-1 h-4 w-4" /> Add Unavailability
                   </Button>
                 ) : null}
               </div>
-              <div className="space-y-3">
-                {agendaItems.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed px-4 py-6 text-center text-sm text-slate-400">
-                    No upcoming calendar items.
-                  </div>
-                ) : (
-                  agendaItems.map((activity) => (
-                    <div
-                      key={activity.id}
-                      className="rounded-2xl border bg-slate-50 px-4 py-3"
+            </div>
+
+            {country ? (
+              <div className="border-b border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+                Calendar region: <span className="font-semibold">{country}</span>.
+                Add player-specific unavailable periods below when local school
+                or travel calendars differ.
+              </div>
+            ) : null}
+
+            {activeView === "agenda" ? (
+              <div className="p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-800">Upcoming</p>
+                  {upcomingActivities.length > 5 ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setAgendaExpanded((current) => !current)}
                     >
-                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                        {formatAgendaDate(activity.start)}
-                      </p>
-                      <p className="mt-1 font-semibold text-slate-800">
-                        {activity.title}
-                      </p>
-                      <p className="mt-1 text-sm text-slate-600">
-                        {formatRange(activity.start, activity.end)}
-                      </p>
-                      <div className="mt-3 flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedActivity(activity)}
-                        >
-                          Open Event
-                        </Button>
-                        {editable && activity.type === "availability-block" ? (
+                      {agendaExpanded ? "Show Less" : "Show More"}
+                    </Button>
+                  ) : null}
+                </div>
+                <div className="space-y-3">
+                  {agendaItems.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed px-4 py-6 text-center text-sm text-slate-400">
+                      No upcoming calendar items.
+                    </div>
+                  ) : (
+                    agendaItems.map((activity) => (
+                      <div
+                        key={activity.id}
+                        className="rounded-2xl border bg-slate-50 px-4 py-3"
+                      >
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                          {formatAgendaDate(activity.start)}
+                        </p>
+                        <p className="mt-1 font-semibold text-slate-800">
+                          {activity.title}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-600">
+                          {formatRange(activity.start, activity.end)}
+                        </p>
+                        <div className="mt-3 flex gap-2">
                           <Button
                             size="sm"
-                            onClick={() => {
-                              const block = availabilityBlocks.find(
-                                (item) => item.id === activity.sourceId,
-                              );
-                              if (!block) return;
-                              setSelectedAvailability(block);
-                              setAvailabilityOpen(true);
-                            }}
+                            variant="outline"
+                            onClick={() => setSelectedActivity(activity)}
                           >
-                            Edit Event
+                            Open Event
                           </Button>
-                        ) : null}
+                          {editable && activity.type === "availability-block" ? (
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                const block = availabilityBlocks.find(
+                                  (item) => item.id === activity.sourceId,
+                                );
+                                if (!block) return;
+                                setSelectedAvailability(block);
+                                setAvailabilityOpen(true);
+                              }}
+                            >
+                              Edit Event
+                            </Button>
+                          ) : null}
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl border bg-white p-3 shadow-sm [&_.fc-button]:!rounded [&_.fc-button-primary]:!bg-green-600 [&_.fc-button-primary]:!border-green-700 [&_.fc-button-primary.fc-button-active]:!bg-green-800">
-              <FullCalendar
-                ref={calendarRef}
-                plugins={[
-                  dayGridPlugin,
-                  timeGridPlugin,
-                  interactionPlugin,
-                  listPlugin,
-                ]}
-                initialView={VIEW_TO_FULLCALENDAR[activeView]}
-                headerToolbar={{
-                  left: "prev,next today",
-                  center: "title",
-                  right: "",
-                }}
-                events={events}
-                editable={false}
-                selectable={false}
-                dateClick={handleDateClick}
-                eventClick={handleEventClick}
-                eventTimeFormat={{
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: false,
-                }}
-                allDaySlot
-                height="auto"
-                nowIndicator
-              />
-            </div>
-          )}
+            ) : (
+              <div className="p-3 [&_.fc-button]:!rounded [&_.fc-button-primary]:!bg-green-600 [&_.fc-button-primary]:!border-green-700 [&_.fc-button-primary.fc-button-active]:!bg-green-800">
+                <FullCalendar
+                  ref={calendarRef}
+                  plugins={[
+                    dayGridPlugin,
+                    timeGridPlugin,
+                    interactionPlugin,
+                    listPlugin,
+                  ]}
+                  initialView={VIEW_TO_FULLCALENDAR[activeView]}
+                  headerToolbar={{
+                    left: "prev,next today",
+                    center: "title",
+                    right: "",
+                  }}
+                  events={events}
+                  editable={false}
+                  selectable={false}
+                  dateClick={handleDateClick}
+                  eventClick={handleEventClick}
+                  eventTimeFormat={{
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
+                  }}
+                  allDaySlot
+                  height="auto"
+                  nowIndicator
+                />
+              </div>
+            )}
+          </div>
 
           {editable ? (
             <p className="text-xs text-muted-foreground">

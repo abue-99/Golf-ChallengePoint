@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { PlayerCapabilitiesRadarCard, PlayerCapabilitiesWidget } from "@/components/player-capabilities-widget";
 import { DevelopmentPlanManager } from "@/components/DevelopmentPlanManager";
 
@@ -47,6 +48,12 @@ export default async function CoachPlayerDashboardPage({
           Full player overview
           {player?.country ? ` · ${player.country}` : ""}
         </p>
+        <Link
+          href={`/coach/players/${playerId}/calendar`}
+          className="mt-2 inline-block text-sm font-semibold text-blue-700 underline underline-offset-2"
+        >
+          Open calendar comparison
+        </Link>
       </header>
       <div className="grid gap-4 lg:grid-cols-5">
         <div className="lg:col-span-2">

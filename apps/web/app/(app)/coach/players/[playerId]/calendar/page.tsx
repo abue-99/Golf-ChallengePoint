@@ -9,6 +9,10 @@ type PlayerSummary = {
   country?: string | null;
 };
 
+type CurrentUser = {
+  id: string;
+};
+
 async function getPlayer(token: string, playerId: string) {
   const apiUrl = process.env.API_URL || "http://golf_api:4000";
   const res = await fetch(`${apiUrl}/users/me/players`, {
@@ -18,6 +22,16 @@ async function getPlayer(token: string, playerId: string) {
   if (!res.ok) return null;
   const players: PlayerSummary[] = await res.json().catch(() => []);
   return players.find((player) => player.id === playerId) ?? null;
+}
+
+async function getCurrentUser(token: string): Promise<CurrentUser | null> {
+  const apiUrl = process.env.API_URL || "http://golf_api:4000";
+  const res = await fetch(`${apiUrl}/auth/me`, {
+    headers: { Authorization: "Bearer " + token },
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  return res.json();
 }
 
 export default async function CoachPlayerCalendarPage({
@@ -30,7 +44,10 @@ export default async function CoachPlayerCalendarPage({
   if (!token) redirect("/api/auth/logout");
 
   const { playerId } = await params;
-  const player = await getPlayer(token, playerId);
+  const [player, currentUser] = await Promise.all([
+    getPlayer(token, playerId),
+    getCurrentUser(token),
+  ]);
 
   const playerName = player
     ? `${player.firstName ?? ""} ${player.lastName ?? ""}`.trim()
@@ -48,7 +65,7 @@ export default async function CoachPlayerCalendarPage({
         </p>
       </header>
 
-      <CoachPlayerCalendarView playerId={playerId} />
+      <CoachPlayerCalendarView playerId={playerId} coachId={currentUser?.id} />
     </div>
   );
 }
