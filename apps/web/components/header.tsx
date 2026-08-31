@@ -15,7 +15,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 type HeaderProps = {
   user: { firstName: string; lastName: string; email?: string; profileImage?: string };
   onToggleSidebar?: () => void;
-  sidebarExpanded?: boolean;
 };
 
 export default function Header({ user, onToggleSidebar }: HeaderProps) {

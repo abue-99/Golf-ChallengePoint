@@ -46,7 +46,7 @@ export default function HeaderAndSidebarLayout({
 
  return (
   <div className='flex flex-col h-[100dvh]'>
-    <Header user={user} onToggleSidebar={() => setExpanded(p => !p)} sidebarExpanded={expanded} />
+    <Header user={user} onToggleSidebar={() => setExpanded(p => !p)} />
     <div className='flex flex-row flex-1 overflow-hidden'>
       {/* Desktop sidebar – hidden on mobile */}
       <div className="hidden md:block">
