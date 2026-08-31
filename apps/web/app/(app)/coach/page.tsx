@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CalendarDays, Route, Search, Users } from "lucide-react";
+import type { CalendarActivity as BaseCalendarActivity } from "@/types/calendar";
 
 type Team = {
   id: string;
@@ -27,12 +28,10 @@ type ItemCount = {
   windows: number;
 };
 
-type CalendarActivity = {
-  id: string;
-  title: string;
-  start: string;
-  end: string;
-};
+type CalendarActivity = Pick<
+  BaseCalendarActivity,
+  "id" | "title" | "start" | "end"
+>;
 
 function nameOfPlayer(player: Player) {
   return [player.firstName, player.lastName].filter(Boolean).join(" ") || player.email || "—";

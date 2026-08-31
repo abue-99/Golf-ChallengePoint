@@ -582,7 +582,7 @@ export default function PlayerCalendarView({
                                 setAvailabilityOpen(true);
                               }}
                             >
-                              Edit Event
+                              Edit Unavailability
                             </Button>
                           ) : null}
                         </div>

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays, User, Users } from "lucide-react";
 import Link from "next/link";
 import PlayerHomeDashboard from "@/components/PlayerHomeDashboard";
+import type { CalendarActivity as BaseCalendarActivity } from "@/types/calendar";
 
 type Team = {
   id: string;
@@ -14,12 +15,10 @@ type Team = {
   createdAt?: string;
 };
 
-type CalendarActivity = {
-  id: string;
-  title: string;
-  start: string;
-  end: string;
-};
+type CalendarActivity = Pick<
+  BaseCalendarActivity,
+  "id" | "title" | "start" | "end"
+>;
 
 const DEFAULT_PLAYER_ID = "local-player";
 
