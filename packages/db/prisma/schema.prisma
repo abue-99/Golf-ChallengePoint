@@ -171,13 +171,18 @@ model PasswordResetToken {
 }
 
 model PlayerProfile {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  handicap  Float?
-  createdAt DateTime @default(now())
-  updatedAt DateTime  @updatedAt
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  handicap       Float?
+  xp             Int      @default(0)
+  level          Int      @default(1)
+  currentStreak  Int      @default(0)
+  longestStreak  Int      @default(0)
+  lastActivityAt DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@map("player_profiles")
 }
