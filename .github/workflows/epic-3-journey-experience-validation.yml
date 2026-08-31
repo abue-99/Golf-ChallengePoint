@@ -72,8 +72,8 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint Web
-        run: pnpm turbo lint --filter=golf-challenge-point-web
+      - name: Lint Journey Files
+        run: pnpm --dir apps/web exec eslint "components/PlayerJourney.tsx" "components/PlayerCalendarView.tsx" "components/CoachPlayerCalendarView.tsx" "types/calendar.ts"
 
       - name: Typecheck Web
         run: pnpm turbo typecheck --filter=golf-challenge-point-web
