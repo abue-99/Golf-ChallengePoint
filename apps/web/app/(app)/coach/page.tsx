@@ -76,27 +76,14 @@ export default function CoachHome() {
         setPlayers(nextPlayers);
         setTeams(nextTeams);
 
-        if (me?.id) {
-          const coachCalendar = await fetch(`/api/calendar/player/${me.id}`, {
-            cache: "no-store",
-          }).then((r) => (r.ok ? r.json() : null));
-          const nowMs = Date.now();
-          const upcoming = (Array.isArray(coachCalendar?.activities)
-            ? coachCalendar.activities
-            : []
-          )
-            .filter(
-              (activity: CalendarActivity) =>
-                new Date(activity.end).getTime() >= nowMs,
-            )
-            .sort(
-              (a: CalendarActivity, b: CalendarActivity) =>
-                new Date(a.start).getTime() - new Date(b.start).getTime(),
-            );
-          if (!ignore) setNextUp(upcoming[0] ?? null);
-        }
+        const coachCalendarPromise = me?.id
+          ? fetch(`/api/calendar/player/${me.id}`, {
+              cache: "no-store",
+            }).then((r) => (r.ok ? r.json() : null))
+          : Promise.resolve(null);
 
-        const [playerEntries, teamEntries] = await Promise.all([
+        const [coachCalendar, playerEntries, teamEntries] = await Promise.all([
+          coachCalendarPromise,
           Promise.all(
             nextPlayers.map(async (player: Player) => {
               const [plans, calendar] = await Promise.all([
@@ -128,6 +115,23 @@ export default function CoachHome() {
             })
           ),
         ]);
+
+        if (me?.id) {
+          const nowMs = Date.now();
+          const upcoming = (Array.isArray(coachCalendar?.activities)
+            ? coachCalendar.activities
+            : []
+          )
+            .filter(
+              (activity: CalendarActivity) =>
+                new Date(activity.end).getTime() >= nowMs,
+            )
+            .sort(
+              (a: CalendarActivity, b: CalendarActivity) =>
+                new Date(a.start).getTime() - new Date(b.start).getTime(),
+            );
+          if (!ignore) setNextUp(upcoming[0] ?? null);
+        }
 
         if (ignore) return;
         setPlayerCounts(Object.fromEntries(playerEntries));

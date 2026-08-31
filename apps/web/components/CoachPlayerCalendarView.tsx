@@ -99,6 +99,10 @@ export default function CoachPlayerCalendarView({
   }, [loadCalendar]);
 
   useEffect(() => {
+    if (coachId) setCompareWithCoach(true);
+  }, [coachId]);
+
+  useEffect(() => {
     const apiInstance = calendarRef.current?.getApi();
     if (apiInstance) {
       apiInstance.changeView(VIEW_TO_FULLCALENDAR[activeView]);
