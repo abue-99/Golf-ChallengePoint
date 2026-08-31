@@ -1,7 +1,5 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { LayoutTemplate } from "lucide-react";
 import CoachPlayerCalendarView from "@/components/CoachPlayerCalendarView";
 
 type PlayerSummary = {
@@ -49,24 +47,6 @@ export default async function CoachPlayerCalendarPage({
           {player?.country ? ` · ${player.country}` : ""}
         </p>
       </header>
-
-      {/* Link to new Planning Board */}
-      <Link
-        href={`/coach/players/${playerId}/planning`}
-        className="flex items-center gap-3 rounded-2xl border-2 border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 hover:bg-blue-100 transition-colors group"
-      >
-        <div className="rounded-xl bg-blue-600 p-2 group-hover:bg-blue-700 transition-colors">
-          <LayoutTemplate size={18} className="text-white" />
-        </div>
-        <div className="flex-1">
-          <p className="font-semibold">Open Planning Board</p>
-          <p className="text-xs text-blue-700">
-            Drag &amp; drop lessons onto training windows to build this
-            player&apos;s training plan.
-          </p>
-        </div>
-        <span className="text-blue-600 font-medium text-xs">Open →</span>
-      </Link>
 
       <CoachPlayerCalendarView playerId={playerId} />
     </div>

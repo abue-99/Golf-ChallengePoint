@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
+import listPlugin from "@fullcalendar/list";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin, { DateClickArg } from "@fullcalendar/interaction";
 import type { EventClickArg, EventInput } from "@fullcalendar/core";
 import Link from "next/link";
-import { CalendarDays, Flame, Plus } from "lucide-react";
+import { Flame, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,7 +78,7 @@ function formatRange(start: string, end: string) {
   return `${formatCalendarDateTime(start)} → ${new Date(end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}`;
 }
 
-function blackoutBadge(type: AvailabilityBlockType) {
+function availabilityBadge(type: AvailabilityBlockType) {
   switch (type) {
     case "SCHOOL":
       return "🎒 School";
@@ -88,8 +89,17 @@ function blackoutBadge(type: AvailabilityBlockType) {
     case "TRAVEL":
       return "✈️ Travel";
     default:
-      return "⛔ Custom";
+      return "🚫 Other";
   }
+}
+
+function formatAgendaDate(value: string) {
+  const date = new Date(value);
+  return date.toLocaleDateString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function ActivityDialog({
@@ -138,7 +148,7 @@ function ActivityDialog({
             ) : null}
             {activity.availabilityType ? (
               <span className="rounded-full bg-slate-100 px-2.5 py-1">
-                {blackoutBadge(activity.availabilityType)}
+                {availabilityBadge(activity.availabilityType)}
               </span>
             ) : null}
           </div>
@@ -248,8 +258,13 @@ export default function PlayerCalendarView({
     useState<AvailabilityBlock | null>(null);
   const [selectedActivity, setSelectedActivity] =
     useState<CalendarActivity | null>(null);
+  const [agendaExpanded, setAgendaExpanded] = useState(false);
   const [activeView, setActiveView] =
-    useState<keyof typeof VIEW_TO_FULLCALENDAR>("month");
+    useState<keyof typeof VIEW_TO_FULLCALENDAR>(() =>
+      typeof window !== "undefined" && window.innerWidth >= 1024
+        ? "week"
+        : "agenda",
+    );
   const calendarRef = useRef<FullCalendar>(null);
 
   const loadCalendar = useCallback(async () => {
@@ -296,6 +311,19 @@ export default function PlayerCalendarView({
     completed: 0,
     total: 0,
   };
+  const upcomingActivities = useMemo(() => {
+    const now = Date.now();
+    return [...calendarData.activities]
+      .filter((activity) => new Date(activity.end).getTime() >= now)
+      .sort(
+        (a, b) =>
+          new Date(a.start).getTime() - new Date(b.start).getTime(),
+      );
+  }, [calendarData.activities]);
+  const agendaItems = useMemo(
+    () => (agendaExpanded ? upcomingActivities : upcomingActivities.slice(0, 5)),
+    [agendaExpanded, upcomingActivities],
+  );
 
   const handleDateClick = useCallback(
     (arg: DateClickArg) => {
@@ -384,17 +412,17 @@ export default function PlayerCalendarView({
       try {
         if (selectedAvailability) {
           await api.updateAvailabilityBlock(selectedAvailability.id, data);
-          toast.success("Blackout time updated");
+          toast.success("Unavailable time updated");
         } else {
           await api.createAvailabilityBlock(data);
-          toast.success("Blackout time added");
+          toast.success("Unavailable time added");
         }
         await loadCalendar();
       } catch (error) {
         toast.error(
           error instanceof Error
             ? error.message
-            : "Failed to save blackout time",
+            : "Failed to save unavailable time",
         );
         throw error;
       }
@@ -406,13 +434,13 @@ export default function PlayerCalendarView({
     if (!selectedAvailability) return;
     try {
       await api.deleteAvailabilityBlock(selectedAvailability.id);
-      toast.success("Blackout time deleted");
+      toast.success("Unavailable time deleted");
       await loadCalendar();
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to delete blackout time",
+          : "Failed to delete unavailable time",
       );
       throw error;
     }
@@ -459,62 +487,147 @@ export default function PlayerCalendarView({
                 Unified Calendar
               </p>
               <p className="text-sm text-slate-500">
-                Today, week, and month views for practice, missions, team
-                events, tournaments, milestones, and blackout times.
+                Agenda, day, week, and month views for sessions, events,
+                milestones, and unavailable periods.
               </p>
             </div>
-            <Tabs
-              value={activeView}
-              onValueChange={(value) =>
-                setActiveView(value as keyof typeof VIEW_TO_FULLCALENDAR)
-              }
-            >
-              <TabsList>
-                <TabsTrigger value="today">Today</TabsTrigger>
-                <TabsTrigger value="week">Week</TabsTrigger>
-                <TabsTrigger value="month">Month</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex flex-col items-start gap-2 sm:items-end">
+              {editable ? (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setSelectedAvailability(null);
+                    setAvailabilityOpen(true);
+                  }}
+                >
+                  <Plus className="mr-1 h-4 w-4" /> Add Unavailable Time
+                </Button>
+              ) : null}
+              <Tabs
+                value={activeView}
+                onValueChange={(value) =>
+                  setActiveView(value as keyof typeof VIEW_TO_FULLCALENDAR)
+                }
+              >
+                <TabsList>
+                  <TabsTrigger value="agenda">Agenda</TabsTrigger>
+                  <TabsTrigger value="day">Day</TabsTrigger>
+                  <TabsTrigger value="week">Week</TabsTrigger>
+                  <TabsTrigger value="month">Month</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
 
           {country ? (
             <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
               Calendar region: <span className="font-semibold">{country}</span>.
-              Add player-specific holiday blackout times below when local school
+              Add player-specific unavailable periods below when local school
               or travel calendars differ.
             </div>
           ) : null}
 
-          <div className="rounded-2xl border bg-white p-3 shadow-sm [&_.fc-button]:!rounded [&_.fc-button-primary]:!bg-green-600 [&_.fc-button-primary]:!border-green-700 [&_.fc-button-primary.fc-button-active]:!bg-green-800">
-            <FullCalendar
-              ref={calendarRef}
-              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-              initialView={VIEW_TO_FULLCALENDAR[activeView]}
-              headerToolbar={{
-                left: "prev,next today",
-                center: "title",
-                right: "",
-              }}
-              events={events}
-              editable={false}
-              selectable={false}
-              dateClick={handleDateClick}
-              eventClick={handleEventClick}
-              eventTimeFormat={{
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-              }}
-              allDaySlot
-              height="auto"
-              nowIndicator
-            />
-          </div>
+          {activeView === "agenda" ? (
+            <div className="rounded-2xl border bg-white p-4 shadow-sm">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-slate-800">Upcoming</p>
+                {upcomingActivities.length > 5 ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setAgendaExpanded((current) => !current)}
+                  >
+                    {agendaExpanded ? "Show Less" : "Show More"}
+                  </Button>
+                ) : null}
+              </div>
+              <div className="space-y-3">
+                {agendaItems.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed px-4 py-6 text-center text-sm text-slate-400">
+                    No upcoming calendar items.
+                  </div>
+                ) : (
+                  agendaItems.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="rounded-2xl border bg-slate-50 px-4 py-3"
+                    >
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        {formatAgendaDate(activity.start)}
+                      </p>
+                      <p className="mt-1 font-semibold text-slate-800">
+                        {activity.title}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        {formatRange(activity.start, activity.end)}
+                      </p>
+                      <div className="mt-3 flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedActivity(activity)}
+                        >
+                          Open Event
+                        </Button>
+                        {editable && activity.type === "availability-block" ? (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              const block = availabilityBlocks.find(
+                                (item) => item.id === activity.sourceId,
+                              );
+                              if (!block) return;
+                              setSelectedAvailability(block);
+                              setAvailabilityOpen(true);
+                            }}
+                          >
+                            Edit Event
+                          </Button>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl border bg-white p-3 shadow-sm [&_.fc-button]:!rounded [&_.fc-button-primary]:!bg-green-600 [&_.fc-button-primary]:!border-green-700 [&_.fc-button-primary.fc-button-active]:!bg-green-800">
+              <FullCalendar
+                ref={calendarRef}
+                plugins={[
+                  dayGridPlugin,
+                  timeGridPlugin,
+                  interactionPlugin,
+                  listPlugin,
+                ]}
+                initialView={VIEW_TO_FULLCALENDAR[activeView]}
+                headerToolbar={{
+                  left: "prev,next today",
+                  center: "title",
+                  right: "",
+                }}
+                events={events}
+                editable={false}
+                selectable={false}
+                dateClick={handleDateClick}
+                eventClick={handleEventClick}
+                eventTimeFormat={{
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: false,
+                }}
+                allDaySlot
+                height="auto"
+                nowIndicator
+              />
+            </div>
+          )}
 
           {editable ? (
             <p className="text-xs text-muted-foreground">
-              Click any empty date to create a practice slot. Click a blackout
-              item to edit player school, work, holiday, or travel conflicts.
+              Click any empty date to create a practice slot. Click an
+              unavailable item to edit school, work, holiday, or travel
+              conflicts.
             </p>
           ) : null}
         </div>
@@ -536,71 +649,6 @@ export default function PlayerCalendarView({
               <div className="rounded-full bg-amber-50 p-3 text-amber-600">
                 <Flame className="h-5 w-5" />
               </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-800">
-                  Blackout times
-                </p>
-                <p className="text-xs text-slate-500">
-                  School, work, holiday, and custom no-go windows
-                </p>
-              </div>
-              {editable ? (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setSelectedAvailability(null);
-                    setAvailabilityOpen(true);
-                  }}
-                >
-                  <Plus className="mr-1 h-4 w-4" /> Add
-                </Button>
-              ) : null}
-            </div>
-
-            <div className="space-y-3">
-              {availabilityBlocks.length === 0 ? (
-                <div className="rounded-2xl border border-dashed px-4 py-6 text-center text-sm text-slate-400">
-                  No blackout times yet.
-                </div>
-              ) : (
-                availabilityBlocks.map((block) => (
-                  <button
-                    key={block.id}
-                    type="button"
-                    className="w-full rounded-2xl border bg-slate-50 px-4 py-3 text-left transition hover:border-slate-300"
-                    onClick={() => {
-                      if (!editable) return;
-                      setSelectedAvailability(block);
-                      setAvailabilityOpen(true);
-                    }}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="font-medium text-slate-800">
-                          {block.title}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {blackoutBadge(block.type)}
-                        </p>
-                      </div>
-                      <CalendarDays className="h-4 w-4 text-slate-400" />
-                    </div>
-                    <p className="mt-2 text-sm text-slate-600">
-                      {formatRange(block.startTime, block.endTime)}
-                    </p>
-                    {block.notes ? (
-                      <p className="mt-2 text-xs text-slate-500">
-                        {block.notes}
-                      </p>
-                    ) : null}
-                  </button>
-                ))
-              )}
             </div>
           </div>
 
@@ -637,8 +685,8 @@ export default function PlayerCalendarView({
                 label="Milestones"
               />
               <Legend
-                color="bg-slate-100 border-slate-500"
-                label="Blackout times"
+                color="bg-red-100 border-red-600"
+                label="Unavailable"
               />
             </div>
           </div>

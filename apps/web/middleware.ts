@@ -35,6 +35,8 @@ export async function middleware(req: NextRequest) {
   // Protected routes
   const PROTECTED = [
     "/dashboard",
+    "/calendar",
+    "/planning",
     "/player",
     "/coach",
     "/club",
