@@ -18,7 +18,7 @@ type HeaderProps = {
   sidebarExpanded?: boolean;
 };
 
-export default function Header({ user, onToggleSidebar, sidebarExpanded }: HeaderProps) {
+export default function Header({ user, onToggleSidebar }: HeaderProps) {
   const router = useRouter();
 
   const initials =
@@ -50,7 +50,7 @@ export default function Header({ user, onToggleSidebar, sidebarExpanded }: Heade
         priority
         className="ml-1"
       />
-      <span className="font-bold text-lg hidden sm:block">Golf Challenge Point</span>
+      <span className="text-base font-bold">Challengepoint</span>
       <div className="ml-auto flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -96,4 +96,3 @@ export default function Header({ user, onToggleSidebar, sidebarExpanded }: Heade
     </header>
   );
 }
-
