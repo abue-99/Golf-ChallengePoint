@@ -45,6 +45,8 @@ type CalendarPayload = {
 
 const VISIBLE_DAY_START_MINUTES = 6 * 60;
 const VISIBLE_DAY_END_MINUTES = 21 * 60;
+const VISIBLE_DAY_START_TIME = `${String(Math.floor(VISIBLE_DAY_START_MINUTES / 60)).padStart(2, "0")}:${String(VISIBLE_DAY_START_MINUTES % 60).padStart(2, "0")}:00`;
+const VISIBLE_DAY_END_TIME = `${String(Math.floor(VISIBLE_DAY_END_MINUTES / 60)).padStart(2, "0")}:${String(VISIBLE_DAY_END_MINUTES % 60).padStart(2, "0")}:00`;
 
 type VisibleRange = { start: Date; end: Date } | null;
 
@@ -444,8 +446,8 @@ export default function CoachPlayerCalendarView({
           datesSet={(arg: DatesSetArg) =>
             setVisibleRange({ start: arg.start, end: arg.end })
           }
-          slotMinTime="06:00:00"
-          slotMaxTime="21:00:00"
+          slotMinTime={VISIBLE_DAY_START_TIME}
+          slotMaxTime={VISIBLE_DAY_END_TIME}
           allDaySlot
           height="auto"
           nowIndicator
