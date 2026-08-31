@@ -1,0 +1,40 @@
+name: Epic 2 Review Checklist
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print Review Checklist
+        run: |
+          echo "Epic 2 Review Checklist"
+
+          echo "[ ] PlanningStyle enum added"
+          echo "[ ] User model updated"
+          echo "[ ] Migration created"
+          echo "[ ] Prisma client regenerated"
+
+          echo "[ ] Auth DTO updated"
+          echo "[ ] Profile endpoint updated"
+
+          echo "[ ] Dashboard toggle implemented"
+          echo "[ ] Structured mode implemented"
+          echo "[ ] Flexible mode implemented"
+
+          echo "[ ] Toggle changes presentation only"
+          echo "[ ] No data mutation"
+
+          echo "[ ] Mobile first verified"
+
+          echo "[ ] Architecture unchanged"
+          echo "[ ] DevelopmentPlan structure unchanged"

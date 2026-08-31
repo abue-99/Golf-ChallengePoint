@@ -1,0 +1,166 @@
+name: Epic 2 - Planning Style Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+    paths:
+      - "apps/api/**"
+      - "apps/web/**"
+      - "packages/db/**"
+      - ".github/workflows/**"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+
+  schema-validation:
+    name: Prisma Schema Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prisma Validate
+        run: pnpm --filter db prisma validate
+
+      - name: Generate Prisma Client
+        run: pnpm --filter db prisma generate
+
+  api-validation:
+    name: Auth API Validation
+    runs-on: ubuntu-latest
+    needs: schema-validation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter db prisma generate
+      - name: Verify Profile Endpoint Updated
+        run: |
+          test -f "apps/api/src/auth/auth.controller.ts"
+          test -f "apps/api/src/auth/auth.service.ts"
+          grep -q "@Get('profile')" "apps/api/src/auth/auth.controller.ts"
+          grep -q "@Patch('profile')" "apps/api/src/auth/auth.controller.ts"
+          grep -q "getMe(" "apps/api/src/auth/auth.service.ts"
+          grep -q "updateProfile(" "apps/api/src/auth/auth.service.ts"
+
+  web-validation:
+    name: Dashboard & Planning UI Validation
+    runs-on: ubuntu-latest
+    needs: api-validation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter db prisma generate
+
+      - name: Verify Dashboard and Planning Routes
+        run: |
+          test -f "apps/web/app/(app)/dashboard/page.tsx"
+          test -f "apps/web/app/(app)/planning/page.tsx"
+          test -f "apps/web/components/PlayerHomeDashboard.tsx"
+          test -f "apps/web/components/PlanningHub.tsx"
+
+      - name: Lint Dashboard and Planning Files
+        run: pnpm --dir apps/web exec eslint "app/(app)/dashboard/page.tsx" "app/(app)/planning/page.tsx" "components/PlayerHomeDashboard.tsx" "components/PlanningHub.tsx"
+
+      - name: Verify Dashboard Uses PlayerHomeDashboard
+        run: |
+          grep -q 'import PlayerHomeDashboard from "@/components/PlayerHomeDashboard"' "apps/web/app/(app)/dashboard/page.tsx"
+          grep -q '<PlayerHomeDashboard' "apps/web/app/(app)/dashboard/page.tsx"
+
+      - name: Verify Planning Page Uses PlanningHub
+        run: |
+          grep -q 'import PlanningHub from "@/components/PlanningHub"' "apps/web/app/(app)/planning/page.tsx"
+          grep -q 'export default async function PlanningPage' "apps/web/app/(app)/planning/page.tsx"
+          grep -q '<PlanningHub' "apps/web/app/(app)/planning/page.tsx"
+          grep -q 'userId={user.id}' "apps/web/app/(app)/planning/page.tsx"
+
+  architecture-guard:
+    name: Architecture Guardrails
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure No Unauthorized Models Added
+        run: |
+          forbidden_models=(
+            "Journey"
+            "Challenge"
+            "Mission"
+          )
+
+          for model in "${forbidden_models[@]}"
+          do
+            if grep -Eq "^model[[:space:]]+$model\\b" packages/db/prisma/schema.prisma; then
+              echo "Forbidden Prisma model detected: $model"
+              exit 1
+            fi
+          done
+
+      - name: Ensure Existing Development Model Remains
+        run: |
+          grep -q "model PlayerDevelopmentPlan" packages/db/prisma/schema.prisma
+          grep -q "model TrainingBlock" packages/db/prisma/schema.prisma
+          grep -q "model LessonAssignment" packages/db/prisma/schema.prisma
+
+  release-readiness:
+    name: Epic 2 Release Readiness
+    runs-on: ubuntu-latest
+
+    needs:
+      - schema-validation
+      - api-validation
+      - web-validation
+      - architecture-guard
+
+    steps:
+      - name: Success
+        run: |
+          echo "Epic 2 validation completed successfully"
+          echo "Planning Style implementation is ready for review"
