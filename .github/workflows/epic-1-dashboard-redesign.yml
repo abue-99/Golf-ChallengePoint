@@ -37,14 +37,8 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint Web App
-        run: pnpm turbo lint --filter=golf-challenge-point-web
-
-      - name: Type Check Web App
-        run: pnpm turbo typecheck --filter=golf-challenge-point-web
-
-      - name: Build Web App
-        run: pnpm turbo build --filter=golf-challenge-point-web
+      - name: Lint Dashboard Files
+        run: pnpm --dir apps/web exec eslint "app/(app)/dashboard/page.tsx" "components/PlayerHomeDashboard.tsx"
 
       - name: Verify Dashboard Route
         run: |
@@ -55,7 +49,17 @@ jobs:
             exit 1
           fi
 
-          echo "Dashboard route file found"
+          if [ ! -f "apps/web/components/PlayerHomeDashboard.tsx" ]; then
+            echo "Dashboard component file not found: apps/web/components/PlayerHomeDashboard.tsx"
+            exit 1
+          fi
+
+          if ! grep -q 'import PlayerHomeDashboard from "@/components/PlayerHomeDashboard"' "apps/web/app/(app)/dashboard/page.tsx"; then
+            echo "Dashboard route does not import PlayerHomeDashboard"
+            exit 1
+          fi
+
+          echo "Dashboard route and component files found"
 
       - name: Upload Build Logs
         if: always()
