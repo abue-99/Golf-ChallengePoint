@@ -10,6 +10,7 @@ import type { EventClickArg, EventInput } from "@fullcalendar/core";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import PracticeSlotDialog, { type PracticeSlotFormData } from "./PracticeSlotDialog";
+import type { CalendarEventExtendedProps } from "@/types/calendar";
 
 type CalendarTask = {
   id: string;
@@ -117,16 +118,6 @@ export default function PlayerCalendarView({ userId, country }: Props) {
     setSelectedDate(arg.dateStr.slice(0, 10));
     setDialogOpen(true);
   }, []);
-
-  type CalendarEventExtendedProps = {
-    type: "slot" | "task";
-    slotId: string;
-    occurrenceStart: string;
-    occurrenceEnd: string;
-    title: string;
-    description: string;
-    durationMinutes: number;
-  };
 
   const handleEventClick = useCallback(
     (arg: EventClickArg) => {

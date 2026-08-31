@@ -10,6 +10,7 @@ import type { EventClickArg, EventInput } from "@fullcalendar/core";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import AssignTaskDialog, { type AssignTaskPayload } from "./AssignTaskDialog";
+import type { CalendarEventExtendedProps } from "@/types/calendar";
 
 type CalendarTask = {
   id: string;
@@ -106,16 +107,6 @@ export default function CoachPlayerCalendarView({ playerId }: Props) {
 
     return result;
   }, [slots]);
-
-  type CalendarEventExtendedProps = {
-    type: "slot" | "task";
-    slotId: string;
-    occurrenceStart: string;
-    occurrenceEnd: string;
-    title: string;
-    description: string;
-    durationMinutes: number;
-  };
 
   const handleEventClick = useCallback(
     (arg: EventClickArg) => {
