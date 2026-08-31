@@ -4,6 +4,13 @@ import Link from "next/link";
 import { LayoutTemplate } from "lucide-react";
 import CoachPlayerCalendarView from "@/components/CoachPlayerCalendarView";
 
+type PlayerSummary = {
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  country?: string | null;
+};
+
 async function getPlayer(token: string, playerId: string) {
   const apiUrl = process.env.API_URL || "http://golf_api:4000";
   const res = await fetch(`${apiUrl}/users/me/players`, {
@@ -11,8 +18,8 @@ async function getPlayer(token: string, playerId: string) {
     cache: "no-store",
   });
   if (!res.ok) return null;
-  const players: any[] = await res.json().catch(() => []);
-  return players.find((p: any) => p.id === playerId) ?? null;
+  const players: PlayerSummary[] = await res.json().catch(() => []);
+  return players.find((player) => player.id === playerId) ?? null;
 }
 
 export default async function CoachPlayerCalendarPage({
@@ -38,7 +45,7 @@ export default async function CoachPlayerCalendarPage({
           Calendar — {playerName}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Legacy calendar view
+          Unified player schedule
           {player?.country ? ` · ${player.country}` : ""}
         </p>
       </header>
@@ -54,7 +61,8 @@ export default async function CoachPlayerCalendarPage({
         <div className="flex-1">
           <p className="font-semibold">Open Planning Board</p>
           <p className="text-xs text-blue-700">
-            Drag & drop lessons onto training windows to build this player's training plan.
+            Drag &amp; drop lessons onto training windows to build this
+            player&apos;s training plan.
           </p>
         </div>
         <span className="text-blue-600 font-medium text-xs">Open →</span>

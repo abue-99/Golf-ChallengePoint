@@ -7,6 +7,14 @@ function xpToLevel(xp: number): number {
   return Math.floor(xp / 100) + 1;
 }
 
+function profileProgress(xp: number) {
+  return {
+    level: xpToLevel(xp),
+    levelProgress: xp % 100,
+    nextLevelXp: 100,
+  };
+}
+
 @Injectable()
 export class GamificationService {
   constructor(private readonly prisma: PrismaService) {}
@@ -22,11 +30,24 @@ export class GamificationService {
         lastActivityAt: true,
       },
     });
-    return profile;
+    if (!profile) return null;
+    return {
+      ...profile,
+      ...profileProgress(profile.xp),
+    };
   }
 
-  async recordActivity(userId: string): Promise<{ xp: number; level: number; currentStreak: number; longestStreak: number }> {
-    const profile = await this.prisma.playerProfile.findUnique({ where: { userId } });
+  async recordActivity(userId: string): Promise<{
+    xp: number;
+    level: number;
+    currentStreak: number;
+    longestStreak: number;
+    levelProgress: number;
+    nextLevelXp: number;
+  }> {
+    const profile = await this.prisma.playerProfile.findUnique({
+      where: { userId },
+    });
     if (!profile) throw new Error('Player profile not found');
 
     const now = new Date();
@@ -54,9 +75,17 @@ export class GamificationService {
     const updated = await this.prisma.playerProfile.update({
       where: { userId },
       data: { xp, level, currentStreak, longestStreak, lastActivityAt: now },
-      select: { xp: true, level: true, currentStreak: true, longestStreak: true },
+      select: {
+        xp: true,
+        level: true,
+        currentStreak: true,
+        longestStreak: true,
+      },
     });
 
-    return updated;
+    return {
+      ...updated,
+      ...profileProgress(updated.xp),
+    };
   }
 }

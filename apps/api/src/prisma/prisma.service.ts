@@ -58,6 +58,18 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.calendarTask;
   }
 
+  get availabilityBlock() {
+    return this.client.availabilityBlock;
+  }
+
+  get teamEvent() {
+    return this.client.teamEvent;
+  }
+
+  get tournament() {
+    return this.client.tournament;
+  }
+
   get trainingLesson() {
     return this.client.trainingLesson;
   }
@@ -72,6 +84,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
   get lessonAssignment() {
     return this.client.lessonAssignment;
+  }
+
+  get developmentPlanMilestone() {
+    return this.client.developmentPlanMilestone;
   }
 
   $transaction<T>(

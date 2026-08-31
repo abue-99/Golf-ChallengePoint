@@ -42,16 +42,26 @@ type Props = {
 
 function formatTime(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  return d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+  return d.toLocaleDateString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function getDurationMin(occ: { start: string; end: string }): number {
-  return Math.round((new Date(occ.end).getTime() - new Date(occ.start).getTime()) / 60000);
+  return Math.round(
+    (new Date(occ.end).getTime() - new Date(occ.start).getTime()) / 60000,
+  );
 }
 
 function formatDuration(min: number): string {
@@ -112,15 +122,20 @@ function LessonCard({
         "rounded-xl border-2 bg-white p-3 cursor-grab select-none transition-all",
         isDragging
           ? "opacity-50 border-blue-300 shadow-lg scale-95"
-          : "border-gray-100 hover:border-blue-300 hover:shadow-md active:cursor-grabbing"
+          : "border-gray-100 hover:border-blue-300 hover:shadow-md active:cursor-grabbing",
       )}
     >
       <div className="flex items-start gap-2">
-        <GripVertical size={14} className="text-gray-300 mt-0.5 flex-shrink-0" />
+        <GripVertical
+          size={14}
+          className="text-gray-300 mt-0.5 flex-shrink-0"
+        />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
             <span className="text-base">{focusAreaIcon(lesson.focusArea)}</span>
-            <h4 className="font-medium text-gray-800 text-sm truncate">{lesson.name}</h4>
+            <h4 className="font-medium text-gray-800 text-sm truncate">
+              {lesson.name}
+            </h4>
           </div>
           <div className="flex flex-wrap gap-2 text-xs text-gray-500">
             {lesson.durationMinutes != null && (
@@ -136,7 +151,9 @@ function LessonCard({
             )}
           </div>
           {lesson.description && (
-            <p className="mt-1 text-xs text-gray-400 line-clamp-1">{lesson.description}</p>
+            <p className="mt-1 text-xs text-gray-400 line-clamp-1">
+              {lesson.description}
+            </p>
           )}
         </div>
       </div>
@@ -167,7 +184,10 @@ function WindowDropZone({
   const totalMin = firstOcc ? getDurationMin(firstOcc) : 0;
   const assignedMin = win.tasks.reduce((s, t) => s + t.durationMinutes, 0);
   const remainMin = Math.max(0, totalMin - assignedMin);
-  const pct = totalMin > 0 ? Math.min(100, Math.round((assignedMin / totalMin) * 100)) : 0;
+  const pct =
+    totalMin > 0
+      ? Math.min(100, Math.round((assignedMin / totalMin) * 100))
+      : 0;
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
@@ -204,7 +224,7 @@ function WindowDropZone({
         "rounded-2xl border-2 p-4 space-y-3 transition-all",
         isOver
           ? "border-blue-400 bg-blue-50 shadow-lg scale-[1.01]"
-          : "border-gray-100 bg-white hover:border-gray-200"
+          : "border-gray-100 bg-white hover:border-gray-200",
       )}
     >
       {/* Header */}
@@ -212,10 +232,14 @@ function WindowDropZone({
         <span className="text-xl">{slotToIcon(win.title)}</span>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-800 text-sm">{win.title}</h3>
-          <p className="text-xs text-gray-500">{formatRecurrence(win.recurrence)}</p>
+          <p className="text-xs text-gray-500">
+            {formatRecurrence(win.recurrence)}
+          </p>
         </div>
         {isOver && (
-          <span className="text-xs text-blue-600 font-medium animate-pulse">Drop here</span>
+          <span className="text-xs text-blue-600 font-medium animate-pulse">
+            Drop here
+          </span>
         )}
       </div>
 
@@ -224,7 +248,8 @@ function WindowDropZone({
         <div className="text-xs text-gray-500 flex items-center gap-2">
           <Clock size={11} />
           <span>
-            {formatDate(firstOcc.start)} · {formatTime(firstOcc.start)} – {formatTime(firstOcc.end)}
+            {formatDate(firstOcc.start)} · {formatTime(firstOcc.start)} –{" "}
+            {formatTime(firstOcc.end)}
           </span>
         </div>
       )}
@@ -236,14 +261,20 @@ function WindowDropZone({
             <div
               className={cn(
                 "h-full rounded-full transition-all",
-                pct >= 90 ? "bg-rose-500" : pct >= 60 ? "bg-amber-500" : "bg-green-500"
+                pct >= 90
+                  ? "bg-rose-500"
+                  : pct >= 60
+                    ? "bg-amber-500"
+                    : "bg-green-500",
               )}
               style={{ width: `${pct}%` }}
             />
           </div>
           <div className="flex justify-between text-xs text-gray-500">
             <span>{assignedMin} min assigned</span>
-            <span className="font-medium text-green-700">{formatDuration(remainMin)} free</span>
+            <span className="font-medium text-green-700">
+              {formatDuration(remainMin)} free
+            </span>
           </div>
         </div>
       )}
@@ -256,17 +287,24 @@ function WindowDropZone({
               key={task.id}
               className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600"
             >
-              <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
+              <CheckCircle2
+                size={12}
+                className="text-green-500 flex-shrink-0"
+              />
               <span className="flex-1 truncate">{task.title}</span>
               <span className="text-gray-400">{task.durationMinutes} min</span>
             </div>
           ))}
         </div>
       ) : (
-        <div className={cn(
-          "rounded-xl border-2 border-dashed py-4 text-center text-xs text-gray-400 transition-colors",
-          isOver ? "border-blue-300 text-blue-500 bg-blue-50" : "border-gray-200"
-        )}>
+        <div
+          className={cn(
+            "rounded-xl border-2 border-dashed py-4 text-center text-xs text-gray-400 transition-colors",
+            isOver
+              ? "border-blue-300 text-blue-500 bg-blue-50"
+              : "border-gray-200",
+          )}
+        >
           {isOver ? "Release to assign" : "Drag a lesson here to assign"}
         </div>
       )}
@@ -342,6 +380,7 @@ export default function CoachPlanningBoard({ playerId }: Props) {
         description: lesson.description ?? "",
         durationMinutes: lesson.durationMinutes ?? DEFAULT_LESSON_DURATION,
         scheduledDate,
+        lessonId: lesson.id,
       });
 
       toast.success(`"${lesson.name}" assigned to ${win.title}`);
@@ -366,7 +405,9 @@ export default function CoachPlanningBoard({ playerId }: Props) {
       {/* Touch-friendly info banner */}
       <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm text-blue-700 flex items-center gap-2">
         <Target size={14} className="flex-shrink-0" />
-        <span>Drag a lesson from the left onto a training window to assign it.</span>
+        <span>
+          Drag a lesson from the left onto a training window to assign it.
+        </span>
       </div>
 
       {assigning && (
@@ -415,7 +456,9 @@ export default function CoachPlanningBoard({ playerId }: Props) {
           {windows.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-gray-200 py-10 text-center text-sm text-gray-400">
               <p>This player has no training windows yet.</p>
-              <p className="mt-1 text-xs">Ask the player to create their availability windows first.</p>
+              <p className="mt-1 text-xs">
+                Ask the player to create their availability windows first.
+              </p>
             </div>
           ) : (
             <div className="space-y-3 max-h-[calc(100vh-260px)] overflow-y-auto pr-1">

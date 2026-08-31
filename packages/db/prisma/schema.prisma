@@ -56,6 +56,30 @@ enum LessonPriority {
   HIGH
 }
 
+enum CalendarTaskStatus {
+  PLANNED
+  COMPLETED
+}
+
+enum AvailabilityBlockType {
+  SCHOOL
+  WORK
+  HOLIDAY
+  TRAVEL
+  CUSTOM
+}
+
+enum TournamentPriority {
+  PRIORITY_1
+  PRIORITY_2
+  PRIORITY_3
+}
+
+enum DevelopmentMilestoneStatus {
+  PLANNED
+  COMPLETED
+}
+
 enum GoalAchieved {
   YES
   PARTIALLY
@@ -100,6 +124,9 @@ model User {
   playerDevelopmentPlans PlayerDevelopmentPlan[] @relation("PlayerPlans")
   coachTrainingBlocks  TrainingBlock[]         @relation("CoachBlocks")
   lessonAssignments    LessonAssignment[]      @relation("PlayerAssignments")
+  availabilityBlocks   AvailabilityBlock[]
+  tournaments          Tournament[]
+  teamEvents           TeamEvent[]             @relation("CoachTeamEvents")
 
   @@map("users")
 }
@@ -142,6 +169,7 @@ model Team {
   members     TeamMember[]
   practiceSlots PracticeSlot[] @relation("TeamPracticeSlots")
   developmentPlans PlayerDevelopmentPlan[] @relation("TeamDevelopmentPlans")
+  events      TeamEvent[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -247,6 +275,10 @@ model CalendarTask {
   description     String
   durationMinutes Int
   scheduledDate   DateTime
+  status          CalendarTaskStatus @default(PLANNED)
+  completedAt     DateTime?
+  lessonId        String?
+  lesson          TrainingLesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
@@ -293,6 +325,7 @@ model TrainingLesson {
   keyLearnings          String?
 
   assignments     LessonAssignment[]
+  calendarTasks   CalendarTask[]
 
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -316,6 +349,7 @@ model PlayerDevelopmentPlan {
   startDate   DateTime?
   endDate     DateTime?
   blocks      TrainingBlock[]
+  milestones  DevelopmentPlanMilestone[]
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
@@ -337,6 +371,7 @@ model TrainingBlock {
   endDate     DateTime?
   sortOrder   Int                   @default(0)
   assignments LessonAssignment[]
+  milestones  DevelopmentPlanMilestone[]
   createdAt   DateTime              @default(now())
   updatedAt   DateTime              @updatedAt
 
@@ -364,4 +399,70 @@ model LessonAssignment {
   updatedAt      DateTime         @updatedAt
 
   @@map("lesson_assignments")
+}
+
+model AvailabilityBlock {
+  id                String                @id @default(cuid())
+  playerId          String
+  player            User                  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  title             String
+  type              AvailabilityBlockType @default(CUSTOM)
+  startTime         DateTime
+  endTime           DateTime
+  recurrence        Recurrence            @default(NONE)
+  recurrenceEndDate DateTime?
+  notes             String?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  @@map("availability_blocks")
+}
+
+model TeamEvent {
+  id          String   @id @default(cuid())
+  teamId       String
+  team         Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  coachId      String
+  coach        User     @relation("CoachTeamEvents", fields: [coachId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  location     String?
+  startTime    DateTime
+  endTime      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("team_events")
+}
+
+model Tournament {
+  id          String             @id @default(cuid())
+  playerId    String
+  player      User               @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  location    String?
+  startTime   DateTime
+  endTime     DateTime
+  priority    TournamentPriority @default(PRIORITY_2)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@map("tournaments")
+}
+
+model DevelopmentPlanMilestone {
+  id          String                     @id @default(cuid())
+  planId       String
+  plan         PlayerDevelopmentPlan      @relation(fields: [planId], references: [id], onDelete: Cascade)
+  blockId      String?
+  block        TrainingBlock?             @relation(fields: [blockId], references: [id], onDelete: SetNull)
+  title        String
+  description  String?
+  dueDate      DateTime
+  status       DevelopmentMilestoneStatus @default(PLANNED)
+  createdAt    DateTime                   @default(now())
+  updatedAt    DateTime                   @updatedAt
+
+  @@map("development_plan_milestones")
 }
