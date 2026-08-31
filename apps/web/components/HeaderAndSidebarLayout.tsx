@@ -37,9 +37,10 @@ export default function HeaderAndSidebarLayout({
    : role === 'PLAYER'
    ? [
        { href: '/', icon: Home, label: 'Home' },
-       { href: '/player', icon: RouteIcon, label: 'Journey' },
-       { href: '/planning', icon: CalendarDays, label: 'Planning' },
-       { href: '/settings/profile', icon: User, label: 'Profile' },
+       { href: '/calendar', icon: CalendarDays, label: 'Kalender' },
+       { href: '/player', icon: RouteIcon, label: 'Training' },
+       { href: '/planning', icon: CalendarDays, label: 'Planung' },
+       { href: '/settings/profile', icon: User, label: 'Profil' },
      ]
    : defaultNavItems;
 
