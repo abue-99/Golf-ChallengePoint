@@ -37,9 +37,6 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint Dashboard Files
-        run: pnpm --dir apps/web exec eslint "app/(app)/dashboard/page.tsx" "components/PlayerHomeDashboard.tsx"
-
       - name: Verify Dashboard Route
         run: |
           echo "Checking dashboard route..."
@@ -60,3 +57,6 @@ jobs:
           fi
 
           echo "Dashboard route and component files found"
+
+      - name: Lint Dashboard Files
+        run: pnpm --dir apps/web exec eslint "app/(app)/dashboard/page.tsx" "components/PlayerHomeDashboard.tsx"
