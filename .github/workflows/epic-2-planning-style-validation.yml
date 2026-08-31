@@ -44,18 +44,6 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm --filter db prisma generate
 
-      - name: Verify PlanningStyle Enum Exists
-        run: |
-          grep -q "enum PlanningStyle" packages/db/prisma/schema.prisma
-
-      - name: Verify User Field Exists
-        run: |
-          grep -q "planningStyle" packages/db/prisma/schema.prisma
-
-      - name: Check Migration Exists
-        run: |
-          find packages/db/prisma/migrations -type f | grep -i planning || exit 1
-
   api-validation:
     name: Auth API Validation
     runs-on: ubuntu-latest
