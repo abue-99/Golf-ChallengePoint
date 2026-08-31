@@ -508,12 +508,6 @@ export default function PlayerHomeDashboard({
 
   return (
     <div className="space-y-4 max-w-lg mx-auto pb-4">
-      {loading ? (
-        <div className="rounded-2xl bg-slate-100 animate-pulse h-36" />
-      ) : (
-        <CalendarSummaryCard activities={calendarActivities} nowIso={calendarNowIso} />
-      )}
-
       {/* Hero level card */}
       <HeroLevelCard
         firstName={firstName}
@@ -523,6 +517,12 @@ export default function PlayerHomeDashboard({
         nextLevelXp={gamification.nextLevelXp}
         currentStreak={gamification.currentStreak}
       />
+
+      {loading ? (
+        <div className="rounded-2xl bg-slate-100 animate-pulse h-36" />
+      ) : (
+        <CalendarSummaryCard activities={calendarActivities} nowIso={calendarNowIso} />
+      )}
 
       {/* Today's training */}
       {loading ? (

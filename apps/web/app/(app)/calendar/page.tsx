@@ -32,7 +32,7 @@ export default async function CalendarPage() {
   const user = await getCurrentUser(token);
   if (!user) redirect("/api/auth/logout");
 
-  const editable = user.role === "PLAYER";
+  const editable = user.role === "PLAYER" || user.role === "COACH";
 
   return (
     <div className="space-y-4">
@@ -44,16 +44,28 @@ export default async function CalendarPage() {
         </p>
       </header>
 
-      {!editable ? (
+      {user.role === "ADMIN" ? (
         <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-          Coaches and admins can review their personal schedule here, while
-          player-specific assignment workflows remain available from the coach
-          dashboard.
+          Admins can review their personal schedule here, while player-specific
+          assignment workflows remain available from the coach dashboard.
           <Link
             href="/coach"
             className="ml-2 font-semibold underline underline-offset-2"
           >
             Open coach dashboard
+          </Link>
+        </div>
+      ) : null}
+
+      {user.role === "COACH" ? (
+        <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          You can add your own unavailability here and compare with a selected
+          player from the coach player calendar.
+          <Link
+            href="/coach/players"
+            className="ml-2 font-semibold underline underline-offset-2"
+          >
+            Open player list
           </Link>
         </div>
       ) : null}

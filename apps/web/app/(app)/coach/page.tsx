@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CalendarDays, Route, Search, Users } from "lucide-react";
+import type { CalendarActivity as BaseCalendarActivity } from "@/types/calendar";
 
 type Team = {
   id: string;
@@ -27,6 +28,11 @@ type ItemCount = {
   windows: number;
 };
 
+type CalendarActivity = Pick<
+  BaseCalendarActivity,
+  "id" | "title" | "start" | "end"
+>;
+
 function nameOfPlayer(player: Player) {
   return [player.firstName, player.lastName].filter(Boolean).join(" ") || player.email || "—";
 }
@@ -47,15 +53,19 @@ export default function CoachHome() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [playerCounts, setPlayerCounts] = useState<Record<string, ItemCount>>({});
   const [teamCounts, setTeamCounts] = useState<Record<string, ItemCount>>({});
+  const [nextUp, setNextUp] = useState<CalendarActivity | null>(null);
 
   useEffect(() => {
     let ignore = false;
 
     (async () => {
       try {
-        const [playersRes, teamsRes] = await Promise.all([
+        const [playersRes, teamsRes, me] = await Promise.all([
           fetch("/api/players/my", { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])),
           fetch("/api/teams", { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])),
+          fetch("/api/auth/me", { cache: "no-store" }).then((r) =>
+            r.ok ? r.json() : null,
+          ),
         ]);
 
         if (ignore) return;
@@ -65,7 +75,14 @@ export default function CoachHome() {
         setPlayers(nextPlayers);
         setTeams(nextTeams);
 
-        const [playerEntries, teamEntries] = await Promise.all([
+        const coachCalendarPromise = me?.id
+          ? fetch(`/api/calendar/player/${me.id}`, {
+              cache: "no-store",
+            }).then((r) => (r.ok ? r.json() : null))
+          : Promise.resolve(null);
+
+        const [coachCalendar, playerEntries, teamEntries] = await Promise.all([
+          coachCalendarPromise,
           Promise.all(
             nextPlayers.map(async (player: Player) => {
               const [plans, calendar] = await Promise.all([
@@ -97,6 +114,23 @@ export default function CoachHome() {
             })
           ),
         ]);
+
+        if (me?.id) {
+          const nowMs = Date.now();
+          const upcoming = (Array.isArray(coachCalendar?.activities)
+            ? coachCalendar.activities
+            : []
+          )
+            .filter(
+              (activity: CalendarActivity) =>
+                new Date(activity.end).getTime() >= nowMs,
+            )
+            .sort(
+              (a: CalendarActivity, b: CalendarActivity) =>
+                new Date(a.start).getTime() - new Date(b.start).getTime(),
+            );
+          if (!ignore) setNextUp(upcoming[0] ?? null);
+        }
 
         if (ignore) return;
         setPlayerCounts(Object.fromEntries(playerEntries));
@@ -135,6 +169,27 @@ export default function CoachHome() {
 
   return (
     <div className="space-y-6">
+      <Link href="/calendar">
+        <Card className="border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+          <CardContent className="flex items-center justify-between gap-3 p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-blue-100 p-2">
+                <CalendarDays className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Next Up
+                </p>
+                <p className="font-semibold text-slate-800">
+                  {nextUp ? nextUp.title : "No scheduled items"}
+                </p>
+              </div>
+            </div>
+            <p className="text-sm font-semibold text-blue-700">Open Calendar</p>
+          </CardContent>
+        </Card>
+      </Link>
+
       <header className="space-y-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Coach Dashboard</h1>

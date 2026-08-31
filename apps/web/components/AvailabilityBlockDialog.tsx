@@ -205,7 +205,7 @@ export default function AvailabilityBlockDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {mode === "edit" ? "Edit Unavailable Time" : "Add Unavailable Time"}
+            {mode === "edit" ? "Edit Unavailability" : "Add Unavailability"}
           </DialogTitle>
         </DialogHeader>
 
@@ -346,7 +346,7 @@ export default function AvailabilityBlockDialog({
                   ? "Saving…"
                   : mode === "edit"
                     ? "Save changes"
-                    : "Add Unavailable Time"}
+                    : "Add Unavailability"}
               </Button>
             </div>
           </div>

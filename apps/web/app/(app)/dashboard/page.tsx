@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Users } from "lucide-react";
+import { CalendarDays, User, Users } from "lucide-react";
+import Link from "next/link";
 import PlayerHomeDashboard from "@/components/PlayerHomeDashboard";
+import type { CalendarActivity as BaseCalendarActivity } from "@/types/calendar";
 
 type Team = {
   id: string;
@@ -13,7 +15,20 @@ type Team = {
   createdAt?: string;
 };
 
+type CalendarActivity = Pick<
+  BaseCalendarActivity,
+  "id" | "title" | "start" | "end"
+>;
+
 const DEFAULT_PLAYER_ID = "local-player";
+
+function formatScheduleTime(value: string) {
+  return new Date(value).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
 
 export default function Dashboard() {
   const router = useRouter();
@@ -22,6 +37,12 @@ export default function Dashboard() {
   const [playerFirstName, setPlayerFirstName] = useState<string>("");
   const [teams, setTeams] = useState<Team[]>([]);
   const [playerCount, setPlayerCount] = useState<number>(0);
+  const [coachCalendarActivities, setCoachCalendarActivities] = useState<
+    CalendarActivity[]
+  >([]);
+  const [coachNowIso, setCoachNowIso] = useState<string>(() =>
+    new Date().toISOString(),
+  );
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -46,17 +67,70 @@ export default function Dashboard() {
     }
   }, [role]);
 
+  useEffect(() => {
+    if (role !== "COACH" || !playerId || playerId === DEFAULT_PLAYER_ID) return;
+    fetch(`/api/calendar/player/${playerId}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        setCoachCalendarActivities(
+          Array.isArray(data?.activities) ? data.activities : [],
+        );
+        setCoachNowIso(new Date().toISOString());
+      })
+      .catch(() => {
+        setCoachCalendarActivities([]);
+        setCoachNowIso(new Date().toISOString());
+      });
+  }, [role, playerId]);
+
   const isCoachOrAdmin = role === "COACH" || role === "ADMIN";
+  const coachNowMs = new Date(coachNowIso).getTime();
+  const upcomingCoachItems = coachCalendarActivities
+    .filter((activity) => new Date(activity.end).getTime() >= coachNowMs)
+    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+  const coachNextUp = upcomingCoachItems[0] ?? null;
 
   return (
     <div className="space-y-6 px-0">
+      {role !== "PLAYER" ? (
+        <header>
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--golf-heading)]">
+            Dashboard
+          </h1>
+        </header>
+      ) : null}
 
-      {/* Header */}
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-[var(--golf-heading)]">
-          {role === "PLAYER" ? "Home" : "Dashboard"}
-        </h1>
-      </header>
+      {role === "COACH" ? (
+        <Link href="/calendar">
+          <Card className="border border-slate-200 shadow-sm transition-shadow hover:shadow-md">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                    <CalendarDays className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Next Up
+                    </p>
+                    <p className="font-semibold text-slate-700">
+                      {coachNextUp ? coachNextUp.title : "No scheduled items"}
+                    </p>
+                    {coachNextUp ? (
+                      <p className="text-xs text-slate-500">
+                        {formatScheduleTime(coachNextUp.start)}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+                <span className="text-sm font-semibold text-blue-700">
+                  Open Calendar
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      ) : null}
 
       {/* Role-specific tiles */}
       {isCoachOrAdmin && (

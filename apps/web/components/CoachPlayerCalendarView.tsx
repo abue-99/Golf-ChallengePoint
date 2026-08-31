@@ -9,6 +9,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 import type { EventClickArg, EventInput } from "@fullcalendar/core";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AssignTaskDialog, { type AssignTaskPayload } from "./AssignTaskDialog";
 import {
@@ -44,16 +45,21 @@ type CalendarPayload = {
 
 export default function CoachPlayerCalendarView({
   playerId,
+  coachId,
 }: {
   playerId: string;
+  coachId?: string;
 }) {
   const [calendarData, setCalendarData] = useState<CalendarPayload>({
     activities: [],
     slots: [],
   });
+  const [coachActivities, setCoachActivities] = useState<CalendarActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
+  const [compareWithCoach, setCompareWithCoach] = useState(Boolean(coachId));
+  const [comparisonNowMs] = useState<number>(() => Date.now());
   const [activeView, setActiveView] =
     useState<keyof typeof VIEW_TO_FULLCALENDAR>(() =>
       typeof window !== "undefined" && window.innerWidth >= 1024
@@ -64,11 +70,19 @@ export default function CoachPlayerCalendarView({
 
   const loadCalendar = useCallback(async () => {
     try {
-      const data = await api.getPlayerCalendar(playerId);
+      const [playerCalendar, coachCalendar] = await Promise.all([
+        api.getPlayerCalendar(playerId),
+        coachId ? api.getPlayerCalendar(coachId) : Promise.resolve(null),
+      ]);
       setCalendarData({
-        activities: Array.isArray(data?.activities) ? data.activities : [],
-        slots: Array.isArray(data?.slots) ? data.slots : [],
+        activities: Array.isArray(playerCalendar?.activities)
+          ? playerCalendar.activities
+          : [],
+        slots: Array.isArray(playerCalendar?.slots) ? playerCalendar.slots : [],
       });
+      setCoachActivities(
+        Array.isArray(coachCalendar?.activities) ? coachCalendar.activities : [],
+      );
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -78,11 +92,15 @@ export default function CoachPlayerCalendarView({
     } finally {
       setLoading(false);
     }
-  }, [playerId]);
+  }, [coachId, playerId]);
 
   useEffect(() => {
     loadCalendar();
   }, [loadCalendar]);
+
+  useEffect(() => {
+    if (!coachId) setCompareWithCoach(false);
+  }, [coachId]);
 
   useEffect(() => {
     const apiInstance = calendarRef.current?.getApi();
@@ -92,10 +110,40 @@ export default function CoachPlayerCalendarView({
   }, [activeView]);
 
   const events = useMemo<EventInput[]>(() => {
-    return calendarData.activities.map((activity) =>
+    const playerEvents = calendarData.activities.map((activity) =>
       activityToEventInput(activity),
     );
-  }, [calendarData.activities]);
+    if (!compareWithCoach) return playerEvents;
+
+    const coachEvents = coachActivities.map((activity) => {
+      const base = activityToEventInput(activity);
+      return {
+        ...base,
+        id: `coach-${activity.id}`,
+        title: `Coach · ${activity.title}`,
+        backgroundColor: "#ede9fe",
+        borderColor: "#8b5cf6",
+        textColor: "#5b21b6",
+      };
+    });
+
+    return [...playerEvents, ...coachEvents];
+  }, [calendarData.activities, coachActivities, compareWithCoach]);
+
+  const playerNext = useMemo(
+    () =>
+      [...calendarData.activities]
+        .filter((activity) => new Date(activity.end).getTime() >= comparisonNowMs)
+        .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())[0],
+    [calendarData.activities, comparisonNowMs],
+  );
+  const coachNext = useMemo(
+    () =>
+      [...coachActivities]
+        .filter((activity) => new Date(activity.end).getTime() >= comparisonNowMs)
+        .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())[0],
+    [coachActivities, comparisonNowMs],
+  );
 
   const handleEventClick = useCallback(
     (arg: EventClickArg) => {
@@ -108,15 +156,16 @@ export default function CoachPlayerCalendarView({
         const slot = calendarData.slots.find(
           (item) => item.id === activity.sourceId,
         );
-        if (!slot) return;
-        setSelectedSlot({
-          id: slot.id,
-          title: slot.title,
-          occurrenceStart: activity.start,
-          occurrenceEnd: activity.end,
-        });
-        setDialogOpen(true);
-        return;
+        if (slot) {
+          setSelectedSlot({
+            id: slot.id,
+            title: slot.title,
+            occurrenceStart: activity.start,
+            occurrenceEnd: activity.end,
+          });
+          setDialogOpen(true);
+          return;
+        }
       }
 
       toast.info(
@@ -179,28 +228,60 @@ export default function CoachPlayerCalendarView({
       <div className="flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-slate-800">
-            Player calendar
+            Player vs coach calendar
           </p>
           <p className="text-sm text-slate-500">
             Agenda, day, week, and month tabs share one unified feed across
             practices, assignments, missions, events, tournaments, milestones,
-            and unavailable periods.
+            and unavailable periods. Coach events are highlighted in violet.
           </p>
         </div>
-        <Tabs
-          value={activeView}
-          onValueChange={(value) =>
-            setActiveView(value as keyof typeof VIEW_TO_FULLCALENDAR)
-          }
-        >
-          <TabsList>
-            <TabsTrigger value="agenda">Agenda</TabsTrigger>
-            <TabsTrigger value="day">Day</TabsTrigger>
-            <TabsTrigger value="week">Week</TabsTrigger>
-            <TabsTrigger value="month">Month</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex flex-wrap items-center gap-2">
+          {coachId ? (
+            <Button
+              size="sm"
+              variant={compareWithCoach ? "default" : "outline"}
+              onClick={() => setCompareWithCoach((current) => !current)}
+            >
+              {compareWithCoach ? "Hide coach overlay" : "Show coach overlay"}
+            </Button>
+          ) : null}
+          <Tabs
+            value={activeView}
+            onValueChange={(value) =>
+              setActiveView(value as keyof typeof VIEW_TO_FULLCALENDAR)
+            }
+          >
+            <TabsList>
+              <TabsTrigger value="agenda">Agenda</TabsTrigger>
+              <TabsTrigger value="day">Day</TabsTrigger>
+              <TabsTrigger value="week">Week</TabsTrigger>
+              <TabsTrigger value="month">Month</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
+
+      {compareWithCoach ? (
+        <div className="grid gap-3 rounded-2xl border bg-white p-4 shadow-sm md:grid-cols-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Selected player · Next up
+            </p>
+            <p className="mt-1 font-semibold text-slate-800">
+              {playerNext ? playerNext.title : "No scheduled items"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">
+              Coach · Next up
+            </p>
+            <p className="mt-1 font-semibold text-violet-700">
+              {coachNext ? coachNext.title : "No scheduled items"}
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="rounded-2xl border bg-white p-3 shadow-sm [&_.fc-button]:!rounded [&_.fc-button-primary]:!bg-blue-600 [&_.fc-button-primary]:!border-blue-700 [&_.fc-button-primary.fc-button-active]:!bg-blue-800">
         <FullCalendar
