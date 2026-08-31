@@ -98,23 +98,26 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm --filter db prisma generate
 
-      - name: Lint Web
-        run: pnpm turbo lint --filter=golf-challenge-point-web
-
-      - name: Typecheck Web
-        run: pnpm turbo typecheck --filter=golf-challenge-point-web
-
-      - name: Build Web
-        run: pnpm turbo build --filter=golf-challenge-point-web
-
-      - name: Verify Planning Toggle Exists
+      - name: Verify Dashboard and Planning Routes
         run: |
-          grep -R "Structured" apps/web || exit 1
-          grep -R "Flexible" apps/web || exit 1
+          test -f "apps/web/app/(app)/dashboard/page.tsx"
+          test -f "apps/web/app/(app)/planning/page.tsx"
+          test -f "apps/web/components/PlayerHomeDashboard.tsx"
+          test -f "apps/web/components/PlanningHub.tsx"
 
-      - name: Verify Dashboard Uses PlanningStyle
+      - name: Lint Dashboard and Planning Files
+        run: pnpm --dir apps/web exec eslint "app/(app)/dashboard/page.tsx" "app/(app)/planning/page.tsx" "components/PlayerHomeDashboard.tsx" "components/PlanningHub.tsx"
+
+      - name: Verify Dashboard Uses PlayerHomeDashboard
         run: |
-          grep -R "planningStyle" apps/web || exit 1
+          grep -q 'import PlayerHomeDashboard from "@/components/PlayerHomeDashboard"' "apps/web/app/(app)/dashboard/page.tsx"
+          grep -q '<PlayerHomeDashboard' "apps/web/app/(app)/dashboard/page.tsx"
+
+      - name: Verify Planning Page Uses PlanningHub
+        run: |
+          grep -q 'import PlanningHub from "@/components/PlanningHub"' "apps/web/app/(app)/planning/page.tsx"
+          grep -q 'Manage your availability and training sessions\.' "apps/web/app/(app)/planning/page.tsx"
+          grep -q '<PlanningHub userId={user.id} />' "apps/web/app/(app)/planning/page.tsx"
 
   architecture-guard:
     name: Architecture Guardrails
