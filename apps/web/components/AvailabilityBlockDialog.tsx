@@ -82,7 +82,7 @@ function isAllDayBlock(startIso: string, endIso: string) {
   const endsAtDayEnd =
     end.getUTCHours() === 23 &&
     end.getUTCMinutes() === 59 &&
-    end.getUTCSeconds() <= 59;
+    end.getUTCSeconds() === 59;
   return startsAtMidnight && endsAtDayEnd;
 }
 

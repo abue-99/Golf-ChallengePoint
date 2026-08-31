@@ -336,10 +336,13 @@ function CurrentJourneyCard({ plan }: { plan: PlayerDevelopmentPlan | null }) {
 
 function CalendarSummaryCard({
   activities,
+  nowIso,
 }: {
   activities: CalendarActivity[];
+  nowIso: string;
 }) {
-  const now = Date.now();
+  const now = nowIso ? new Date(nowIso).getTime() : 0;
+  const today = nowIso ? new Date(nowIso) : new Date(0);
   const upcoming = [...activities]
     .filter((activity) => new Date(activity.end).getTime() >= now)
     .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
@@ -347,7 +350,6 @@ function CalendarSummaryCard({
   const todayItems = upcoming
     .filter((activity) => {
       const date = new Date(activity.start);
-      const today = new Date();
       return (
         date.getFullYear() === today.getFullYear() &&
         date.getMonth() === today.getMonth() &&
@@ -464,6 +466,7 @@ export default function PlayerHomeDashboard({
   const [calendarActivities, setCalendarActivities] = useState<CalendarActivity[]>(
     [],
   );
+  const [calendarNowIso, setCalendarNowIso] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   const loadPlans = useCallback(async () => {
@@ -490,6 +493,7 @@ export default function PlayerHomeDashboard({
       setCalendarActivities(
         Array.isArray(calendar?.activities) ? calendar.activities : [],
       );
+      setCalendarNowIso(new Date().toISOString());
     } finally {
       setLoading(false);
     }
@@ -507,7 +511,7 @@ export default function PlayerHomeDashboard({
       {loading ? (
         <div className="rounded-2xl bg-slate-100 animate-pulse h-36" />
       ) : (
-        <CalendarSummaryCard activities={calendarActivities} />
+        <CalendarSummaryCard activities={calendarActivities} nowIso={calendarNowIso} />
       )}
 
       {/* Hero level card */}
