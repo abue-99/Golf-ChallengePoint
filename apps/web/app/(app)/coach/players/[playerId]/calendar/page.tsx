@@ -38,7 +38,7 @@ export default async function CoachPlayerCalendarPage({
           Calendar — {playerName}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Legacy calendar view
+          Unified player schedule
           {player?.country ? ` · ${player.country}` : ""}
         </p>
       </header>

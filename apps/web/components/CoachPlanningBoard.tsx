@@ -342,6 +342,7 @@ export default function CoachPlanningBoard({ playerId }: Props) {
         description: lesson.description ?? "",
         durationMinutes: lesson.durationMinutes ?? DEFAULT_LESSON_DURATION,
         scheduledDate,
+        lessonId: lesson.id,
       });
 
       toast.success(`"${lesson.name}" assigned to ${win.title}`);

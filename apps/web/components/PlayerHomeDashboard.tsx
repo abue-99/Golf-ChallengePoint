@@ -10,7 +10,7 @@ import {
 } from "@/lib/lesson-types";
 import { PlayerCapabilitiesRadarCard, PlayerCapabilitiesWidget } from "@/components/player-capabilities-widget";
 import { cn } from "@/lib/utils";
-import { Clock, ChevronRight, Trophy, Zap, CalendarDays } from "lucide-react";
+import { Clock, ChevronRight, Trophy, Zap, CalendarDays, Flame } from "lucide-react";
 
 const FOCUS_AREA_EMOJI: Record<string, string> = {
   SETUP: "🏌️",
@@ -29,34 +29,15 @@ const STATUS_NODE: Record<string, { emoji: string; label: string }> = {
   REVIEWED: { emoji: "⭐", label: "Reviewed" },
 };
 
-function computeXp(plans: PlayerDevelopmentPlan[]): number {
-  let xp = 0;
-  for (const plan of plans) {
-    for (const block of plan.blocks) {
-      const blockAssignments = block.assignments;
-      const doneCount = blockAssignments.filter(
-        (a) => a.status === "FINISHED" || a.status === "REVIEWED"
-      ).length;
-      xp += doneCount * 50;
-      if (doneCount === blockAssignments.length && blockAssignments.length > 0) {
-        xp += 500;
-      }
-    }
-  }
-  return xp;
-}
+type GamificationProfile = {
+  xp: number;
+  level: number;
+  currentStreak: number;
+  longestStreak: number;
+};
 
-function xpToLevel(xp: number): { level: number; progress: number; nextLevelXp: number } {
-  // Each level requires 500 XP (levels 1–10 then 1000 XP per level)
-  let level = 1;
-  let threshold = 500;
-  let remaining = xp;
-  while (remaining >= threshold) {
-    remaining -= threshold;
-    level += 1;
-    threshold = level >= 10 ? 1000 : 500;
-  }
-  return { level, progress: Math.round((remaining / threshold) * 100), nextLevelXp: threshold };
+function progressToNextLevel(xp: number) {
+  return xp % 100;
 }
 
 function findActiveAssignment(
@@ -91,11 +72,15 @@ function getActivePlan(plans: PlayerDevelopmentPlan[]): PlayerDevelopmentPlan | 
 function HeroLevelCard({
   firstName,
   xp,
+  level,
+  currentStreak,
 }: {
   firstName: string;
   xp: number;
+  level: number;
+  currentStreak: number;
 }) {
-  const { level, progress } = xpToLevel(xp);
+  const progress = progressToNextLevel(xp);
 
   return (
     <div className="rounded-2xl bg-gradient-to-br from-green-700 via-green-800 to-emerald-900 px-5 py-5 text-white shadow-lg">
@@ -112,6 +97,10 @@ function HeroLevelCard({
           <div className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1">
             <Trophy className="h-3.5 w-3.5 text-amber-300" />
             <span className="text-sm font-bold">Level {level}</span>
+          </div>
+          <div className="mt-2 flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1">
+            <Flame className="h-3.5 w-3.5 text-orange-300" />
+            <span className="text-sm font-bold">{currentStreak} Day Streak</span>
           </div>
         </div>
       </div>
@@ -315,6 +304,43 @@ function NextSessionCard() {
   );
 }
 
+function WeeklyCompletionCard({
+  completed,
+  total,
+}: {
+  completed: number;
+  total: number;
+}) {
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  return (
+    <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2">
+        <p className="text-xs font-semibold uppercase tracking-widest text-amber-50">
+          Weekly Completion
+        </p>
+      </div>
+      <div className="space-y-3 px-5 py-4">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-slate-500">Sessions this week</p>
+          <p className="text-lg font-bold text-slate-800">
+            {completed} / {total}
+          </p>
+        </div>
+        <div className="h-2 w-full rounded-full bg-slate-100">
+          <div
+            className="h-2 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-700"
+            style={{ width: `${percent}%` }}
+          />
+        </div>
+        <p className="text-xs text-slate-500">
+          Completed calendar sessions are counted from the coach-assignment completion signal.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function PlayerHomeDashboard({
@@ -325,29 +351,53 @@ export default function PlayerHomeDashboard({
   playerId: string;
 }) {
   const [plans, setPlans] = useState<PlayerDevelopmentPlan[]>([]);
+  const [gamification, setGamification] = useState<GamificationProfile>({
+    xp: 0,
+    level: 1,
+    currentStreak: 0,
+    longestStreak: 0,
+  });
+  const [weeklyCompletion, setWeeklyCompletion] = useState({ completed: 0, total: 0 });
   const [loading, setLoading] = useState(true);
 
   const loadPlans = useCallback(async () => {
     try {
-      const data = await api.getMyPlans();
+      const [data, profile, calendar] = await Promise.all([
+        api.getMyPlans(),
+        api.getGamificationProfile(playerId),
+        api.getPlayerCalendar(playerId),
+      ]);
       setPlans(Array.isArray(data) ? data : []);
+      if (profile) {
+        setGamification({
+          xp: profile.xp ?? 0,
+          level: profile.level ?? 1,
+          currentStreak: profile.currentStreak ?? 0,
+          longestStreak: profile.longestStreak ?? 0,
+        });
+      }
+      setWeeklyCompletion(calendar?.summary?.weeklyCompletion ?? { completed: 0, total: 0 });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [playerId]);
 
   useEffect(() => {
     loadPlans();
   }, [loadPlans]);
 
-  const xp = computeXp(plans);
   const activeTraining = loading ? null : findActiveAssignment(plans);
   const activePlan = loading ? null : getActivePlan(plans);
 
   return (
     <div className="space-y-4 max-w-lg mx-auto pb-4">
       {/* Hero level card */}
-      <HeroLevelCard firstName={firstName} xp={xp} />
+      <HeroLevelCard
+        firstName={firstName}
+        xp={gamification.xp}
+        level={gamification.level}
+        currentStreak={gamification.currentStreak}
+      />
 
       {/* Today's training */}
       {loading ? (
@@ -361,6 +411,15 @@ export default function PlayerHomeDashboard({
         <div className="rounded-2xl bg-slate-100 animate-pulse h-48" />
       ) : (
         <CurrentJourneyCard plan={activePlan} />
+      )}
+
+      {loading ? (
+        <div className="rounded-2xl bg-slate-100 animate-pulse h-32" />
+      ) : (
+        <WeeklyCompletionCard
+          completed={weeklyCompletion.completed}
+          total={weeklyCompletion.total}
+        />
       )}
 
       {loading ? (

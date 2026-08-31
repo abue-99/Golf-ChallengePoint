@@ -41,6 +41,12 @@ export class DevelopmentPlansService {
       coach: { select: { id: true, firstName: true, lastName: true, email: true } },
       player: { select: { id: true, firstName: true, lastName: true, email: true } },
       team: { select: { id: true, shortName: true, icon: true } },
+      milestones: {
+        orderBy: { dueDate: 'asc' as const },
+        include: {
+          block: { select: { id: true, name: true } },
+        },
+      },
       blocks: {
         orderBy: { sortOrder: 'asc' as const },
         include: {
@@ -332,6 +338,79 @@ export class DevelopmentPlansService {
     const block = await this.prisma.trainingBlock.findUnique({ where: { id: assignment.blockId } });
     if (role !== 'ADMIN' && block?.coachId !== coachId) throw new ForbiddenException('Not your block');
     await this.prisma.lessonAssignment.delete({ where: { id: assignmentId } });
+    return { ok: true };
+  }
+
+  async createMilestone(
+    coachId: string,
+    role: string,
+    planId: string,
+    data: { title: string; description?: string; dueDate: string; blockId?: string; status?: string },
+  ) {
+    this.requireCoachOrAdmin(role);
+    const plan = await this.prisma.playerDevelopmentPlan.findUnique({ where: { id: planId } });
+    if (!plan) throw new NotFoundException('Plan not found');
+    if (role !== 'ADMIN' && plan.coachId !== coachId) throw new ForbiddenException('Not your plan');
+    if (data.blockId) {
+      const block = await this.prisma.trainingBlock.findUnique({ where: { id: data.blockId } });
+      if (!block || block.planId !== planId) throw new ForbiddenException('Block does not belong to this plan');
+    }
+    return this.prisma.developmentPlanMilestone.create({
+      data: {
+        planId,
+        blockId: data.blockId ?? null,
+        title: data.title,
+        description: data.description,
+        dueDate: new Date(data.dueDate),
+        status: (data.status as any) ?? 'PLANNED',
+      },
+      include: {
+        block: { select: { id: true, name: true } },
+      },
+    });
+  }
+
+  async updateMilestone(
+    coachId: string,
+    role: string,
+    milestoneId: string,
+    data: { title?: string; description?: string | null; dueDate?: string; blockId?: string | null; status?: string },
+  ) {
+    this.requireCoachOrAdmin(role);
+    const milestone = await this.prisma.developmentPlanMilestone.findUnique({
+      where: { id: milestoneId },
+      include: { plan: true },
+    });
+    if (!milestone) throw new NotFoundException('Milestone not found');
+    if (role !== 'ADMIN' && milestone.plan.coachId !== coachId) throw new ForbiddenException('Not your milestone');
+    if (data.blockId) {
+      const block = await this.prisma.trainingBlock.findUnique({ where: { id: data.blockId } });
+      if (!block || block.planId !== milestone.planId) throw new ForbiddenException('Block does not belong to this plan');
+    }
+    return this.prisma.developmentPlanMilestone.update({
+      where: { id: milestoneId },
+      data: {
+        ...(data.title !== undefined ? { title: data.title } : {}),
+        ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.dueDate !== undefined ? { dueDate: new Date(data.dueDate) } : {}),
+        ...(data.blockId !== undefined ? { blockId: data.blockId } : {}),
+        ...(data.status !== undefined ? { status: data.status } : {}),
+      },
+      include: {
+        block: { select: { id: true, name: true } },
+      },
+    });
+  }
+
+  async deleteMilestone(coachId: string, role: string, milestoneId: string) {
+    this.requireCoachOrAdmin(role);
+    const milestone = await this.prisma.developmentPlanMilestone.findUnique({
+      where: { id: milestoneId },
+      include: { plan: true },
+    });
+    if (!milestone) throw new NotFoundException('Milestone not found');
+    if (role !== 'ADMIN' && milestone.plan.coachId !== coachId) throw new ForbiddenException('Not your milestone');
+    await this.prisma.developmentPlanMilestone.delete({ where: { id: milestoneId } });
     return { ok: true };
   }
 }

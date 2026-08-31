@@ -22,14 +22,12 @@ import { CalendarService } from './calendar.service';
 export class CalendarController {
   constructor(private readonly calendarService: CalendarService) {}
 
-  // ─── Practice Slots ───────────────────────────────────────────────────────
-
   @Get('slots')
   listSlots(
     @CurrentUser() user: AuthenticatedUser,
     @Query('playerId') playerId?: string,
   ) {
-    return this.calendarService.listSlots(user.id, playerId);
+    return this.calendarService.listSlots(user.id, user.role as string, playerId);
   }
 
   @Post('slots')
@@ -50,9 +48,7 @@ export class CalendarController {
     if (role === 'PLAYER') {
       return this.calendarService.createSlot(user.id, body);
     }
-    throw new ForbiddenException(
-      'Only players can create personal practice slots',
-    );
+    throw new ForbiddenException('Only players can create personal practice slots');
   }
 
   @Get('team-slots/:teamId')
@@ -77,12 +73,7 @@ export class CalendarController {
       recurrenceEndDate?: string;
     },
   ) {
-    return this.calendarService.createTeamSlot(
-      user.id,
-      user.role as string,
-      teamId,
-      body,
-    );
+    return this.calendarService.createTeamSlot(user.id, user.role as string, teamId, body);
   }
 
   @Patch('slots/:id')
@@ -108,7 +99,152 @@ export class CalendarController {
     return this.calendarService.deleteSlot(user.id, user.role as string, id);
   }
 
-  // ─── Slot Tasks ───────────────────────────────────────────────────────────
+  @Get('availability')
+  listAvailabilityBlocks(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('playerId') playerId?: string,
+  ) {
+    return this.calendarService.listAvailabilityBlocks(user.id, user.role as string, playerId);
+  }
+
+  @Post('availability')
+  @HttpCode(HttpStatus.CREATED)
+  createAvailabilityBlock(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body()
+    body: {
+      playerId?: string;
+      title: string;
+      type?: string;
+      startTime: string;
+      endTime: string;
+      recurrence?: string;
+      recurrenceEndDate?: string;
+      notes?: string;
+    },
+  ) {
+    return this.calendarService.createAvailabilityBlock(user.id, user.role as string, body);
+  }
+
+  @Patch('availability/:id')
+  updateAvailabilityBlock(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body()
+    body: {
+      title?: string;
+      type?: string;
+      startTime?: string;
+      endTime?: string;
+      recurrence?: string;
+      recurrenceEndDate?: string | null;
+      notes?: string | null;
+    },
+  ) {
+    return this.calendarService.updateAvailabilityBlock(user.id, user.role as string, id, body);
+  }
+
+  @Delete('availability/:id')
+  @HttpCode(HttpStatus.OK)
+  deleteAvailabilityBlock(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    return this.calendarService.deleteAvailabilityBlock(user.id, user.role as string, id);
+  }
+
+  @Get('team-events')
+  listTeamEvents(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('teamId') teamId?: string,
+  ) {
+    return this.calendarService.listTeamEvents(user.id, user.role as string, teamId);
+  }
+
+  @Post('team-events')
+  @HttpCode(HttpStatus.CREATED)
+  createTeamEvent(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body()
+    body: {
+      teamId: string;
+      title: string;
+      description?: string;
+      location?: string;
+      startTime: string;
+      endTime: string;
+    },
+  ) {
+    return this.calendarService.createTeamEvent(user.id, user.role as string, body);
+  }
+
+  @Patch('team-events/:id')
+  updateTeamEvent(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body()
+    body: {
+      title?: string;
+      description?: string | null;
+      location?: string | null;
+      startTime?: string;
+      endTime?: string;
+    },
+  ) {
+    return this.calendarService.updateTeamEvent(user.id, user.role as string, id, body);
+  }
+
+  @Delete('team-events/:id')
+  @HttpCode(HttpStatus.OK)
+  deleteTeamEvent(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    return this.calendarService.deleteTeamEvent(user.id, user.role as string, id);
+  }
+
+  @Get('tournaments')
+  listTournaments(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('playerId') playerId?: string,
+  ) {
+    return this.calendarService.listTournaments(user.id, user.role as string, playerId);
+  }
+
+  @Post('tournaments')
+  @HttpCode(HttpStatus.CREATED)
+  createTournament(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body()
+    body: {
+      playerId?: string;
+      title: string;
+      description?: string;
+      location?: string;
+      startTime: string;
+      endTime: string;
+      priority?: string;
+    },
+  ) {
+    return this.calendarService.createTournament(user.id, user.role as string, body);
+  }
+
+  @Patch('tournaments/:id')
+  updateTournament(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body()
+    body: {
+      title?: string;
+      description?: string | null;
+      location?: string | null;
+      startTime?: string;
+      endTime?: string;
+      priority?: string;
+    },
+  ) {
+    return this.calendarService.updateTournament(user.id, user.role as string, id, body);
+  }
+
+  @Delete('tournaments/:id')
+  @HttpCode(HttpStatus.OK)
+  deleteTournament(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    return this.calendarService.deleteTournament(user.id, user.role as string, id);
+  }
 
   @Get('slots/:slotId/tasks')
   listSlotTasks(
@@ -131,6 +267,7 @@ export class CalendarController {
       scheduledDate: string;
       recurrenceCount?: number;
       recurrenceWeeks?: number;
+      lessonId?: string;
     },
   ) {
     const role = user.role as string;
@@ -139,8 +276,6 @@ export class CalendarController {
     }
     return this.calendarService.assignTask(user.id, role, slotId, body);
   }
-
-  // ─── Calendar Tasks ───────────────────────────────────────────────────────
 
   @Patch('tasks/:id')
   @HttpCode(HttpStatus.OK)
@@ -153,24 +288,24 @@ export class CalendarController {
       description?: string;
       durationMinutes?: number;
       scheduledDate?: string;
+      status?: string;
+      lessonId?: string | null;
     },
   ) {
-    return this.calendarService.updateTask(user.id, id, body);
+    return this.calendarService.updateTask(user.id, user.role as string, id, body);
   }
 
   @Delete('tasks/:id')
   @HttpCode(HttpStatus.OK)
   deleteTask(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
-    return this.calendarService.deleteTask(user.id, id);
+    return this.calendarService.deleteTask(user.id, user.role as string, id);
   }
-
-  // ─── Full Calendar View ───────────────────────────────────────────────────
 
   @Get('player/:playerId')
   getPlayerCalendar(
     @CurrentUser() user: AuthenticatedUser,
     @Param('playerId') playerId: string,
   ) {
-    return this.calendarService.getPlayerCalendar(user.id, playerId);
+    return this.calendarService.getPlayerCalendar(user.id, user.role as string, playerId);
   }
 }

@@ -146,4 +146,32 @@ export class DevelopmentPlansController {
   ) {
     return this.service.removeAssignment(user.id, user.role as string, assignmentId);
   }
+
+  @Post(':planId/milestones')
+  @HttpCode(HttpStatus.CREATED)
+  createMilestone(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('planId') planId: string,
+    @Body() body: { title: string; description?: string; dueDate: string; blockId?: string; status?: string },
+  ) {
+    return this.service.createMilestone(user.id, user.role as string, planId, body);
+  }
+
+  @Patch('milestones/:milestoneId')
+  updateMilestone(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('milestoneId') milestoneId: string,
+    @Body() body: { title?: string; description?: string | null; dueDate?: string; blockId?: string | null; status?: string },
+  ) {
+    return this.service.updateMilestone(user.id, user.role as string, milestoneId, body);
+  }
+
+  @Delete('milestones/:milestoneId')
+  @HttpCode(HttpStatus.OK)
+  deleteMilestone(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('milestoneId') milestoneId: string,
+  ) {
+    return this.service.deleteMilestone(user.id, user.role as string, milestoneId);
+  }
 }

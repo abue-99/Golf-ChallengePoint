@@ -25,6 +25,13 @@ const FOCUS_AREA_EMOJI: Record<string, string> = {
   MENTAL: "🧘",
 };
 
+function missionChecklist(value?: string | null) {
+  return (value ?? "")
+    .split(/\r?\n/)
+    .map((item) => item.replace(/^[-*\d.)\s]+/, "").trim())
+    .filter(Boolean);
+}
+
 // ─── Status Configuration ─────────────────────────────────────────────────────
 
 type StatusKey = "OUTSTANDING" | "STARTED" | "FINISHED" | "REVIEWED" | "LOCKED";
@@ -563,6 +570,7 @@ function LessonDetailModal({
     assignment.lesson.subSubCapability
   );
   const focusEmoji = FOCUS_AREA_EMOJI[assignment.lesson.focusArea] ?? "📋";
+  const exercises = missionChecklist(assignment.lesson.plannedExercises);
 
   async function handleSave() {
     setSaving(true);
@@ -611,52 +619,56 @@ function LessonDetailModal({
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Meta */}
-          <div className="flex gap-4 text-sm">
-            <div className="flex items-center gap-1.5 text-slate-600">
-              <Clock className="h-4 w-4 text-slate-400" />
-              {assignment.lesson.durationMinutes} minutes
+          <div className="rounded-3xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-5 text-white">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-200">
+              Mission Card
+            </p>
+            <h3 className="mt-2 text-xl font-bold leading-tight">
+              {assignment.lesson.trainingObjective || assignment.lesson.name}
+            </h3>
+            <div className="mt-4 flex flex-wrap gap-2 text-xs">
+              <span className="rounded-full bg-white/15 px-3 py-1">
+                <Clock className="mr-1 inline h-3 w-3" />
+                {assignment.lesson.durationMinutes} minutes
+              </span>
+              <span className="rounded-full bg-white/15 px-3 py-1">{status}</span>
+              {assignment.dueDate && (
+                <span className="rounded-full bg-white/15 px-3 py-1">
+                  Due {new Date(assignment.dueDate).toLocaleDateString()}
+                </span>
+              )}
             </div>
-            {assignment.dueDate && (
-              <div className="text-slate-600">
-                Due {new Date(assignment.dueDate).toLocaleDateString()}
-              </div>
-            )}
           </div>
 
-          {/* Objective */}
-          {assignment.lesson.trainingObjective && (
+          {exercises.length > 0 && (
             <div>
-              <h3 className="mb-1.5 text-sm font-semibold text-slate-700">🎯 Objective</h3>
-              <p className="text-sm text-slate-600 bg-slate-50 rounded-xl px-3 py-2.5">
-                {assignment.lesson.trainingObjective}
-              </p>
+              <h3 className="mb-2 text-sm font-semibold text-slate-700">Exercises checklist</h3>
+              <div className="space-y-2">
+                {exercises.map((exercise, index) => (
+                  <div
+                    key={`${exercise}-${index}`}
+                    className="flex items-start gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2.5"
+                  >
+                    <span className="mt-0.5 text-green-600">☐</span>
+                    <span className="text-sm text-slate-700">{exercise}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Exercises */}
-          {assignment.lesson.plannedExercises && (
-            <div>
-              <h3 className="mb-1.5 text-sm font-semibold text-slate-700">📋 Exercises</h3>
-              <pre className="whitespace-pre-wrap font-sans text-sm text-slate-600 bg-slate-50 rounded-xl px-3 py-2.5">
-                {assignment.lesson.plannedExercises}
-              </pre>
-            </div>
-          )}
-
-          {/* Success Criteria */}
           {assignment.lesson.successCriteria && (
             <div>
-              <h3 className="mb-1.5 text-sm font-semibold text-slate-700">✅ Success Criteria</h3>
-              <p className="text-sm text-slate-600 bg-slate-50 rounded-xl px-3 py-2.5">
+              <h3 className="mb-2 text-sm font-semibold text-slate-700">Success criteria</h3>
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
                 {assignment.lesson.successCriteria}
-              </p>
+              </div>
             </div>
           )}
 
           {/* Status */}
           <div>
-            <h3 className="mb-2 text-sm font-semibold text-slate-700">Update Progress</h3>
+            <h3 className="mb-2 text-sm font-semibold text-slate-700">Completion flow</h3>
             <div className="grid grid-cols-3 gap-2">
               {ASSIGNMENT_STATUSES.filter((s) => s.value !== "REVIEWED").map((s) => (
                 <button
@@ -669,7 +681,7 @@ function LessonDetailModal({
                       : "border-gray-200 text-slate-500 hover:border-slate-300"
                   )}
                 >
-                  {s.value === "OUTSTANDING" ? "⚪ Open" : s.value === "STARTED" ? "🟡 Started" : "✅ Done"}
+                  {s.value === "OUTSTANDING" ? "Open" : s.value === "STARTED" ? "Start" : "Complete"}
                 </button>
               ))}
             </div>
@@ -739,7 +751,7 @@ function LessonDetailModal({
             onClick={handleSave}
             disabled={saving}
           >
-            {saving ? "Saving…" : status === "FINISHED" ? "✅ Complete Lesson" : "Save Progress"}
+            {saving ? "Saving…" : status === "FINISHED" ? "✅ Complete Mission" : "Save Mission"}
           </Button>
         </div>
       </div>
