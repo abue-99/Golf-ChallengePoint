@@ -24,6 +24,17 @@ type EventType = {
   end: string;
 };
 
+type EventReceiveInfo = {
+  draggedEl: HTMLElement;
+  event: { start: Date | null; end: Date | null; setProp: (name: string, value: unknown) => void };
+  revert: () => void;
+};
+
+type EventChangeInfo = {
+  event: { id: string; start: Date | null; end: Date | null };
+  revert: () => void;
+};
+
 export default function PlayerCalendar({ playerId }: { playerId: string }) {
   const [events, setEvents] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,13 +66,14 @@ export default function PlayerCalendar({ playerId }: { playerId: string }) {
     };
   }, [playerId]);
 
-  const handleReceive = async (info: any) => {
+  const handleReceive = async (info: EventReceiveInfo) => {
+    if (!info.event.start) return;
     try {
       const created = await api.createEvent({
         playerId,
         templateId: info.draggedEl.dataset.id,
-        start: info.date.toISOString(),
-        end: info.date.toISOString(),
+        start: info.event.start.toISOString(),
+        end: info.event.end?.toISOString(),
       });
 
       info.event.setProp('id', created.id);
@@ -70,7 +82,8 @@ export default function PlayerCalendar({ playerId }: { playerId: string }) {
     }
   };
 
-  const handleDropOrResize = async (info: any) => {
+  const handleDropOrResize = async (info: EventChangeInfo) => {
+    if (!info.event.start) return;
     try {
       await api.updateEvent(info.event.id, {
         start: info.event.start.toISOString(),

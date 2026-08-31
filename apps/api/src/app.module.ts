@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { DevelopmentPlansModule } from './development-plans/development-plans.module';
+import { GamificationModule } from './gamification/gamification.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { DevelopmentPlansModule } from './development-plans/development-plans.mo
     CalendarModule,
     LessonsModule,
     DevelopmentPlansModule,
+    GamificationModule,
   ],
   controllers: [AppController],
 })

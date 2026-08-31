@@ -10,6 +10,7 @@ import type { EventClickArg, EventInput } from "@fullcalendar/core";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import PracticeSlotDialog, { type PracticeSlotFormData } from "./PracticeSlotDialog";
+import type { CalendarEventExtendedProps } from "@/types/calendar";
 
 type CalendarTask = {
   id: string;
@@ -120,7 +121,7 @@ export default function PlayerCalendarView({ userId, country }: Props) {
 
   const handleEventClick = useCallback(
     (arg: EventClickArg) => {
-      const { type, slotId, occurrenceStart, occurrenceEnd } = arg.event.extendedProps as any;
+      const { type, slotId, occurrenceStart, occurrenceEnd } = arg.event.extendedProps as CalendarEventExtendedProps;
 
       if (type === "slot") {
         const slot = slots.find((s) => s.id === slotId);
@@ -132,7 +133,7 @@ export default function PlayerCalendarView({ userId, country }: Props) {
       }
 
       if (type === "task") {
-        const { title, description, durationMinutes } = arg.event.extendedProps as any;
+        const { title, description, durationMinutes } = arg.event.extendedProps as CalendarEventExtendedProps;
         toast.info(
           <div>
             <p className="font-medium">{title}</p>

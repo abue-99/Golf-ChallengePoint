@@ -10,6 +10,7 @@ import type { EventClickArg, EventInput } from "@fullcalendar/core";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import AssignTaskDialog, { type AssignTaskPayload } from "./AssignTaskDialog";
+import type { CalendarEventExtendedProps } from "@/types/calendar";
 
 type CalendarTask = {
   id: string;
@@ -110,7 +111,7 @@ export default function CoachPlayerCalendarView({ playerId }: Props) {
   const handleEventClick = useCallback(
     (arg: EventClickArg) => {
       const { type, slotId, occurrenceStart, occurrenceEnd } =
-        arg.event.extendedProps as any;
+        arg.event.extendedProps as CalendarEventExtendedProps;
 
       if (type === "slot") {
         const slot = slots.find((s) => s.id === slotId);
@@ -127,7 +128,7 @@ export default function CoachPlayerCalendarView({ playerId }: Props) {
 
       if (type === "task") {
         const { title, description, durationMinutes } =
-          arg.event.extendedProps as any;
+          arg.event.extendedProps as CalendarEventExtendedProps;
         toast.info(
           <div>
             <p className="font-medium">{title}</p>

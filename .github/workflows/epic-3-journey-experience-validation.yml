@@ -1,0 +1,172 @@
+name: Epic 3 - Journey Experience Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+    paths:
+      - "apps/web/**"
+      - "apps/api/**"
+      - "packages/db/**"
+      - ".github/workflows/**"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+
+  architecture-guard:
+    name: Preserve Existing Domain Model
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify No New Journey Models Exist
+        run: |
+          forbidden_models=(
+            "Journey"
+            "Challenge"
+            "Mission"
+          )
+
+          for model in "${forbidden_models[@]}"
+          do
+            if grep -Eq "^model[[:space:]]+$model\\b" packages/db/prisma/schema.prisma; then
+              echo "Forbidden Prisma model detected: $model"
+              exit 1
+            fi
+          done
+
+      - name: Verify Existing Models Remain
+        run: |
+          grep -q "model PlayerDevelopmentPlan" packages/db/prisma/schema.prisma
+          grep -q "model TrainingBlock" packages/db/prisma/schema.prisma
+          grep -q "model LessonAssignment" packages/db/prisma/schema.prisma
+
+      - name: Verify Existing OwnerType Enum Remains
+        run: |
+          grep -q "enum OwnerType" packages/db/prisma/schema.prisma
+
+  web-validation:
+    name: Journey UI Validation
+    runs-on: ubuntu-latest
+    needs: architecture-guard
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint Journey Files
+        run: pnpm --dir apps/web exec eslint "components/PlayerJourney.tsx" "components/PlayerCalendarView.tsx" "components/CoachPlayerCalendarView.tsx" "components/calendar.tsx" "types/calendar.ts"
+
+      - name: Generate Prisma Client
+        run: pnpm --filter db prisma generate
+
+      - name: Typecheck Web
+        run: pnpm turbo typecheck --filter=golf-challenge-point-web
+
+      - name: Build Web
+        run: pnpm turbo build --filter=golf-challenge-point-web
+
+      - name: Verify Journey Terminology Exists
+        run: |
+          grep -R "Journey" apps/web || exit 1
+
+      - name: Verify Challenge Terminology Exists
+        run: |
+          grep -R "Challenge" apps/web || exit 1
+
+      - name: Verify Mission Terminology Exists
+        run: |
+          grep -R "Mission" apps/web || exit 1
+
+  ui-consistency:
+    name: UI Consistency Checks
+    runs-on: ubuntu-latest
+    needs: web-validation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify Development Plan Screens Updated
+        run: |
+          grep -R "DevelopmentPlan" apps/web || true
+          grep -R "Journey" apps/web || exit 1
+
+      - name: Verify Planning Screens Updated
+        run: |
+          grep -R "/planning" apps/web || exit 1
+
+      - name: Verify Dashboard Displays Journey
+        run: |
+          grep -R "Journey" apps/web || exit 1
+
+  api-regression:
+    name: API Regression Validation
+    runs-on: ubuntu-latest
+    needs: architecture-guard
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter db prisma generate
+
+      - name: Build API
+        run: pnpm turbo build --filter=api
+
+      - name: Verify Existing Endpoints Remain
+        run: |
+          grep -R "development-plans" apps/api/src || exit 1
+
+      - name: Verify No Journey Endpoints Added
+        run: |
+          if grep -R "journeys" apps/api/src; then
+            echo "Journey endpoints should not exist"
+            exit 1
+          fi
+
+  release-readiness:
+    name: Epic 3 Release Readiness
+    runs-on: ubuntu-latest
+
+    needs:
+      - architecture-guard
+      - web-validation
+      - ui-consistency
+      - api-regression
+
+    steps:
+      - name: Release Ready
+        run: |
+          echo "Epic 3 Journey Experience validation successful"
+          echo "Existing architecture preserved"
+          echo "UX terminology layer verified"

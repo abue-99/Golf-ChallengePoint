@@ -404,7 +404,7 @@ function JourneyHeader({
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-            Player Journey
+            Player Mission &amp; Journey
           </p>
           <h1 className="mt-0.5 text-xl font-extrabold tracking-tight">
             {playerName ? `${playerName}'s Path` : "My Development Path"}

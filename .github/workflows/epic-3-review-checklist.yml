@@ -1,0 +1,39 @@
+name: Epic 3 Review Checklist
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Journey Experience Review
+        run: |
+          echo "Epic 3 Checklist"
+
+          echo "[ ] Journey terminology implemented"
+          echo "[ ] Challenge terminology implemented"
+          echo "[ ] Mission terminology implemented"
+
+          echo "[ ] Existing API untouched"
+          echo "[ ] Existing Prisma schema preserved"
+
+          echo "[ ] No Journey Prisma model"
+          echo "[ ] No Challenge Prisma model"
+          echo "[ ] No Mission Prisma model"
+
+          echo "[ ] Planning UI updated"
+          echo "[ ] Dashboard updated"
+
+          echo "[ ] Mobile UX verified"
+          echo "[ ] Player Experience verified"
+
+          echo "[ ] Existing development workflows still functional"

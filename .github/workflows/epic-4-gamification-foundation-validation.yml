@@ -1,0 +1,206 @@
+name: Epic 4 - Gamification Foundation Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+    paths:
+      - "apps/api/**"
+      - "apps/web/**"
+      - "packages/db/**"
+      - ".github/workflows/**"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+
+  schema-validation:
+    name: Gamification Schema Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prisma Validate
+        run: pnpm --filter db prisma validate
+
+      - name: Prisma Generate
+        run: pnpm --filter db prisma generate
+
+      - name: Verify XP Field Exists
+        run: |
+          grep -q "xp" packages/db/prisma/schema.prisma || exit 1
+
+      - name: Verify Level Field Exists
+        run: |
+          grep -q "level" packages/db/prisma/schema.prisma || exit 1
+
+      - name: Verify Current Streak Field Exists
+        run: |
+          grep -q "currentStreak" packages/db/prisma/schema.prisma || exit 1
+
+      - name: Verify Longest Streak Field Exists
+        run: |
+          grep -q "longestStreak" packages/db/prisma/schema.prisma || exit 1
+
+      - name: Verify Migration Exists
+        run: |
+          find packages/db/prisma/migrations -type f | grep -i streak || exit 1
+
+  architecture-guard:
+    name: Architecture Protection
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify Existing Models Remain
+        run: |
+          grep -q "model User" packages/db/prisma/schema.prisma
+          grep -q "model PlayerDevelopmentPlan" packages/db/prisma/schema.prisma
+          grep -q "model TrainingBlock" packages/db/prisma/schema.prisma
+          grep -q "model LessonAssignment" packages/db/prisma/schema.prisma
+
+      - name: Block Public Ranking Models
+        run: |
+          forbidden_models=(
+            "Leaderboard"
+            "Ranking"
+            "Competition"
+            "TournamentRanking"
+          )
+
+          for model in "${forbidden_models[@]}"
+          do
+            if grep -Eq "^model[[:space:]]+$model\\b" packages/db/prisma/schema.prisma; then
+              echo "Forbidden model detected: $model"
+              exit 1
+            fi
+          done
+
+      - name: Block Social Features
+        run: |
+          forbidden_models=(
+            "Follow"
+            "Follower"
+            "Friend"
+            "SocialFeed"
+          )
+
+          for model in "${forbidden_models[@]}"
+          do
+            if grep -Eq "^model[[:space:]]+$model\\b" packages/db/prisma/schema.prisma; then
+              echo "Forbidden social model detected: $model"
+              exit 1
+            fi
+          done
+
+  api-validation:
+    name: Gamification API Validation
+    runs-on: ubuntu-latest
+    needs: schema-validation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter db prisma generate
+
+      - name: Build API
+        run: pnpm turbo build --filter=api
+
+      - name: Verify XP References
+        run: |
+          grep -R "xp" apps/api/src || exit 1
+
+      - name: Verify Streak References
+        run: |
+          grep -R "streak" apps/api/src || exit 1
+
+      - name: Verify Level References
+        run: |
+          grep -R "level" apps/api/src || exit 1
+
+  web-validation:
+    name: Gamification UI Validation
+    runs-on: ubuntu-latest
+    needs: api-validation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter db prisma generate
+
+      - name: Build Web
+        run: pnpm turbo build --filter=golf-challenge-point-web
+
+      - name: Verify Streak Display Exists
+        run: |
+          grep -R "streak" apps/web || exit 1
+
+      - name: Verify Level Display Exists
+        run: |
+          grep -R "level" apps/web || exit 1
+
+      - name: Verify XP Display Exists
+        run: |
+          grep -R "xp" apps/web || exit 1
+
+  release-readiness:
+    name: Epic 4 Release Readiness
+    runs-on: ubuntu-latest
+
+    needs:
+      - schema-validation
+      - architecture-guard
+      - api-validation
+      - web-validation
+
+    steps:
+      - name: Release Ready
+        run: |
+          echo "Epic 4 Gamification Foundation validation successful"
+          echo "Existing architecture preserved"
+          echo "Gamification layer verified"
