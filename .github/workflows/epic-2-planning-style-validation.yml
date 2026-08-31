@@ -133,7 +133,7 @@ jobs:
 
           for model in "${forbidden_models[@]}"
           do
-            if grep -q "model $model" packages/db/prisma/schema.prisma; then
+            if grep -Eq "^model[[:space:]]+$model\\b" packages/db/prisma/schema.prisma; then
               echo "Forbidden Prisma model detected: $model"
               exit 1
             fi
