@@ -99,7 +99,7 @@ export default function CoachPlayerCalendarView({
   }, [loadCalendar]);
 
   useEffect(() => {
-    if (coachId) setCompareWithCoach(true);
+    setCompareWithCoach(Boolean(coachId));
   }, [coachId]);
 
   useEffect(() => {
