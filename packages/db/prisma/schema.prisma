@@ -204,7 +204,7 @@ model TaskTemplate {
   @@map("task_templates")
 }
 
-model Challenge {
+model GolfChallenge {
   id        String   @id @default(cuid())
   title     String
   createdAt DateTime @default(now())
