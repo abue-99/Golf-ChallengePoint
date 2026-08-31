@@ -169,7 +169,7 @@ export default function CoachHome() {
 
   return (
     <div className="space-y-6">
-      <Link href="/calendar">
+      <Link href="/calendar" className="block">
         <Card className="border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
           <CardContent className="flex items-center justify-between gap-3 p-4">
             <div className="flex items-center gap-3">

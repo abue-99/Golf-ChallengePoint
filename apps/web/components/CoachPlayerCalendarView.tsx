@@ -6,8 +6,8 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import listPlugin from "@fullcalendar/list";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import type { EventClickArg, EventInput } from "@fullcalendar/core";
-import { AlertTriangle } from "lucide-react";
+import type { DatesSetArg, EventClickArg, EventInput } from "@fullcalendar/core";
+import { AlertTriangle, ArrowDown, ArrowUp } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +17,12 @@ import {
   formatCalendarDateTime,
   VIEW_TO_FULLCALENDAR,
 } from "@/lib/calendar-activity";
+import {
+  classifyOutsideVisibleHours,
+  VISIBLE_DAY_END_TIME,
+  VISIBLE_DAY_START_TIME,
+  type VisibleRange,
+} from "@/lib/calendar-visible-hours";
 import { api } from "@/lib/api";
 import type {
   CalendarActivity,
@@ -43,6 +49,8 @@ type CalendarPayload = {
   slots: SlotData[];
 };
 
+type OptionalVisibleRange = VisibleRange | null;
+
 export default function CoachPlayerCalendarView({
   playerId,
   coachId,
@@ -66,6 +74,7 @@ export default function CoachPlayerCalendarView({
         ? "week"
         : "agenda",
     );
+  const [visibleRange, setVisibleRange] = useState<OptionalVisibleRange>(null);
   const calendarRef = useRef<FullCalendar>(null);
 
   const loadCalendar = useCallback(async () => {
@@ -143,6 +152,65 @@ export default function CoachPlayerCalendarView({
         .filter((activity) => new Date(activity.end).getTime() >= comparisonNowMs)
         .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())[0],
     [coachActivities, comparisonNowMs],
+  );
+  const isTimeGridView = activeView === "day" || activeView === "week";
+  const timelineActivities = useMemo<CalendarActivity[]>(() => {
+    if (!compareWithCoach) return calendarData.activities;
+    return [
+      ...calendarData.activities,
+      ...coachActivities.map((activity) => ({
+        ...activity,
+        id: `coach-${activity.id}`,
+        title: `Coach · ${activity.title}`,
+      })),
+    ];
+  }, [calendarData.activities, coachActivities, compareWithCoach]);
+  const outOfRangeActivities = useMemo(() => {
+    if (!visibleRange || !isTimeGridView) return { before: [], after: [] } as {
+      before: CalendarActivity[];
+      after: CalendarActivity[];
+    };
+
+    const before: CalendarActivity[] = [];
+    const after: CalendarActivity[] = [];
+
+    for (const activity of timelineActivities) {
+      const start = new Date(activity.start);
+      const end = new Date(activity.end);
+      if (end <= visibleRange.start || start >= visibleRange.end) continue;
+
+      const outside = classifyOutsideVisibleHours(start, end, visibleRange);
+      if (outside.before) before.push(activity);
+      if (outside.after) after.push(activity);
+    }
+
+    return { before, after };
+  }, [isTimeGridView, timelineActivities, visibleRange]);
+
+  const showOutOfRangeItems = useCallback(
+    (position: "before" | "after") => {
+      const items = outOfRangeActivities[position];
+      if (items.length === 0) return;
+
+      toast.info(
+        <div className="space-y-1">
+          <p className="font-semibold">
+            {position === "before" ? "Before 06:00" : "After 21:00"}
+          </p>
+          {items.slice(0, 6).map((item) => (
+            <p key={`${position}-${item.id}`} className="text-sm">
+              {item.title} · {formatCalendarDateTime(item.start)} →{" "}
+              {formatCalendarDateTime(item.end)}
+            </p>
+          ))}
+          {items.length > 6 ? (
+            <p className="text-xs text-slate-500">+{items.length - 6} more</p>
+          ) : null}
+        </div>,
+        { duration: 7000 },
+      );
+    },
+    [outOfRangeActivities],
   );
 
   const handleEventClick = useCallback(
@@ -231,9 +299,8 @@ export default function CoachPlayerCalendarView({
             Player vs coach calendar
           </p>
           <p className="text-sm text-slate-500">
-            Agenda, day, week, and month tabs share one unified feed across
-            practices, assignments, missions, events, tournaments, milestones,
-            and unavailable periods. Coach events are highlighted in violet.
+            Views for sessions, events, and so on. Coach events are highlighted
+            in violet.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -284,6 +351,30 @@ export default function CoachPlayerCalendarView({
       ) : null}
 
       <div className="rounded-2xl border bg-white p-3 shadow-sm [&_.fc-button]:!rounded [&_.fc-button-primary]:!bg-blue-600 [&_.fc-button-primary]:!border-blue-700 [&_.fc-button-primary.fc-button-active]:!bg-blue-800">
+        {isTimeGridView ? (
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            {outOfRangeActivities.before.length > 0 ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => showOutOfRangeItems("before")}
+              >
+                <ArrowUp className="mr-1 h-4 w-4" />
+                {outOfRangeActivities.before.length} before 06:00
+              </Button>
+            ) : null}
+            {outOfRangeActivities.after.length > 0 ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => showOutOfRangeItems("after")}
+              >
+                <ArrowDown className="mr-1 h-4 w-4" />
+                {outOfRangeActivities.after.length} after 21:00
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
         <FullCalendar
           ref={calendarRef}
           plugins={[
@@ -307,6 +398,11 @@ export default function CoachPlayerCalendarView({
             minute: "2-digit",
             hour12: false,
           }}
+          datesSet={(arg: DatesSetArg) =>
+            setVisibleRange({ start: arg.start, end: arg.end })
+          }
+          slotMinTime={VISIBLE_DAY_START_TIME}
+          slotMaxTime={VISIBLE_DAY_END_TIME}
           allDaySlot
           height="auto"
           nowIndicator

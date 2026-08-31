@@ -6,9 +6,9 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import listPlugin from "@fullcalendar/list";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin, { DateClickArg } from "@fullcalendar/interaction";
-import type { EventClickArg, EventInput } from "@fullcalendar/core";
+import type { DatesSetArg, EventClickArg, EventInput } from "@fullcalendar/core";
 import Link from "next/link";
-import { Flame, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, Flame, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +24,12 @@ import {
   splitChecklist,
   VIEW_TO_FULLCALENDAR,
 } from "@/lib/calendar-activity";
+import {
+  classifyOutsideVisibleHours,
+  VISIBLE_DAY_END_TIME,
+  VISIBLE_DAY_START_TIME,
+  type VisibleRange,
+} from "@/lib/calendar-visible-hours";
 import { api } from "@/lib/api";
 import type {
   AvailabilityBlockType,
@@ -73,6 +79,8 @@ type CalendarPayload = {
   slots: SlotData[];
   summary?: { weeklyCompletion?: { completed: number; total: number } };
 };
+
+type OptionalVisibleRange = VisibleRange | null;
 
 function formatRange(start: string, end: string) {
   return `${formatCalendarDateTime(start)} → ${new Date(end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}`;
@@ -265,6 +273,7 @@ export default function PlayerCalendarView({
         ? "week"
         : "agenda",
     );
+  const [visibleRange, setVisibleRange] = useState<OptionalVisibleRange>(null);
   const calendarRef = useRef<FullCalendar>(null);
 
   const loadCalendar = useCallback(async () => {
@@ -323,6 +332,53 @@ export default function PlayerCalendarView({
   const agendaItems = useMemo(
     () => (agendaExpanded ? upcomingActivities : upcomingActivities.slice(0, 5)),
     [agendaExpanded, upcomingActivities],
+  );
+  const isTimeGridView = activeView === "day" || activeView === "week";
+  const outOfRangeActivities = useMemo(() => {
+    if (!visibleRange || !isTimeGridView) return { before: [], after: [] } as {
+      before: CalendarActivity[];
+      after: CalendarActivity[];
+    };
+
+    const before: CalendarActivity[] = [];
+    const after: CalendarActivity[] = [];
+
+    for (const activity of calendarData.activities) {
+      const start = new Date(activity.start);
+      const end = new Date(activity.end);
+      if (end <= visibleRange.start || start >= visibleRange.end) continue;
+
+      const outside = classifyOutsideVisibleHours(start, end, visibleRange);
+      if (outside.before) before.push(activity);
+      if (outside.after) after.push(activity);
+    }
+
+    return { before, after };
+  }, [calendarData.activities, isTimeGridView, visibleRange]);
+
+  const showOutOfRangeItems = useCallback(
+    (position: "before" | "after") => {
+      const items = outOfRangeActivities[position];
+      if (items.length === 0) return;
+
+      toast.info(
+        <div className="space-y-1">
+          <p className="font-semibold">
+            {position === "before" ? "Before 06:00" : "After 21:00"}
+          </p>
+          {items.slice(0, 6).map((item) => (
+            <p key={`${position}-${item.id}`} className="text-sm">
+              {item.title} · {formatRange(item.start, item.end)}
+            </p>
+          ))}
+          {items.length > 6 ? (
+            <p className="text-xs text-slate-500">+{items.length - 6} more</p>
+          ) : null}
+        </div>,
+        { duration: 7000 },
+      );
+    },
+    [outOfRangeActivities],
   );
 
   const handleDateClick = useCallback(
@@ -488,8 +544,7 @@ export default function PlayerCalendarView({
                   Unified Calendar
                 </p>
                 <p className="text-sm text-slate-500">
-                  Agenda, day, week, and month views for sessions, events,
-                  milestones, and unavailable periods.
+                  Views for sessions, events, and so on.
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -593,6 +648,30 @@ export default function PlayerCalendarView({
               </div>
             ) : (
               <div className="p-3 [&_.fc-button]:!rounded [&_.fc-button-primary]:!bg-green-600 [&_.fc-button-primary]:!border-green-700 [&_.fc-button-primary.fc-button-active]:!bg-green-800">
+                {isTimeGridView ? (
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    {outOfRangeActivities.before.length > 0 ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => showOutOfRangeItems("before")}
+                      >
+                        <ArrowUp className="mr-1 h-4 w-4" />
+                        {outOfRangeActivities.before.length} before 06:00
+                      </Button>
+                    ) : null}
+                    {outOfRangeActivities.after.length > 0 ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => showOutOfRangeItems("after")}
+                      >
+                        <ArrowDown className="mr-1 h-4 w-4" />
+                        {outOfRangeActivities.after.length} after 21:00
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : null}
                 <FullCalendar
                   ref={calendarRef}
                   plugins={[
@@ -617,6 +696,11 @@ export default function PlayerCalendarView({
                     minute: "2-digit",
                     hour12: false,
                   }}
+                  datesSet={(arg: DatesSetArg) =>
+                    setVisibleRange({ start: arg.start, end: arg.end })
+                  }
+                  slotMinTime={VISIBLE_DAY_START_TIME}
+                  slotMaxTime={VISIBLE_DAY_END_TIME}
                   allDaySlot
                   height="auto"
                   nowIndicator
