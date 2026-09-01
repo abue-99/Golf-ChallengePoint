@@ -253,6 +253,29 @@ export const api = {
     fetch(`/api/gamification/${userId}/activity`, { method: "POST" }).then(
       handleResponse,
     ),
+
+  // Standalone Lesson Assignments (Assignment-First model)
+  createStandaloneAssignment: (payload: Record<string, unknown>) =>
+    fetch("/api/assignments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then(handleResponse),
+  listMyStandaloneAssignments: (params?: { status?: string; queueOnly?: boolean }) => {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set("status", params.status);
+    if (params?.queueOnly) qs.set("queueOnly", "true");
+    const url = qs.toString() ? `/api/assignments?${qs}` : "/api/assignments";
+    return fetch(url, { cache: "no-store" }).then((r) => r.json());
+  },
+  updateStandaloneAssignment: (id: string, payload: Record<string, unknown>) =>
+    fetch(`/api/assignments/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then(handleResponse),
+  moveStandaloneAssignmentToQueue: (id: string) =>
+    fetch(`/api/assignments/${id}/queue`, { method: "POST" }).then(handleResponse),
 };
 
 /**

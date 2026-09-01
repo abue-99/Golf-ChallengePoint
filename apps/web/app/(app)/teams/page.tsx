@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Trash2, SquarePen, Plus, UserPlus, X, Search, ExternalLink, Route as RouteIcon, CalendarDays } from "lucide-react";
+import { Trash2, SquarePen, Plus, UserPlus, X, Search, ExternalLink, Route as RouteIcon, CalendarDays, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,8 @@ import {
 import { PlayerCapabilitiesRadarCard } from "@/components/player-capabilities-widget";
 import { DevelopmentPlanManager } from "@/components/DevelopmentPlanManager";
 import TeamTrainingWindowsView from "@/components/TeamTrainingWindowsView";
+import AssignLessonModal from "@/components/AssignLessonModal";
+import { toast } from "sonner";
 
 // Common icons represented as emoji for team assignment
 const TEAM_ICONS = [
@@ -160,6 +162,7 @@ export default function TeamsPage() {
   // Badge counts: teamId → count (loaded in background after teams are fetched)
   const [teamWindowCounts, setTeamWindowCounts] = useState<Record<string, number>>({});
   const [teamPlanCounts, setTeamPlanCounts] = useState<Record<string, number>>({});
+  const [assignTeamId, setAssignTeamId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -594,6 +597,17 @@ export default function TeamsPage() {
 
                 const actionsContent = (
                   <div className="flex items-center gap-1">
+                    {/* Assign Lesson button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-gray-500 hover:text-primary"
+                      onClick={(e) => { e.stopPropagation(); setAssignTeamId(team.id); }}
+                      aria-label="Assign lesson to team"
+                      title="Assign Lesson"
+                    >
+                      <BookOpen size={16} />
+                    </Button>
                     {/* Dev Plans button with badge */}
                     <div className="relative">
                       <Button
@@ -769,6 +783,17 @@ export default function TeamsPage() {
         }
       />
       </div>
+
+      {/* Assign Lesson to Team modal */}
+      <AssignLessonModal
+        open={Boolean(assignTeamId)}
+        onClose={() => setAssignTeamId(null)}
+        preselectedTeamId={assignTeamId}
+        onAssigned={() => {
+          toast.success("Lesson assigned to team.");
+          setAssignTeamId(null);
+        }}
+      />
     </div>
   );
 }

@@ -16,6 +16,8 @@ import {
   type TrainingLesson,
 } from "@/lib/lesson-types";
 import { Plus, Search, BookOpen, Clock, MapPin, User, Globe, Lock } from "lucide-react";
+import AssignLessonModal from "@/components/AssignLessonModal";
+import { toast } from "sonner";
 
 export default function LessonsPage() {
   const [lessons, setLessons] = useState<TrainingLesson[] | null>(null);
@@ -196,6 +198,7 @@ export default function LessonsPage() {
 
 function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | null }) {
   const router = useRouter();
+  const [assignOpen, setAssignOpen] = useState(false);
   const focusLabel =
     FOCUS_AREAS.find((f) => f.value === lesson.focusArea)?.label ??
     lesson.focusArea;
@@ -279,6 +282,16 @@ function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | n
             {new Date(lesson.createdAt).toLocaleDateString()}
           </p>
           <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1"
+              onClick={() => setAssignOpen(true)}
+              title="Assign this lesson to a player or team"
+            >
+              <BookOpen className="h-3 w-3" />
+              Assign
+            </Button>
             {isOwner && (
               <Link href={`/coach/lessons/${lesson.id}?mode=edit`}>
                 <Button
@@ -299,6 +312,16 @@ function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | n
           </div>
         </div>
       </CardContent>
+
+      <AssignLessonModal
+        open={assignOpen}
+        onClose={() => setAssignOpen(false)}
+        preselectedLesson={lesson}
+        onAssigned={() => {
+          toast.success(`"${lesson.name}" assigned.`);
+          setAssignOpen(false);
+        }}
+      />
     </Card>
   );
 }

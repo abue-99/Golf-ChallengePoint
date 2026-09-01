@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays, User, Users } from "lucide-react";
 import Link from "next/link";
 import PlayerHomeDashboard from "@/components/PlayerHomeDashboard";
+import NewAssignmentsSection from "@/components/NewAssignmentsSection";
 import type { CalendarActivity as BaseCalendarActivity } from "@/types/calendar";
 import { formatDateInTimeZone, resolveCalendarTimeZone } from "@/lib/timezone";
 
@@ -166,7 +167,8 @@ export default function Dashboard() {
 
       {/* Player dashboard */}
       {role === "PLAYER" && (
-        <section>
+        <section className="space-y-6">
+          <NewAssignmentsSection />
           <PlayerHomeDashboard
             firstName={playerFirstName}
             playerId={playerId}
