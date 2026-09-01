@@ -10,6 +10,17 @@ export const FOCUS_AREAS = [
   { value: "MENTAL", label: "Mental" },
 ] as const;
 
+/** Emoji icon for each FOCUS_AREA value. Used in UI lists and cards. */
+export const FOCUS_AREA_EMOJI: Record<string, string> = {
+  SETUP: "🏌️",
+  PUTTING: "⛳",
+  SHORT_GAME: "🎯",
+  LONG_GAME: "💪",
+  TACTICAL: "🧠",
+  FITNESS: "🏃",
+  MENTAL: "🧘",
+};
+
 export const LOCATIONS = [
   { value: "DRIVING_RANGE", label: "Driving Range" },
   { value: "SHORT_GAME_AREA", label: "Short Game Area" },

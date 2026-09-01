@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ExternalLink, Trash2, UserPlus } from "lucide-react";
+import { BookOpen, ExternalLink, Trash2, UserPlus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PlayerCapabilitiesRadarCard } from "@/components/player-capabilities-widget";
+import AssignLessonModal from "@/components/AssignLessonModal";
+import DroppableZone from "@/components/DroppableZone";
+import { DndLessonProvider } from "@/components/DndLessonProvider";
+import { toast } from "sonner";
 
 type Club = { id: string; name: string };
 
@@ -289,6 +293,10 @@ export default function PlayersPage() {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [showInvite, setShowInvite] = useState(false);
 
+  // Assign lesson modal state
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [assignTargetPlayerId, setAssignTargetPlayerId] = useState<string | null>(null);
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.ok ? r.json() : null)
@@ -315,82 +323,136 @@ export default function PlayersPage() {
   if (loading) return <div className="p-4">Loading…</div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-[var(--golf-heading)]">Players</h1>
-        {isCoachOrAdmin && (
-          <Button
-            onClick={() => setShowInvite(true)}
-            className="gap-2"
-          >
-            <UserPlus size={16} />
-            Add User
-          </Button>
-        )}
-      </div>
-
-      {players.length === 0 ? (
-        <p className="text-sm text-[var(--golf-muted-text)]">No players found.</p>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {players.map((player) => {
-                const isInactive = !player.lastLogin;
-
-            return (
-              <div
-                key={player.id}
-                className="flex flex-col items-center gap-2 rounded-xl border border-[var(--golf-muted)] bg-white p-4 shadow-sm hover:shadow-md transition-all cursor-pointer select-none"
-                onClick={() => setSelectedPlayer(player)}
-                title="Click to view details"
+    <DndLessonProvider
+      onAssigned={(target) => {
+        if (target.kind === "player") {
+          toast.success(`Lesson assigned to ${target.playerName}.`);
+        }
+      }}
+    >
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold text-[var(--golf-heading)]">Players</h1>
+          {isCoachOrAdmin && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setAssignTargetPlayerId(null);
+                  setAssignModalOpen(true);
+                }}
+                className="gap-2"
               >
-                <div className="relative">
-                  <Avatar className="h-16 w-16">
-                    {player.profileImage && (
-                      <AvatarImage src={player.profileImage} alt={playerName(player)} />
-                    )}
-                    <AvatarFallback className="text-xl bg-gray-200 text-gray-600">
-                      {playerInitials(player)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {isInactive && (
-                    <span
-                      className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-amber-400 border-2 border-white"
-                      title="Inactive"
-                    />
-                  )}
-                </div>
-                <span className="text-sm font-medium text-center text-[var(--golf-heading)] leading-snug">
-                  {playerName(player)}
-                </span>
-              </div>
-            );
-          })}
+                <BookOpen size={16} />
+                Assign Lesson
+              </Button>
+              <Button
+                onClick={() => setShowInvite(true)}
+                className="gap-2"
+              >
+                <UserPlus size={16} />
+                Add User
+              </Button>
+            </div>
+          )}
         </div>
-      )}
 
-      {selectedPlayer && (
-        <PlayerDetailDialog
-          player={selectedPlayer}
-          onClose={() => setSelectedPlayer(null)}
-          onRemove={(playerId) => {
-            setPlayers((prev) => prev.filter((p) => p.id !== playerId));
-            setSelectedPlayer(null);
-          }}
-        />
-      )}
+        {players.length === 0 ? (
+          <p className="text-sm text-[var(--golf-muted-text)]">No players found.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {players.map((player) => {
+                  const isInactive = !player.lastLogin;
 
-      {showInvite && (
-        <InvitePlayerDialog
-          clubs={myClubs}
-          onClose={() => setShowInvite(false)}
-          onInvited={(newPlayer) => {
-            setPlayers((prev) => {
-              const exists = prev.some((p) => p.id === newPlayer.id);
-              return exists ? prev : [...prev, newPlayer];
-            });
+              return (
+                <DroppableZone
+                  key={player.id}
+                  id={`player:${player.id}:${playerName(player)}`}
+                  className="rounded-xl"
+                  activeClassName="ring-2 ring-primary ring-offset-1 bg-primary/5"
+                >
+                  <div
+                    className="flex flex-col items-center gap-2 rounded-xl border border-[var(--golf-muted)] bg-white p-4 shadow-sm hover:shadow-md transition-all cursor-pointer select-none"
+                    onClick={() => setSelectedPlayer(player)}
+                    title="Click to view details"
+                  >
+                    <div className="relative">
+                      <Avatar className="h-16 w-16">
+                        {player.profileImage && (
+                          <AvatarImage src={player.profileImage} alt={playerName(player)} />
+                        )}
+                        <AvatarFallback className="text-xl bg-gray-200 text-gray-600">
+                          {playerInitials(player)}
+                        </AvatarFallback>
+                      </Avatar>
+                      {isInactive && (
+                        <span
+                          className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-amber-400 border-2 border-white"
+                          title="Inactive"
+                        />
+                      )}
+                    </div>
+                    <span className="text-sm font-medium text-center text-[var(--golf-heading)] leading-snug">
+                      {playerName(player)}
+                    </span>
+                    {/* Quick-assign button for touch / non-DnD */}
+                    {isCoachOrAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs gap-1 px-2 opacity-60 hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAssignTargetPlayerId(player.id);
+                          setAssignModalOpen(true);
+                        }}
+                        title="Assign lesson to this player"
+                      >
+                        <BookOpen className="h-3 w-3" />
+                        Assign
+                      </Button>
+                    )}
+                  </div>
+                </DroppableZone>
+              );
+            })}
+          </div>
+        )}
+
+        {selectedPlayer && (
+          <PlayerDetailDialog
+            player={selectedPlayer}
+            onClose={() => setSelectedPlayer(null)}
+            onRemove={(playerId) => {
+              setPlayers((prev) => prev.filter((p) => p.id !== playerId));
+              setSelectedPlayer(null);
+            }}
+          />
+        )}
+
+        {showInvite && (
+          <InvitePlayerDialog
+            clubs={myClubs}
+            onClose={() => setShowInvite(false)}
+            onInvited={(newPlayer) => {
+              setPlayers((prev) => {
+                const exists = prev.some((p) => p.id === newPlayer.id);
+                return exists ? prev : [...prev, newPlayer];
+              });
+            }}
+          />
+        )}
+
+        <AssignLessonModal
+          open={assignModalOpen}
+          onClose={() => {
+            setAssignModalOpen(false);
+            setAssignTargetPlayerId(null);
           }}
+          preselectedPlayerId={assignTargetPlayerId}
+          onAssigned={() => toast.success("Lesson assigned successfully.")}
         />
-      )}
-    </div>
+      </div>
+    </DndLessonProvider>
   );
 }

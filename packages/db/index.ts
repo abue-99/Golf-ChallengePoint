@@ -6,6 +6,7 @@ export {
   OwnerType,
   LessonPriority,
   AssignmentStatus,
+  AssignmentTargetType,
   CalendarTaskStatus,
   AvailabilityBlockType,
   TournamentPriority,

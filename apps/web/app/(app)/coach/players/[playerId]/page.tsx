@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { PlayerCapabilitiesRadarCard, PlayerCapabilitiesWidget } from "@/components/player-capabilities-widget";
 import { DevelopmentPlanManager } from "@/components/DevelopmentPlanManager";
+import AssignLessonButton from "@/components/AssignLessonButton";
 
 type LinkedPlayer = {
   id: string;
@@ -42,18 +43,23 @@ export default async function CoachPlayerDashboardPage({
 
   return (
     <section className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Player Dashboard — {playerName}</h1>
-        <p className="text-sm text-muted-foreground">
-          Full player overview
-          {player?.country ? ` · ${player.country}` : ""}
-        </p>
-        <Link
-          href={`/coach/players/${playerId}/calendar`}
-          className="mt-2 inline-block text-sm font-semibold text-blue-700 underline underline-offset-2"
-        >
-          Open calendar comparison
-        </Link>
+      <header className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Player Dashboard — {playerName}</h1>
+          <p className="text-sm text-muted-foreground">
+            Full player overview
+            {player?.country ? ` · ${player.country}` : ""}
+          </p>
+          <Link
+            href={`/coach/players/${playerId}/calendar`}
+            className="mt-2 inline-block text-sm font-semibold text-blue-700 underline underline-offset-2"
+          >
+            Open calendar comparison
+          </Link>
+        </div>
+        <div className="shrink-0">
+          <AssignLessonButton playerId={playerId} />
+        </div>
       </header>
       <div className="grid gap-4 lg:grid-cols-5">
         <div className="lg:col-span-2">
