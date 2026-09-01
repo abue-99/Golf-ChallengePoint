@@ -507,63 +507,71 @@ export default function PlayerHomeDashboard({
   const activePlan = loading ? null : getActivePlan(plans);
 
   return (
-    <div className="mx-auto max-w-lg space-y-6 pb-4">
-      {/* Hero level card */}
-      <HeroLevelCard
-        firstName={firstName}
-        xp={gamification.xp}
-        level={gamification.level}
-        levelProgress={gamification.levelProgress}
-        nextLevelXp={gamification.nextLevelXp}
-        currentStreak={gamification.currentStreak}
-      />
-
-      {loading ? (
-        <div className="rounded-2xl bg-slate-100 animate-pulse h-36" />
-      ) : (
-        <CalendarSummaryCard activities={calendarActivities} nowIso={calendarNowIso} />
-      )}
-
-      {/* Today's training */}
-      {loading ? (
-        <div className="rounded-2xl bg-slate-100 animate-pulse h-40" />
-      ) : (
-        <TodaysTrainingCard active={activeTraining} />
-      )}
-
-      {/* Current journey preview */}
-      {loading ? (
-        <div className="rounded-2xl bg-slate-100 animate-pulse h-48" />
-      ) : (
-        <CurrentJourneyCard plan={activePlan} />
-      )}
-
-      {loading ? (
-        <div className="rounded-2xl bg-slate-100 animate-pulse h-32" />
-      ) : (
-        <WeeklyCompletionCard
-          completed={weeklyCompletion.completed}
-          total={weeklyCompletion.total}
-        />
-      )}
-
-      {loading ? (
-        <div
-          role="status"
-          aria-live="polite"
-          aria-label="Loading capability data"
-          className="rounded-2xl bg-slate-100 animate-pulse h-[360px]"
-        />
-      ) : (
-        <div className="space-y-4">
-          <PlayerCapabilitiesWidget playerId={playerId} showRadar={false} />
-          <PlayerCapabilitiesRadarCard
-            playerId={playerId}
-            title="Skill Radar"
+    <div className="mx-auto max-w-lg pb-4 lg:max-w-none">
+      {/* Two-column grid on lg+, single column on mobile */}
+      <div className="lg:grid lg:gap-6" style={{ gridTemplateColumns: "3fr 2fr" }}>
+        {/* Left column */}
+        <div className="space-y-6">
+          {/* Hero level card */}
+          <HeroLevelCard
+            firstName={firstName}
+            xp={gamification.xp}
+            level={gamification.level}
+            levelProgress={gamification.levelProgress}
+            nextLevelXp={gamification.nextLevelXp}
+            currentStreak={gamification.currentStreak}
           />
-        </div>
-      )}
 
+          {/* Today's training */}
+          {loading ? (
+            <div className="rounded-2xl bg-slate-100 animate-pulse h-40" />
+          ) : (
+            <TodaysTrainingCard active={activeTraining} />
+          )}
+
+          {/* Current journey preview */}
+          {loading ? (
+            <div className="rounded-2xl bg-slate-100 animate-pulse h-48" />
+          ) : (
+            <CurrentJourneyCard plan={activePlan} />
+          )}
+
+          {loading ? (
+            <div className="rounded-2xl bg-slate-100 animate-pulse h-32" />
+          ) : (
+            <WeeklyCompletionCard
+              completed={weeklyCompletion.completed}
+              total={weeklyCompletion.total}
+            />
+          )}
+        </div>
+
+        {/* Right column */}
+        <div className="mt-6 space-y-6 lg:mt-0">
+          {loading ? (
+            <div className="rounded-2xl bg-slate-100 animate-pulse h-36" />
+          ) : (
+            <CalendarSummaryCard activities={calendarActivities} nowIso={calendarNowIso} />
+          )}
+
+          {loading ? (
+            <div
+              role="status"
+              aria-live="polite"
+              aria-label="Loading capability data"
+              className="rounded-2xl bg-slate-100 animate-pulse h-[360px]"
+            />
+          ) : (
+            <div className="space-y-4">
+              <PlayerCapabilitiesWidget playerId={playerId} showRadar={false} />
+              <PlayerCapabilitiesRadarCard
+                playerId={playerId}
+                title="Skill Radar"
+              />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
