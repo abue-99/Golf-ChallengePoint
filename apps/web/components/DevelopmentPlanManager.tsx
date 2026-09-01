@@ -4,7 +4,16 @@ import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { FOCUS_AREAS, getFocusAreaPath, type PlayerDevelopmentPlan, type TrainingBlock, type TrainingLesson, type LessonAssignment } from "@/lib/lesson-types";
+import {
+  FOCUS_AREAS,
+  getFocusAreaPath,
+  isCompletedAssignmentStatus,
+  normalizeAssignmentStatus,
+  type PlayerDevelopmentPlan,
+  type TrainingBlock,
+  type TrainingLesson,
+  type LessonAssignment,
+} from "@/lib/lesson-types";
 import {
   Plus,
   ChevronDown,
@@ -37,17 +46,19 @@ const FOCUS_AREA_EMOJI: Record<string, string> = {
 // ─── Status styles ────────────────────────────────────────────────────────────
 
 const STATUS_BADGE: Record<string, string> = {
-  OUTSTANDING: "bg-slate-100 text-slate-600",
-  STARTED: "bg-blue-100 text-blue-700",
-  FINISHED: "bg-green-100 text-green-700",
-  REVIEWED: "bg-amber-100 text-amber-700",
+  NEW: "bg-slate-100 text-slate-600",
+  OPEN: "bg-slate-100 text-slate-600",
+  IN_PROGRESS: "bg-blue-100 text-blue-700",
+  COMPLETED: "bg-green-100 text-green-700",
+  ARCHIVED: "bg-amber-100 text-amber-700",
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  OUTSTANDING: "Outstanding",
-  STARTED: "In Progress",
-  FINISHED: "Finished",
-  REVIEWED: "Reviewed",
+  NEW: "New",
+  OPEN: "Open",
+  IN_PROGRESS: "In Progress",
+  COMPLETED: "Completed",
+  ARCHIVED: "Archived",
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -118,7 +129,6 @@ export function DevelopmentPlanManager({ playerId, teamId }: Props) {
               key={plan.id}
               plan={plan}
               playerId={playerId}
-              teamId={teamId}
               onDeleted={() => setPlans((prev) => prev.filter((p) => p.id !== plan.id))}
               onUpdated={(updated) => setPlans((prev) => prev.map((p) => p.id === updated.id ? updated : p))}
             />
@@ -330,13 +340,11 @@ function EditPlanForm({
 function PlanCard({
   plan,
   playerId,
-  teamId,
   onDeleted,
   onUpdated,
 }: {
   plan: PlayerDevelopmentPlan;
   playerId?: string;
-  teamId?: string;
   onDeleted: () => void;
   onUpdated: (plan: PlayerDevelopmentPlan) => void;
 }) {
@@ -348,7 +356,7 @@ function PlanCard({
 
   const totalAssignments = blocks.reduce((s, b) => s + b.assignments.length, 0);
   const completedAssignments = blocks.reduce(
-    (s, b) => s + b.assignments.filter((a) => a.status === "FINISHED" || a.status === "REVIEWED").length,
+    (s, b) => s + b.assignments.filter((a) => isCompletedAssignmentStatus(a.status)).length,
     0
   );
   const progress = totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0;
@@ -651,7 +659,7 @@ function TrainingBlockCard({
   const [expanded, setExpanded] = useState(true);
 
   const total = assignments.length;
-  const done = assignments.filter((a) => a.status === "FINISHED" || a.status === "REVIEWED").length;
+  const done = assignments.filter((a) => isCompletedAssignmentStatus(a.status)).length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
   async function loadLessons() {
@@ -830,8 +838,9 @@ function AssignmentRow({
     assignment.lesson.subCapability,
     assignment.lesson.subSubCapability
   );
-  const badgeClass = STATUS_BADGE[assignment.status] ?? "bg-slate-100 text-slate-600";
-  const statusLabel = STATUS_LABEL[assignment.status] ?? assignment.status;
+  const normalizedStatus = normalizeAssignmentStatus(assignment.status);
+  const badgeClass = STATUS_BADGE[normalizedStatus] ?? "bg-slate-100 text-slate-600";
+  const statusLabel = STATUS_LABEL[normalizedStatus] ?? normalizedStatus;
 
   return (
     <div className="flex items-center gap-3 rounded-xl border-2 border-gray-100 bg-white px-3 py-2.5">
