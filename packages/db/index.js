@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.prisma = exports.DevelopmentMilestoneStatus = exports.TournamentPriority = exports.AvailabilityBlockType = exports.CalendarTaskStatus = exports.AssignmentStatus = exports.LessonPriority = exports.OwnerType = exports.Recurrence = exports.Role = exports.PrismaClient = exports.Prisma = void 0;
+exports.prisma = exports.DevelopmentMilestoneStatus = exports.TournamentPriority = exports.AvailabilityBlockType = exports.CalendarTaskStatus = exports.AssignmentTargetType = exports.AssignmentStatus = exports.LessonPriority = exports.OwnerType = exports.Recurrence = exports.Role = exports.PrismaClient = exports.Prisma = void 0;
 var client_1 = require("./generated/client/client");
 Object.defineProperty(exports, "Prisma", { enumerable: true, get: function () { return client_1.Prisma; } });
 Object.defineProperty(exports, "PrismaClient", { enumerable: true, get: function () { return client_1.PrismaClient; } });
@@ -9,6 +9,7 @@ Object.defineProperty(exports, "Recurrence", { enumerable: true, get: function (
 Object.defineProperty(exports, "OwnerType", { enumerable: true, get: function () { return client_1.OwnerType; } });
 Object.defineProperty(exports, "LessonPriority", { enumerable: true, get: function () { return client_1.LessonPriority; } });
 Object.defineProperty(exports, "AssignmentStatus", { enumerable: true, get: function () { return client_1.AssignmentStatus; } });
+Object.defineProperty(exports, "AssignmentTargetType", { enumerable: true, get: function () { return client_1.AssignmentTargetType; } });
 Object.defineProperty(exports, "CalendarTaskStatus", { enumerable: true, get: function () { return client_1.CalendarTaskStatus; } });
 Object.defineProperty(exports, "AvailabilityBlockType", { enumerable: true, get: function () { return client_1.AvailabilityBlockType; } });
 Object.defineProperty(exports, "TournamentPriority", { enumerable: true, get: function () { return client_1.TournamentPriority; } });

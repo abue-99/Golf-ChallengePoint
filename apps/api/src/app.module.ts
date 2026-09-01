@@ -9,6 +9,7 @@ import { CalendarModule } from './calendar/calendar.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { DevelopmentPlansModule } from './development-plans/development-plans.module';
 import { GamificationModule } from './gamification/gamification.module';
+import { AssignmentsModule } from './assignments/assignments.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { GamificationModule } from './gamification/gamification.module';
     LessonsModule,
     DevelopmentPlansModule,
     GamificationModule,
+    AssignmentsModule,
   ],
   controllers: [AppController],
 })
