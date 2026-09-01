@@ -129,7 +129,6 @@ export function DevelopmentPlanManager({ playerId, teamId }: Props) {
               key={plan.id}
               plan={plan}
               playerId={playerId}
-              teamId={teamId}
               onDeleted={() => setPlans((prev) => prev.filter((p) => p.id !== plan.id))}
               onUpdated={(updated) => setPlans((prev) => prev.map((p) => p.id === updated.id ? updated : p))}
             />
@@ -341,13 +340,11 @@ function EditPlanForm({
 function PlanCard({
   plan,
   playerId,
-  teamId,
   onDeleted,
   onUpdated,
 }: {
   plan: PlayerDevelopmentPlan;
   playerId?: string;
-  teamId?: string;
   onDeleted: () => void;
   onUpdated: (plan: PlayerDevelopmentPlan) => void;
 }) {

@@ -70,7 +70,6 @@ function findActiveAssignment(plans: PlayerDevelopmentPlan[]): {
 } | null {
   for (const plan of plans) {
     for (const block of plan.blocks) {
-      const started = block.assignments.find((a) => a.status === "STARTED");
       const normalizedStarted = block.assignments.find((a) =>
         isStartedAssignmentStatus(a.status),
       );
