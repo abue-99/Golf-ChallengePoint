@@ -317,10 +317,10 @@ export default function CoachPlayerCalendarView({
           </div>
           <Tabs value={activeView} onValueChange={handleViewChange}>
             <TabsList>
-              <TabsTrigger value="agenda">Agenda</TabsTrigger>
-              <TabsTrigger value="day">Day</TabsTrigger>
-              <TabsTrigger value="week">Week</TabsTrigger>
-              <TabsTrigger value="month">Month</TabsTrigger>
+              <TabsTrigger value="agenda" className="data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:font-medium">Agenda</TabsTrigger>
+              <TabsTrigger value="day" className="data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:font-medium">Day</TabsTrigger>
+              <TabsTrigger value="week" className="data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:font-medium">Week</TabsTrigger>
+              <TabsTrigger value="month" className="data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:font-medium">Month</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>

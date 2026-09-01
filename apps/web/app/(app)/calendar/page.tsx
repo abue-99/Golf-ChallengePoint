@@ -76,6 +76,7 @@ export default async function CalendarPage() {
         country={user.country ?? null}
         timeZone={user.timezone ?? null}
         editable={editable}
+        role={user.role}
       />
     </div>
   );

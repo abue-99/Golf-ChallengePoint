@@ -1300,6 +1300,11 @@ export class CalendarService {
     for (const block of availabilityBlocks) {
       const occurrences = expandRecurringOccurrences(block, limit);
       for (const occurrence of occurrences) {
+        const diffMs = occurrence.end.getTime() - occurrence.start.getTime();
+        const isAllDay =
+          occurrence.start.getUTCSeconds() === 0 &&
+          occurrence.end.getUTCSeconds() === 0 &&
+          diffMs === 23 * 60 * 60 * 1000 + 59 * 60 * 1000;
         activities.push({
           id: `availability-${block.id}-${occurrence.start.toISOString()}`,
           sourceId: block.id,
@@ -1307,6 +1312,7 @@ export class CalendarService {
           title: block.title,
           start: occurrence.start.toISOString(),
           end: occurrence.end.toISOString(),
+          allDay: isAllDay,
           availabilityType: block.type,
           notes: block.notes,
         });
