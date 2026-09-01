@@ -518,7 +518,7 @@ export default function PlayerHomeDashboard({
       <div className="lg:grid lg:gap-6" style={{ gridTemplateColumns: "3fr 2fr" }}>
         {/* Left column */}
         <div className="space-y-6">
-          {/* Hero level card */}
+          {/* Hero level card – Player Development */}
           <HeroLevelCard
             firstName={firstName}
             xp={gamification.xp}
@@ -528,20 +528,32 @@ export default function PlayerHomeDashboard({
             currentStreak={gamification.currentStreak}
           />
 
-          {/* Today's training */}
+          {/* Next Up – directly below Player Development */}
+          {loading ? (
+            <div className="rounded-2xl bg-slate-100 animate-pulse h-36" />
+          ) : (
+            <CalendarSummaryCard
+              activities={calendarActivities}
+              nowIso={calendarNowIso}
+              timeZone={resolvedTimeZone}
+            />
+          )}
+
+          {/* Pending Training */}
           {loading ? (
             <div className="rounded-2xl bg-slate-100 animate-pulse h-40" />
           ) : (
             <TodaysTrainingCard active={activeTraining} />
           )}
 
-          {/* Current journey preview */}
+          {/* Current Journey */}
           {loading ? (
             <div className="rounded-2xl bg-slate-100 animate-pulse h-48" />
           ) : (
             <CurrentJourneyCard plan={activePlan} />
           )}
 
+          {/* Weekly Completion */}
           {loading ? (
             <div className="rounded-2xl bg-slate-100 animate-pulse h-32" />
           ) : (
@@ -554,16 +566,6 @@ export default function PlayerHomeDashboard({
 
         {/* Right column */}
         <div className="mt-6 space-y-6 lg:mt-0">
-          {loading ? (
-            <div className="rounded-2xl bg-slate-100 animate-pulse h-36" />
-          ) : (
-            <CalendarSummaryCard
-              activities={calendarActivities}
-              nowIso={calendarNowIso}
-              timeZone={resolvedTimeZone}
-            />
-          )}
-
           {loading ? (
             <div
               role="status"

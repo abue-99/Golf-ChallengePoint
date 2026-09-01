@@ -8,7 +8,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin, { DateClickArg } from "@fullcalendar/interaction";
 import type { DatesSetArg, EventClickArg, EventInput } from "@fullcalendar/core";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, Flame, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, Flame, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -79,6 +79,13 @@ type Props = {
   country: string | null;
   editable?: boolean;
   timeZone?: string | null;
+  role?: string;
+};
+
+type PlayerOption = {
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
 };
 
 type CalendarPayload = {
@@ -258,8 +265,10 @@ export default function PlayerCalendarView({
   country,
   editable = true,
   timeZone,
+  role,
 }: Props) {
   const resolvedTimeZone = resolveCalendarTimeZone(timeZone);
+  const isCoach = role === "COACH";
   const [calendarData, setCalendarData] = useState<CalendarPayload>({
     activities: [],
     slots: [],
@@ -281,6 +290,13 @@ export default function PlayerCalendarView({
     useState<CalendarView>(() => loadCalendarViewPreference() ?? "week");
   const [visibleRange, setVisibleRange] = useState<OptionalVisibleRange>(null);
   const calendarRef = useRef<FullCalendar>(null);
+
+  // Coach player comparison
+  const [players, setPlayers] = useState<PlayerOption[]>([]);
+  const [playerSearch, setPlayerSearch] = useState("");
+  const [comparePlayerId, setComparePlayerId] = useState<string | null>(null);
+  const [compareActivities, setCompareActivities] = useState<CalendarActivity[]>([]);
+  const [comparePlayerName, setComparePlayerName] = useState<string>("");
 
   const loadCalendar = useCallback(async () => {
     try {
@@ -309,6 +325,31 @@ export default function PlayerCalendarView({
     loadCalendar();
   }, [loadCalendar]);
 
+  // Load players list for coach comparison
+  useEffect(() => {
+    if (!isCoach) return;
+    fetch("/api/players/my")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setPlayers(Array.isArray(data) ? data : []))
+      .catch(() => setPlayers([]));
+  }, [isCoach]);
+
+  // Load compare player's calendar
+  useEffect(() => {
+    if (!comparePlayerId) {
+      setCompareActivities([]);
+      return;
+    }
+    fetch(`/api/calendar/player/${comparePlayerId}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        setCompareActivities(
+          Array.isArray(data?.activities) ? data.activities : [],
+        );
+      })
+      .catch(() => setCompareActivities([]));
+  }, [comparePlayerId]);
+
   useEffect(() => {
     const apiInstance = calendarRef.current?.getApi();
     if (apiInstance) {
@@ -323,10 +364,23 @@ export default function PlayerCalendarView({
   }, []);
 
   const events = useMemo<EventInput[]>(() => {
-    return calendarData.activities.map((activity) =>
+    const myEvents = calendarData.activities.map((activity) =>
       activityToEventInput(activity),
     );
-  }, [calendarData.activities]);
+    if (!comparePlayerId || compareActivities.length === 0) return myEvents;
+
+    const overlayEvents = compareActivities.map((activity) => {
+      const base = activityToEventInput(activity);
+      return {
+        ...base,
+        id: `compare-${activity.id}`,
+        title: `◐ ${activity.title}`,
+        opacity: 0.6,
+        classNames: ["fc-compare-overlay"],
+      };
+    });
+    return [...myEvents, ...overlayEvents];
+  }, [calendarData.activities, compareActivities, comparePlayerId]);
 
   const weeklyCompletion = calendarData.summary?.weeklyCompletion ?? {
     completed: 0,
@@ -548,6 +602,96 @@ export default function PlayerCalendarView({
 
   return (
     <div className="space-y-4">
+      {/* Coach player comparison toolbar */}
+      {isCoach ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border bg-white px-4 py-3 shadow-sm">
+          <span className="text-sm font-semibold text-slate-700">
+            🗓 My Calendar
+          </span>
+          <span className="hidden text-slate-300 sm:block">|</span>
+          {comparePlayerId ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-600">
+                Comparing with:{" "}
+                <span className="font-semibold text-green-700">
+                  {comparePlayerName}
+                </span>
+              </span>
+              <button
+                type="button"
+                aria-label="Clear player comparison"
+                className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300"
+                onClick={() => {
+                  setComparePlayerId(null);
+                  setComparePlayerName("");
+                  setPlayerSearch("");
+                }}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <label htmlFor="player-compare-search" className="text-sm text-slate-500">
+                Compare Player:
+              </label>
+              <div className="relative">
+                <input
+                  id="player-compare-search"
+                  type="text"
+                  value={playerSearch}
+                  onChange={(e) => setPlayerSearch(e.target.value)}
+                  placeholder="Search player…"
+                  className="h-8 rounded-md border border-input bg-background px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                {playerSearch.length > 0 ? (
+                  <div className="absolute left-0 top-9 z-50 max-h-48 w-64 overflow-y-auto rounded-md border bg-white shadow-lg">
+                    {players
+                      .filter((p) => {
+                        const name = `${p.firstName ?? ""} ${p.lastName ?? ""}`.toLowerCase();
+                        return name.includes(playerSearch.toLowerCase());
+                      })
+                      .map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-slate-100"
+                          onClick={() => {
+                            setComparePlayerId(p.id);
+                            setComparePlayerName(
+                              `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.id,
+                            );
+                            setPlayerSearch("");
+                          }}
+                        >
+                          {`${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.id}
+                        </button>
+                      ))}
+                    {players.filter((p) => {
+                      const name = `${p.firstName ?? ""} ${p.lastName ?? ""}`.toLowerCase();
+                      return name.includes(playerSearch.toLowerCase());
+                    }).length === 0 ? (
+                      <p className="px-3 py-2 text-sm text-slate-400">No players found</p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          )}
+          {comparePlayerId ? (
+            <div className="ml-auto flex items-center gap-3 text-xs text-slate-500">
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-3 w-3 rounded-sm bg-green-500" />
+                My Calendar
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-3 w-3 rounded-sm bg-blue-400 opacity-60" />
+                {comparePlayerName}
+              </span>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
         <div className="space-y-4">
           <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
@@ -563,10 +707,10 @@ export default function PlayerCalendarView({
                 </div>
                 <Tabs value={activeView} onValueChange={handleViewChange}>
                   <TabsList>
-                    <TabsTrigger value="agenda">Agenda</TabsTrigger>
-                    <TabsTrigger value="day">Day</TabsTrigger>
-                    <TabsTrigger value="week">Week</TabsTrigger>
-                    <TabsTrigger value="month">Month</TabsTrigger>
+                    <TabsTrigger value="agenda" className="data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:font-medium">Agenda</TabsTrigger>
+                    <TabsTrigger value="day" className="data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:font-medium">Day</TabsTrigger>
+                    <TabsTrigger value="week" className="data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:font-medium">Week</TabsTrigger>
+                    <TabsTrigger value="month" className="data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:font-medium">Month</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>

@@ -171,6 +171,7 @@ export function activityToEventInput(activity: CalendarActivity): EventInput {
       title: getActivityLabel(activity),
       start: activity.start,
       end: activity.end,
+      allDay: activity.allDay ?? false,
       backgroundColor: "#fee2e2",
       borderColor: "#dc2626",
       textColor: "#991b1b",
