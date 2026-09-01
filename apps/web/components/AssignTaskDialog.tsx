@@ -88,7 +88,7 @@ export default function AssignTaskDialog({
         recurrenceWeeks: 4,
       });
     }
-  }, [open, slot, reset]);
+  }, [open, slot, reset, timeZone]);
 
   const isRecurring = watch("isRecurring");
 

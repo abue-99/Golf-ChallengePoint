@@ -165,7 +165,7 @@ export default function AvailabilityBlockDialog({
         notes: "",
       });
     }
-  }, [defaultValues, open, reset, selectedDate]);
+  }, [defaultValues, open, reset, selectedDate, timeZone]);
 
   const recurrence = useWatch({ control, name: "recurrence" });
   const allDay = useWatch({ control, name: "allDay" });

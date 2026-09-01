@@ -102,7 +102,7 @@ export default function PracticeSlotDialog({
         recurrenceEndDate: "",
       });
     }
-  }, [open, defaultValues, selectedDate, reset]);
+  }, [open, defaultValues, selectedDate, reset, timeZone]);
 
   const recurrence = watch("recurrence");
 
