@@ -87,10 +87,17 @@ enum GoalAchieved {
 }
 
 enum AssignmentStatus {
-  OUTSTANDING
-  STARTED
-  FINISHED
-  REVIEWED
+  NEW
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+
+enum AssignmentTargetType {
+  PLAYER
+  TEAM
+  GROUP
 }
 
 model User {
@@ -169,6 +176,7 @@ model Team {
   members     TeamMember[]
   practiceSlots PracticeSlot[] @relation("TeamPracticeSlots")
   developmentPlans PlayerDevelopmentPlan[] @relation("TeamDevelopmentPlans")
+  lessonAssignments LessonAssignment[]
   events      TeamEvent[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -279,6 +287,8 @@ model CalendarTask {
   completedAt     DateTime?
   lessonId        String?
   lesson          TrainingLesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  assignmentId    String? @unique
+  assignment      LessonAssignment? @relation("AssignmentCalendarTask", fields: [assignmentId], references: [id], onDelete: SetNull)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
@@ -382,21 +392,33 @@ model TrainingBlock {
 
 model LessonAssignment {
   id             String           @id @default(cuid())
-  blockId        String
-  block          TrainingBlock    @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  blockId        String?
+  block          TrainingBlock?   @relation(fields: [blockId], references: [id], onDelete: Cascade)
   lessonId       String
   lesson         TrainingLesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  playerId       String
-  player         User             @relation("PlayerAssignments", fields: [playerId], references: [id], onDelete: Cascade)
+  targetType     AssignmentTargetType @default(PLAYER)
+  playerId       String?
+  player         User?            @relation("PlayerAssignments", fields: [playerId], references: [id], onDelete: Cascade)
+  teamId         String?
+  team           Team?            @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  groupName      String?
   coachId        String
   dueDate        DateTime?
+  isInTrainingQueue Boolean       @default(false)
+  teamEventId    String?
+  teamEvent      TeamEvent?       @relation(fields: [teamEventId], references: [id], onDelete: SetNull)
+  calendarTask   CalendarTask?    @relation("AssignmentCalendarTask")
   priority       LessonPriority   @default(MEDIUM)
-  status         AssignmentStatus @default(OUTSTANDING)
+  status         AssignmentStatus @default(NEW)
   sortOrder      Int              @default(0)
   playerNotes    String?
   selfAssessment Int?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+
+  @@index([targetType, playerId])
+  @@index([targetType, teamId])
+  @@index([isInTrainingQueue])
 
   @@map("lesson_assignments")
 }
@@ -429,6 +451,7 @@ model TeamEvent {
   location     String?
   startTime    DateTime
   endTime      DateTime
+  assignments  LessonAssignment[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

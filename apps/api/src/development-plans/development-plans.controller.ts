@@ -155,10 +155,14 @@ export class DevelopmentPlansController {
     @Body()
     body: {
       lessonId: string;
-      playerId: string;
+      playerId?: string;
+      teamId?: string;
+      targetType?: string;
+      groupName?: string;
       dueDate?: string;
       priority?: string;
       sortOrder?: number;
+      isInTrainingQueue?: boolean;
     },
   ) {
     return this.service.addAssignment(
@@ -181,6 +185,7 @@ export class DevelopmentPlansController {
       sortOrder?: number;
       playerNotes?: string;
       selfAssessment?: number | null;
+      isInTrainingQueue?: boolean;
     },
   ) {
     return this.service.updateAssignment(

@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  AssignmentTargetType,
   AssignmentStatus,
   DevelopmentMilestoneStatus,
   LessonPriority,
@@ -48,7 +49,7 @@ export class DevelopmentPlansService {
     return memberships.map((membership) => membership.teamId);
   }
 
-  private planInclude(playerIdForAssignments?: string) {
+  private planInclude(assignmentWhere?: Prisma.LessonAssignmentWhereInput) {
     return {
       coach: {
         select: { id: true, firstName: true, lastName: true, email: true },
@@ -67,9 +68,7 @@ export class DevelopmentPlansService {
         orderBy: { sortOrder: 'asc' as const },
         include: {
           assignments: {
-            ...(playerIdForAssignments
-              ? { where: { playerId: playerIdForAssignments } }
-              : {}),
+            ...(assignmentWhere ? { where: assignmentWhere } : {}),
             orderBy: { sortOrder: 'asc' as const },
             include: {
               lesson: {
@@ -85,6 +84,7 @@ export class DevelopmentPlansService {
                   subSubCapability: true,
                 },
               },
+              team: { select: { id: true, shortName: true, icon: true } },
             },
           },
         },
@@ -100,6 +100,20 @@ export class DevelopmentPlansService {
       await this.assertCoachPlayerLink(coachId, playerId);
     }
     const activeTeamIds = await this.getActiveTeamIdsForPlayer(playerId);
+    const assignmentWhere: Prisma.LessonAssignmentWhereInput = {
+      OR: [
+        { targetType: AssignmentTargetType.PLAYER, playerId },
+        ...(activeTeamIds.length > 0
+          ? [
+              {
+                targetType: AssignmentTargetType.TEAM,
+                teamId: { in: activeTeamIds },
+              },
+            ]
+          : []),
+        { targetType: AssignmentTargetType.GROUP },
+      ],
+    };
     return this.prisma.playerDevelopmentPlan.findMany({
       where: {
         ...(role === 'ADMIN' ? {} : { coachId }),
@@ -110,13 +124,27 @@ export class DevelopmentPlansService {
             : []),
         ],
       },
-      include: this.planInclude(playerId),
+      include: this.planInclude(assignmentWhere),
       orderBy: { createdAt: 'desc' },
     });
   }
 
   async getPlayerPlansAsPlayer(playerId: string) {
     const activeTeamIds = await this.getActiveTeamIdsForPlayer(playerId);
+    const assignmentWhere: Prisma.LessonAssignmentWhereInput = {
+      OR: [
+        { targetType: AssignmentTargetType.PLAYER, playerId },
+        ...(activeTeamIds.length > 0
+          ? [
+              {
+                targetType: AssignmentTargetType.TEAM,
+                teamId: { in: activeTeamIds },
+              },
+            ]
+          : []),
+        { targetType: AssignmentTargetType.GROUP },
+      ],
+    };
     return this.prisma.playerDevelopmentPlan.findMany({
       where: {
         OR: [
@@ -126,7 +154,7 @@ export class DevelopmentPlansService {
             : []),
         ],
       },
-      include: this.planInclude(playerId),
+      include: this.planInclude(assignmentWhere),
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -356,26 +384,77 @@ export class DevelopmentPlansService {
     blockId: string,
     data: {
       lessonId: string;
-      playerId: string;
+      playerId?: string;
+      teamId?: string;
+      targetType?: string;
+      groupName?: string;
       dueDate?: string;
       priority?: string;
       sortOrder?: number;
+      isInTrainingQueue?: boolean;
     },
   ) {
     this.requireCoachOrAdmin(role);
     const block = await this.prisma.trainingBlock.findUnique({
       where: { id: blockId },
+      include: { plan: true },
     });
     if (!block) throw new NotFoundException('Block not found');
     if (role !== 'ADMIN' && block.coachId !== coachId)
       throw new ForbiddenException('Not your block');
+    if (!block.plan) {
+      throw new ForbiddenException('Block does not belong to a plan');
+    }
+
+    const requestedTarget = data.targetType as AssignmentTargetType | undefined;
+    const inferredTarget =
+      requestedTarget ??
+      (data.playerId
+        ? AssignmentTargetType.PLAYER
+        : data.teamId
+          ? AssignmentTargetType.TEAM
+          : block.plan.ownerType === OwnerType.TEAM
+            ? AssignmentTargetType.TEAM
+            : AssignmentTargetType.PLAYER);
+
+    let playerId: string | null = null;
+    let teamId: string | null = null;
+    let groupName: string | null = null;
+
+    if (inferredTarget === AssignmentTargetType.PLAYER) {
+      playerId = data.playerId ?? block.plan.playerId ?? null;
+      if (!playerId) {
+        throw new ForbiddenException('Player assignment requires a player target');
+      }
+      if (role !== 'ADMIN') {
+        await this.assertCoachPlayerLink(coachId, playerId);
+      }
+    } else if (inferredTarget === AssignmentTargetType.TEAM) {
+      teamId = data.teamId ?? block.plan.teamId ?? null;
+      if (!teamId) {
+        throw new ForbiddenException('Team assignment requires a team target');
+      }
+      if (role !== 'ADMIN') {
+        await this.assertCoachOwnsTeam(coachId, teamId);
+      }
+    } else {
+      groupName = data.groupName?.trim() || null;
+      if (!groupName) {
+        throw new ForbiddenException('Group assignment requires a group name');
+      }
+    }
+
     return this.prisma.lessonAssignment.create({
       data: {
         blockId,
         lessonId: data.lessonId,
-        playerId: data.playerId,
+        targetType: inferredTarget,
+        playerId,
+        teamId,
+        groupName,
         coachId,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
+        isInTrainingQueue: Boolean(data.isInTrainingQueue),
         priority: (data.priority ?? LessonPriority.MEDIUM) as LessonPriority,
         sortOrder: data.sortOrder ?? 0,
       },
@@ -390,6 +469,7 @@ export class DevelopmentPlansService {
             subSubCapability: true,
           },
         },
+        team: { select: { id: true, shortName: true, icon: true } },
       },
     });
   }
@@ -405,6 +485,7 @@ export class DevelopmentPlansService {
       sortOrder?: number;
       playerNotes?: string;
       selfAssessment?: number | null;
+      isInTrainingQueue?: boolean;
     },
   ) {
     const assignment = await this.prisma.lessonAssignment.findUnique({
@@ -414,8 +495,24 @@ export class DevelopmentPlansService {
 
     // Coaches/admins can update all fields; players can only update status, notes, selfAssessment
     const isCoachOrAdmin = role === 'COACH' || role === 'ADMIN';
-    if (!isCoachOrAdmin && assignment.playerId !== userId) {
+    if (isCoachOrAdmin && role !== 'ADMIN' && assignment.coachId !== userId) {
       throw new ForbiddenException('Not your assignment');
+    }
+
+    if (!isCoachOrAdmin) {
+      const isPersonalAssignment =
+        assignment.targetType === AssignmentTargetType.PLAYER &&
+        assignment.playerId === userId;
+      const isTeamAssignment =
+        assignment.targetType === AssignmentTargetType.TEAM &&
+        assignment.teamId &&
+        (await this.prisma.teamMember.findFirst({
+          where: { teamId: assignment.teamId, userId },
+          select: { id: true },
+        }));
+      if (!isPersonalAssignment && !isTeamAssignment) {
+        throw new ForbiddenException('Not your assignment');
+      }
     }
 
     const updateData: Prisma.LessonAssignmentUpdateInput = {};
@@ -431,6 +528,11 @@ export class DevelopmentPlansService {
       if (data.priority !== undefined)
         updateData.priority = data.priority as LessonPriority;
       if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
+      if (Object.prototype.hasOwnProperty.call(data, 'isInTrainingQueue')) {
+        updateData.isInTrainingQueue = Boolean(
+          (data as { isInTrainingQueue?: boolean }).isInTrainingQueue,
+        );
+      }
     }
 
     return this.prisma.lessonAssignment.update({
@@ -447,6 +549,7 @@ export class DevelopmentPlansService {
             subSubCapability: true,
           },
         },
+        team: { select: { id: true, shortName: true, icon: true } },
       },
     });
   }
@@ -457,10 +560,7 @@ export class DevelopmentPlansService {
       where: { id: assignmentId },
     });
     if (!assignment) throw new NotFoundException('Assignment not found');
-    const block = await this.prisma.trainingBlock.findUnique({
-      where: { id: assignment.blockId },
-    });
-    if (role !== 'ADMIN' && block?.coachId !== coachId)
+    if (role !== 'ADMIN' && assignment.coachId !== coachId)
       throw new ForbiddenException('Not your block');
     await this.prisma.lessonAssignment.delete({ where: { id: assignmentId } });
     return { ok: true };
