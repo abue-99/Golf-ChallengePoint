@@ -266,7 +266,7 @@ export const api = {
     if (params?.status) qs.set("status", params.status);
     if (params?.queueOnly) qs.set("queueOnly", "true");
     const url = qs.toString() ? `/api/assignments?${qs}` : "/api/assignments";
-    return fetch(url, { cache: "no-store" }).then((r) => r.json());
+    return fetch(url, { cache: "no-store" }).then(handleResponse);
   },
   updateStandaloneAssignment: (id: string, payload: Record<string, unknown>) =>
     fetch(`/api/assignments/${id}`, {

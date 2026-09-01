@@ -47,6 +47,8 @@ type Props = {
   preselectedPlayerId?: string | null;
   /** Pre-select a team target */
   preselectedTeamId?: string | null;
+  /** Pre-check the "Add to Training Queue" checkbox (e.g., when dropped on queue zone) */
+  defaultAddToQueue?: boolean;
   /** Called after a successful assignment */
   onAssigned?: () => void;
 };
@@ -57,6 +59,7 @@ export default function AssignLessonModal({
   preselectedLesson,
   preselectedPlayerId,
   preselectedTeamId,
+  defaultAddToQueue,
   onAssigned,
 }: Props) {
   const [lessons, setLessons] = useState<TrainingLesson[]>([]);
@@ -101,7 +104,8 @@ export default function AssignLessonModal({
       setTargetType("team");
       setSelectedTeamId(preselectedTeamId);
     }
-  }, [open, preselectedLesson, preselectedPlayerId, preselectedTeamId]);
+    if (defaultAddToQueue) setAddToQueue(true);
+  }, [open, preselectedLesson, preselectedPlayerId, preselectedTeamId, defaultAddToQueue]);
 
   const filteredLessons = useMemo(() => {
     const lower = lessonSearch.toLowerCase();
@@ -116,6 +120,7 @@ export default function AssignLessonModal({
   function handleClose() {
     setLessonSearch("");
     setSelectedLessonId("");
+    setTargetType("player");
     setSelectedPlayerId("");
     setSelectedTeamId("");
     setAddToQueue(false);

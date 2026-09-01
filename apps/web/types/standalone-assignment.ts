@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * Standalone Assignment types used by the Assignment-First model.
  * These are distinct from development-plan assignments.

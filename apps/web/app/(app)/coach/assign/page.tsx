@@ -42,6 +42,7 @@ export default function CoachAssignPage() {
   const [assignPlayerId, setAssignPlayerId] = useState<string | null>(null);
   const [assignTeamId, setAssignTeamId] = useState<string | null>(null);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [defaultAddToQueue, setDefaultAddToQueue] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -60,6 +61,15 @@ export default function CoachAssignPage() {
     setAssignLesson(lesson);
     setAssignPlayerId(null);
     setAssignTeamId(null);
+    setDefaultAddToQueue(false);
+    setAssignModalOpen(true);
+  }, []);
+
+  const handleQueueDrop = useCallback((lesson: TrainingLesson) => {
+    setAssignLesson(lesson);
+    setAssignPlayerId(null);
+    setAssignTeamId(null);
+    setDefaultAddToQueue(true);
     setAssignModalOpen(true);
   }, []);
 
@@ -70,7 +80,7 @@ export default function CoachAssignPage() {
   }, []);
 
   return (
-    <DndLessonProvider onAssigned={handleAssigned}>
+    <DndLessonProvider onAssigned={handleAssigned} onQueueDrop={handleQueueDrop}>
       <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
         {/* Lesson Library Sidebar */}
         <LessonLibrarySidebar onLessonClick={handleLessonClick} />
@@ -206,10 +216,12 @@ export default function CoachAssignPage() {
           setAssignLesson(null);
           setAssignPlayerId(null);
           setAssignTeamId(null);
+          setDefaultAddToQueue(false);
         }}
         preselectedLesson={assignLesson}
         preselectedPlayerId={assignPlayerId}
         preselectedTeamId={assignTeamId}
+        defaultAddToQueue={defaultAddToQueue}
         onAssigned={() => {
           toast.success("Lesson assigned successfully.");
           setAssignModalOpen(false);

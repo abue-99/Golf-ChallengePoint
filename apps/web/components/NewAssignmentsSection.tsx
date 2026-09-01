@@ -3,21 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { StandaloneAssignment } from "@/types/standalone-assignment";
+import { FOCUS_AREA_EMOJI } from "@/lib/lesson-types";
 import { cn } from "@/lib/utils";
 import { CalendarPlus, CheckCircle, ClipboardList, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
-const FOCUS_AREA_EMOJI: Record<string, string> = {
-  SETUP: "🏌️",
-  PUTTING: "⛳",
-  SHORT_GAME: "🎯",
-  LONG_GAME: "💪",
-  TACTICAL: "🧠",
-  FITNESS: "🏃",
-  MENTAL: "🧘",
-};
 
 function AssignmentCard({
   assignment,

@@ -47,11 +47,18 @@ export function useDndLesson() {
 
 type Props = {
   children: ReactNode;
-  /** Called after a successful assignment so the parent can refresh data */
+  /** Called after a successful player/team assignment so the parent can refresh data */
   onAssigned?: (target: AssignmentTarget) => void;
+  /**
+   * Called when a lesson is dropped on the "training-queue" target.
+   * The parent should open the AssignLessonModal with the lesson pre-selected
+   * and `defaultAddToQueue=true` so the user can choose a target player.
+   * If not provided, queue drops are silently ignored.
+   */
+  onQueueDrop?: (lesson: TrainingLesson) => void;
 };
 
-export function DndLessonProvider({ children, onAssigned }: Props) {
+export function DndLessonProvider({ children, onAssigned, onQueueDrop }: Props) {
   const [activeLesson, setActiveLesson] = useState<TrainingLesson | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
 
@@ -67,6 +74,11 @@ export function DndLessonProvider({ children, onAssigned }: Props) {
 
   const assignLesson = useCallback(
     async (lesson: TrainingLesson, target: AssignmentTarget) => {
+      // Queue drops require a player to be specified — delegate to parent via onQueueDrop
+      if (target.kind === "queue") {
+        onQueueDrop?.(lesson);
+        return;
+      }
       try {
         const payload: Record<string, unknown> = { lessonId: lesson.id };
         if (target.kind === "player") {
@@ -75,8 +87,6 @@ export function DndLessonProvider({ children, onAssigned }: Props) {
         } else if (target.kind === "team") {
           payload.teamId = target.teamId;
           payload.targetType = "TEAM";
-        } else if (target.kind === "queue") {
-          payload.isInTrainingQueue = true;
         }
         await api.createStandaloneAssignment(payload);
         onAssigned?.(target);
@@ -86,7 +96,7 @@ export function DndLessonProvider({ children, onAssigned }: Props) {
         setLastError(msg);
       }
     },
-    [onAssigned],
+    [onAssigned, onQueueDrop],
   );
 
   const onDragStart = useCallback((lesson: TrainingLesson) => {

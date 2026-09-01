@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import {
   FOCUS_AREAS,
   getFocusAreaPath,
+  FOCUS_AREA_EMOJI,
   type TrainingLesson,
 } from "@/lib/lesson-types";
 import { cn } from "@/lib/utils";
@@ -70,16 +71,6 @@ function DraggableLessonCard({
 }
 
 // ── Focus-area section with collapse ─────────────────────────────────────────
-
-const FOCUS_AREA_EMOJI: Record<string, string> = {
-  SETUP: "🏌️",
-  PUTTING: "⛳",
-  SHORT_GAME: "🎯",
-  LONG_GAME: "💪",
-  TACTICAL: "🧠",
-  FITNESS: "🏃",
-  MENTAL: "🧘",
-};
 
 function FocusSection({
   label,
