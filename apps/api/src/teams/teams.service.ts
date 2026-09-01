@@ -59,34 +59,40 @@ export class TeamsService {
       },
     } as const;
 
+    // Determine which clubs to search
+    let targetClubIds: string[];
     if (clubId) {
-      // Return all users (any role) from the specified club
-      const members = await this.prisma.userClub.findMany({
-        where: { clubId },
-        include: {
-          user: { select: userSelect },
-        },
-        distinct: ['userId'],
+      targetClubIds = [clubId];
+    } else {
+      // No club specified: use all clubs the coach belongs to
+      const coachClubs = await this.prisma.userClub.findMany({
+        where: { userId: coachId },
+        select: { clubId: true },
       });
-      return members.map((m) => m.user).filter(Boolean);
+      targetClubIds = coachClubs.map((c) => c.clubId);
     }
 
-    // No club specified: return all users from all clubs the coach belongs to
-    const coachClubs = await this.prisma.userClub.findMany({
-      where: { userId: coachId },
-      select: { clubId: true },
-    });
-    const clubIds = coachClubs.map((c) => c.clubId);
+    if (targetClubIds.length === 0) return [];
 
-    const members = await this.prisma.userClub.findMany({
-      where: { clubId: { in: clubIds } },
-      include: {
-        user: { select: userSelect },
-      },
+    // Step 1: get distinct userIds from the target clubs.
+    // This is kept as a separate query (select-only, no include) to avoid a
+    // Prisma limitation where using distinct + include on UserClub while the
+    // nested userClubs select also references the same table causes players
+    // with multiple club memberships to be silently dropped from results.
+    const userClubRecords = await this.prisma.userClub.findMany({
+      where: { clubId: { in: targetClubIds } },
+      select: { userId: true },
       distinct: ['userId'],
     });
 
-    return members.map((m) => m.user).filter(Boolean);
+    const userIds = userClubRecords.map((r) => r.userId);
+    if (userIds.length === 0) return [];
+
+    // Step 2: fetch the full user records by ID.
+    return this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: userSelect,
+    });
   }
 
   // Keep backward-compat alias
