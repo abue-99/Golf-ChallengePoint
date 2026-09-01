@@ -76,6 +76,10 @@ export type LegacyAssignmentStatus =
   | "FINISHED"
   | "REVIEWED";
 
+/**
+ * Normalizes assignment statuses during the old-to-new enum transition.
+ * Unknown values fall back to OPEN so player-facing UIs stay usable instead of crashing.
+ */
 export function normalizeAssignmentStatus(
   status?: string | null
 ): AssignmentStatus {
@@ -111,6 +115,17 @@ export function isStartedAssignmentStatus(status?: string | null): boolean {
 export function isCompletedAssignmentStatus(status?: string | null): boolean {
   const normalized = normalizeAssignmentStatus(status);
   return normalized === "COMPLETED" || normalized === "ARCHIVED";
+}
+
+export function toEditableAssignmentStatus(
+  status?: string | null
+): Extract<AssignmentStatus, "OPEN" | "IN_PROGRESS" | "COMPLETED"> {
+  const normalized = normalizeAssignmentStatus(status);
+  if (normalized === "IN_PROGRESS") return "IN_PROGRESS";
+  if (normalized === "COMPLETED" || normalized === "ARCHIVED") {
+    return "COMPLETED";
+  }
+  return "OPEN";
 }
 
 const FOCUS_AREA_CAPABILITY_KEY: Record<LessonFocusArea, CapabilityKey> = {

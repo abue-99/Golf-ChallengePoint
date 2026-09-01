@@ -266,7 +266,9 @@ function CurrentJourneyCard({ plan }: { plan: PlayerDevelopmentPlan | null }) {
   const activeBlock =
     plan.blocks.find((b) =>
       b.assignments.some(
-        (a) => !isCompletedAssignmentStatus(a.status),
+        (a) =>
+          isStartedAssignmentStatus(a.status) ||
+          isPendingAssignmentStatus(a.status),
       ),
     ) ?? plan.blocks[0];
 

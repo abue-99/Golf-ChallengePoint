@@ -9,6 +9,7 @@ import {
   isCompletedAssignmentStatus,
   isPendingAssignmentStatus,
   normalizeAssignmentStatus,
+  toEditableAssignmentStatus,
   type PlayerDevelopmentPlan,
   type TrainingBlock,
   type LessonAssignment,
@@ -639,12 +640,9 @@ function LessonDetailModal({
   onClose: () => void;
   onStatusChange: (updated: LessonAssignment) => void;
 }) {
-  const [status, setStatus] = useState(() => {
-    const normalized = normalizeAssignmentStatus(assignment.status);
-    if (normalized === "NEW") return "OPEN";
-    if (normalized === "ARCHIVED") return "COMPLETED";
-    return normalized;
-  });
+  const [status, setStatus] = useState(() =>
+    toEditableAssignmentStatus(assignment.status),
+  );
   const [notes, setNotes] = useState(assignment.playerNotes ?? "");
   const [selfAssessment, setSelfAssessment] = useState<string>(
     assignment.selfAssessment != null ? String(assignment.selfAssessment) : "",
