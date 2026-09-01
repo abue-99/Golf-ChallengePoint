@@ -6,6 +6,10 @@ import { api } from "@/lib/api";
 import type { CalendarActivity } from "@/types/calendar";
 import {
   FOCUS_AREAS,
+  isCompletedAssignmentStatus,
+  isPendingAssignmentStatus,
+  isStartedAssignmentStatus,
+  normalizeAssignmentStatus,
   type PlayerDevelopmentPlan,
   type LessonAssignment,
 } from "@/lib/lesson-types";
@@ -35,10 +39,11 @@ const FOCUS_AREA_EMOJI: Record<string, string> = {
 };
 
 const STATUS_NODE: Record<string, { emoji: string; label: string }> = {
-  OUTSTANDING: { emoji: "⚪", label: "Open" },
-  STARTED: { emoji: "🟡", label: "In Progress" },
-  FINISHED: { emoji: "✅", label: "Completed" },
-  REVIEWED: { emoji: "⭐", label: "Reviewed" },
+  NEW: { emoji: "⚪", label: "New" },
+  OPEN: { emoji: "⚪", label: "Open" },
+  IN_PROGRESS: { emoji: "🟡", label: "In Progress" },
+  COMPLETED: { emoji: "✅", label: "Completed" },
+  ARCHIVED: { emoji: "⭐", label: "Archived" },
 };
 
 type GamificationProfile = {
@@ -66,9 +71,12 @@ function findActiveAssignment(plans: PlayerDevelopmentPlan[]): {
   for (const plan of plans) {
     for (const block of plan.blocks) {
       const started = block.assignments.find((a) => a.status === "STARTED");
-      if (started)
+      const normalizedStarted = block.assignments.find((a) =>
+        isStartedAssignmentStatus(a.status),
+      );
+      if (normalizedStarted)
         return {
-          assignment: started,
+          assignment: normalizedStarted,
           planName: plan.name,
           blockName: block.name,
         };
@@ -78,7 +86,7 @@ function findActiveAssignment(plans: PlayerDevelopmentPlan[]): {
   for (const plan of plans) {
     for (const block of plan.blocks) {
       const outstanding = block.assignments.find(
-        (a) => a.status === "OUTSTANDING",
+        (a) => isPendingAssignmentStatus(a.status),
       );
       if (outstanding)
         return {
@@ -96,7 +104,7 @@ function getActivePlan(
 ): PlayerDevelopmentPlan | null {
   // Find the plan that has at least one started assignment, else first plan
   const withStarted = plans.find((p) =>
-    p.blocks.some((b) => b.assignments.some((a) => a.status === "STARTED")),
+    p.blocks.some((b) => b.assignments.some((a) => isStartedAssignmentStatus(a.status))),
   );
   return withStarted ?? plans[0] ?? null;
 }
@@ -193,7 +201,8 @@ function TodaysTrainingCard({
   const focusLabel =
     FOCUS_AREAS.find((f) => f.value === assignment.lesson.focusArea)?.label ??
     assignment.lesson.focusArea;
-  const statusNode = STATUS_NODE[assignment.status] ?? STATUS_NODE.OUTSTANDING;
+  const statusNode =
+    STATUS_NODE[normalizeAssignmentStatus(assignment.status)] ?? STATUS_NODE.OPEN;
 
   return (
     <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
@@ -250,7 +259,7 @@ function CurrentJourneyCard({ plan }: { plan: PlayerDevelopmentPlan | null }) {
   const allAssignments = plan.blocks.flatMap((b) => b.assignments);
   const total = allAssignments.length;
   const done = allAssignments.filter(
-    (a) => a.status === "FINISHED" || a.status === "REVIEWED",
+    (a) => isCompletedAssignmentStatus(a.status),
   ).length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
@@ -258,7 +267,7 @@ function CurrentJourneyCard({ plan }: { plan: PlayerDevelopmentPlan | null }) {
   const activeBlock =
     plan.blocks.find((b) =>
       b.assignments.some(
-        (a) => a.status === "STARTED" || a.status === "OUTSTANDING",
+        (a) => !isCompletedAssignmentStatus(a.status),
       ),
     ) ?? plan.blocks[0];
 
@@ -290,12 +299,12 @@ function CurrentJourneyCard({ plan }: { plan: PlayerDevelopmentPlan | null }) {
         {activeBlock && (
           <div className="space-y-1.5">
             {activeBlock.assignments.slice(0, 5).map((a, idx) => {
-              const node = STATUS_NODE[a.status] ?? STATUS_NODE.OUTSTANDING;
+              const node =
+                STATUS_NODE[normalizeAssignmentStatus(a.status)] ?? STATUS_NODE.OPEN;
               const prevCompleted =
                 idx === 0 ||
-                activeBlock.assignments[idx - 1].status === "FINISHED" ||
-                activeBlock.assignments[idx - 1].status === "REVIEWED";
-              const isLocked = a.status === "OUTSTANDING" && !prevCompleted;
+                isCompletedAssignmentStatus(activeBlock.assignments[idx - 1].status);
+              const isLocked = isPendingAssignmentStatus(a.status) && !prevCompleted;
               return (
                 <div
                   key={a.id}
@@ -310,7 +319,7 @@ function CurrentJourneyCard({ plan }: { plan: PlayerDevelopmentPlan | null }) {
                   <span
                     className={cn(
                       "font-medium",
-                      a.status === "FINISHED" || a.status === "REVIEWED"
+                      isCompletedAssignmentStatus(a.status)
                         ? "text-slate-400 line-through"
                         : "text-slate-700",
                     )}

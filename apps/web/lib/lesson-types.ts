@@ -57,10 +57,11 @@ export const GOAL_ACHIEVED_OPTIONS = [
 ] as const;
 
 export const ASSIGNMENT_STATUSES = [
-  { value: "OUTSTANDING", label: "Outstanding" },
-  { value: "STARTED", label: "Started" },
-  { value: "FINISHED", label: "Finished" },
-  { value: "REVIEWED", label: "Reviewed" },
+  { value: "NEW", label: "New" },
+  { value: "OPEN", label: "Open" },
+  { value: "IN_PROGRESS", label: "In Progress" },
+  { value: "COMPLETED", label: "Completed" },
+  { value: "ARCHIVED", label: "Archived" },
 ] as const;
 
 export type LessonFocusArea = (typeof FOCUS_AREAS)[number]["value"];
@@ -69,6 +70,48 @@ export type LessonVisibility = (typeof LESSON_VISIBILITIES)[number]["value"];
 export type LessonPriority = (typeof PRIORITIES)[number]["value"];
 export type GoalAchieved = (typeof GOAL_ACHIEVED_OPTIONS)[number]["value"];
 export type AssignmentStatus = (typeof ASSIGNMENT_STATUSES)[number]["value"];
+export type LegacyAssignmentStatus =
+  | "OUTSTANDING"
+  | "STARTED"
+  | "FINISHED"
+  | "REVIEWED";
+
+export function normalizeAssignmentStatus(
+  status?: string | null
+): AssignmentStatus {
+  switch (status) {
+    case "NEW":
+    case "OPEN":
+    case "IN_PROGRESS":
+    case "COMPLETED":
+    case "ARCHIVED":
+      return status;
+    case "OUTSTANDING":
+      return "OPEN";
+    case "STARTED":
+      return "IN_PROGRESS";
+    case "FINISHED":
+      return "COMPLETED";
+    case "REVIEWED":
+      return "ARCHIVED";
+    default:
+      return "OPEN";
+  }
+}
+
+export function isPendingAssignmentStatus(status?: string | null): boolean {
+  const normalized = normalizeAssignmentStatus(status);
+  return normalized === "NEW" || normalized === "OPEN";
+}
+
+export function isStartedAssignmentStatus(status?: string | null): boolean {
+  return normalizeAssignmentStatus(status) === "IN_PROGRESS";
+}
+
+export function isCompletedAssignmentStatus(status?: string | null): boolean {
+  const normalized = normalizeAssignmentStatus(status);
+  return normalized === "COMPLETED" || normalized === "ARCHIVED";
+}
 
 const FOCUS_AREA_CAPABILITY_KEY: Record<LessonFocusArea, CapabilityKey> = {
   SETUP: "setup",

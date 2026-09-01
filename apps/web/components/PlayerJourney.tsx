@@ -6,6 +6,9 @@ import { splitChecklist as missionChecklist } from "@/lib/calendar-activity";
 import {
   ASSIGNMENT_STATUSES,
   getFocusAreaPath,
+  isCompletedAssignmentStatus,
+  isPendingAssignmentStatus,
+  normalizeAssignmentStatus,
   type PlayerDevelopmentPlan,
   type TrainingBlock,
   type LessonAssignment,
@@ -27,29 +30,40 @@ const FOCUS_AREA_EMOJI: Record<string, string> = {
 
 // ─── Status Configuration ─────────────────────────────────────────────────────
 
-type StatusKey = "OUTSTANDING" | "STARTED" | "FINISHED" | "REVIEWED" | "LOCKED";
+type StatusKey =
+  | "NEW"
+  | "OPEN"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "ARCHIVED"
+  | "LOCKED";
 
 const STATUS_STYLE: Record<
   StatusKey,
   { label: string; badge: string; dot: string }
 > = {
-  OUTSTANDING: {
+  NEW: {
+    label: "New",
+    badge: "bg-slate-100 text-slate-600",
+    dot: "bg-slate-300",
+  },
+  OPEN: {
     label: "Open",
     badge: "bg-slate-100 text-slate-600",
     dot: "bg-slate-300",
   },
-  STARTED: {
+  IN_PROGRESS: {
     label: "In Progress",
     badge: "bg-blue-100 text-blue-700",
     dot: "bg-blue-500",
   },
-  FINISHED: {
+  COMPLETED: {
     label: "Completed",
     badge: "bg-green-100 text-green-700",
     dot: "bg-green-500",
   },
-  REVIEWED: {
-    label: "Reviewed",
+  ARCHIVED: {
+    label: "Archived",
     badge: "bg-amber-100 text-amber-700",
     dot: "bg-amber-400",
   },
@@ -65,7 +79,7 @@ function resolveStatus(
   isLocked: boolean,
 ): StatusKey {
   if (isLocked) return "LOCKED";
-  return assignment.status as StatusKey;
+  return normalizeAssignmentStatus(assignment.status);
 }
 
 // ─── XP helpers ──────────────────────────────────────────────────────────────
@@ -75,7 +89,7 @@ function computeXp(plans: PlayerDevelopmentPlan[]): number {
   for (const plan of plans) {
     for (const block of plan.blocks) {
       const done = block.assignments.filter(
-        (a) => a.status === "FINISHED" || a.status === "REVIEWED",
+        (a) => isCompletedAssignmentStatus(a.status),
       ).length;
       xp += done * 50;
       if (done === block.assignments.length && block.assignments.length > 0)
@@ -185,10 +199,11 @@ function LessonCard({
     <div
       className={cn(
         "flex items-center gap-3 rounded-xl border-2 p-3 transition-all duration-200",
-        statusKey === "STARTED" && "border-blue-200 bg-blue-50/60",
-        statusKey === "FINISHED" && "border-green-200 bg-green-50/60",
-        statusKey === "REVIEWED" && "border-amber-200 bg-amber-50/60",
-        statusKey === "OUTSTANDING" && "border-gray-200 bg-white",
+        statusKey === "IN_PROGRESS" && "border-blue-200 bg-blue-50/60",
+        statusKey === "COMPLETED" && "border-green-200 bg-green-50/60",
+        statusKey === "ARCHIVED" && "border-amber-200 bg-amber-50/60",
+        (statusKey === "NEW" || statusKey === "OPEN") &&
+          "border-gray-200 bg-white",
         statusKey === "LOCKED" && "border-slate-100 bg-slate-50/60 opacity-60",
         !isLocked && "cursor-pointer hover:shadow-sm active:scale-[0.99]",
       )}
@@ -198,16 +213,17 @@ function LessonCard({
       <div
         className={cn(
           "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-base border-2",
-          statusKey === "STARTED" && "border-blue-300 bg-blue-100",
-          statusKey === "FINISHED" && "border-green-300 bg-green-100",
-          statusKey === "REVIEWED" && "border-amber-300 bg-amber-100",
-          statusKey === "OUTSTANDING" && "border-slate-200 bg-slate-100",
+          statusKey === "IN_PROGRESS" && "border-blue-300 bg-blue-100",
+          statusKey === "COMPLETED" && "border-green-300 bg-green-100",
+          statusKey === "ARCHIVED" && "border-amber-300 bg-amber-100",
+          (statusKey === "NEW" || statusKey === "OPEN") &&
+            "border-slate-200 bg-slate-100",
           statusKey === "LOCKED" && "border-slate-100 bg-slate-50",
         )}
       >
-        {statusKey === "FINISHED"
+        {statusKey === "COMPLETED"
           ? "✅"
-          : statusKey === "REVIEWED"
+          : statusKey === "ARCHIVED"
             ? "⭐"
             : focusEmoji}
       </div>
@@ -253,13 +269,11 @@ function BlockCard({
 }) {
   const total = block.assignments.length;
   const done = block.assignments.filter(
-    (a) => a.status === "FINISHED" || a.status === "REVIEWED",
+    (a) => isCompletedAssignmentStatus(a.status),
   ).length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const blockDone = done === total && total > 0;
-  const blockStarted = block.assignments.some(
-    (a) => a.status !== "OUTSTANDING",
-  );
+  const blockStarted = block.assignments.some((a) => !isPendingAssignmentStatus(a.status));
 
   const [expanded, setExpanded] = useState(
     isFirst || blockStarted || !blockDone,
@@ -274,7 +288,7 @@ function BlockCard({
   function handleStatusChange(updated: LessonAssignment) {
     onAssignmentUpdated(updated);
     if (selectedAssignment) setSelectedAssignment(updated);
-    if (updated.status === "FINISHED") {
+    if (normalizeAssignmentStatus(updated.status) === "COMPLETED") {
       const idx = block.assignments.findIndex((a) => a.id === updated.id);
       const nextAssignment = block.assignments[idx + 1];
       setCelebration({
@@ -351,10 +365,9 @@ function BlockCard({
               block.assignments.map((assignment, idx) => {
                 const prevDone =
                   idx === 0 ||
-                  block.assignments[idx - 1].status === "FINISHED" ||
-                  block.assignments[idx - 1].status === "REVIEWED";
+                  isCompletedAssignmentStatus(block.assignments[idx - 1].status);
                 const isLocked =
-                  !prevDone && assignment.status === "OUTSTANDING";
+                  !prevDone && isPendingAssignmentStatus(assignment.status);
                 return (
                   <LessonCard
                     key={assignment.id}
@@ -462,7 +475,7 @@ function JourneyHeader({
   );
   const total = allAssignments.length;
   const done = allAssignments.filter(
-    (a) => a.status === "FINISHED" || a.status === "REVIEWED",
+    (a) => isCompletedAssignmentStatus(a.status),
   ).length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const xp = computeXp(plans);
@@ -626,7 +639,12 @@ function LessonDetailModal({
   onClose: () => void;
   onStatusChange: (updated: LessonAssignment) => void;
 }) {
-  const [status, setStatus] = useState(assignment.status);
+  const [status, setStatus] = useState(() => {
+    const normalized = normalizeAssignmentStatus(assignment.status);
+    if (normalized === "NEW") return "OPEN";
+    if (normalized === "ARCHIVED") return "COMPLETED";
+    return normalized;
+  });
   const [notes, setNotes] = useState(assignment.playerNotes ?? "");
   const [selfAssessment, setSelfAssessment] = useState<string>(
     assignment.selfAssessment != null ? String(assignment.selfAssessment) : "",
@@ -749,7 +767,11 @@ function LessonDetailModal({
               Completion flow
             </h3>
             <div className="grid grid-cols-3 gap-2">
-              {ASSIGNMENT_STATUSES.filter((s) => s.value !== "REVIEWED").map(
+              {ASSIGNMENT_STATUSES.filter((s) =>
+                s.value === "OPEN" ||
+                s.value === "IN_PROGRESS" ||
+                s.value === "COMPLETED",
+              ).map(
                 (s) => (
                   <button
                     key={s.value}
@@ -761,9 +783,9 @@ function LessonDetailModal({
                         : "border-gray-200 text-slate-500 hover:border-slate-300",
                     )}
                   >
-                    {s.value === "OUTSTANDING"
+                    {s.value === "OPEN"
                       ? "Open"
-                      : s.value === "STARTED"
+                      : s.value === "IN_PROGRESS"
                         ? "Start"
                         : "Complete"}
                   </button>
@@ -840,7 +862,7 @@ function LessonDetailModal({
           >
             {saving
               ? "Saving…"
-              : status === "FINISHED"
+              : status === "COMPLETED"
                 ? "✅ Complete Mission"
                 : "Save Mission"}
           </Button>
