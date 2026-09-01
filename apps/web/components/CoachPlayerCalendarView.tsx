@@ -18,12 +18,18 @@ import {
   VIEW_TO_FULLCALENDAR,
 } from "@/lib/calendar-activity";
 import {
+  loadCalendarViewPreference,
+  saveCalendarViewPreference,
+  type CalendarView,
+} from "@/lib/calendar-view-preference";
+import {
   classifyOutsideVisibleHours,
   VISIBLE_DAY_END_TIME,
   VISIBLE_DAY_START_TIME,
   type VisibleRange,
 } from "@/lib/calendar-visible-hours";
 import { api } from "@/lib/api";
+import { resolveCalendarTimeZone } from "@/lib/timezone";
 import type {
   CalendarActivity,
   CalendarEventExtendedProps,
@@ -54,10 +60,13 @@ type OptionalVisibleRange = VisibleRange | null;
 export default function CoachPlayerCalendarView({
   playerId,
   coachId,
+  timeZone,
 }: {
   playerId: string;
   coachId?: string;
+  timeZone?: string | null;
 }) {
+  const resolvedTimeZone = resolveCalendarTimeZone(timeZone);
   const [calendarData, setCalendarData] = useState<CalendarPayload>({
     activities: [],
     slots: [],
@@ -69,11 +78,7 @@ export default function CoachPlayerCalendarView({
   const [compareWithCoach, setCompareWithCoach] = useState(Boolean(coachId));
   const [comparisonNowMs] = useState<number>(() => Date.now());
   const [activeView, setActiveView] =
-    useState<keyof typeof VIEW_TO_FULLCALENDAR>(() =>
-      typeof window !== "undefined" && window.innerWidth >= 1024
-        ? "week"
-        : "agenda",
-    );
+    useState<CalendarView>(() => loadCalendarViewPreference() ?? "week");
   const [visibleRange, setVisibleRange] = useState<OptionalVisibleRange>(null);
   const calendarRef = useRef<FullCalendar>(null);
 
@@ -117,6 +122,12 @@ export default function CoachPlayerCalendarView({
       apiInstance.changeView(VIEW_TO_FULLCALENDAR[activeView]);
     }
   }, [activeView]);
+
+  const handleViewChange = useCallback((value: string) => {
+    const nextView = value as CalendarView;
+    setActiveView(nextView);
+    saveCalendarViewPreference(nextView);
+  }, []);
 
   const events = useMemo<EventInput[]>(() => {
     const playerEvents = calendarData.activities.map((activity) =>
@@ -195,12 +206,12 @@ export default function CoachPlayerCalendarView({
       toast.info(
         <div className="space-y-1">
           <p className="font-semibold">
-            {position === "before" ? "Before 06:00" : "After 21:00"}
+            {position === "before" ? "Before 06:00" : "After 22:00"}
           </p>
           {items.slice(0, 6).map((item) => (
             <p key={`${position}-${item.id}`} className="text-sm">
-              {item.title} · {formatCalendarDateTime(item.start)} →{" "}
-              {formatCalendarDateTime(item.end)}
+              {item.title} · {formatCalendarDateTime(item.start, resolvedTimeZone)}{" "}
+              → {formatCalendarDateTime(item.end, resolvedTimeZone)}
             </p>
           ))}
           {items.length > 6 ? (
@@ -210,7 +221,7 @@ export default function CoachPlayerCalendarView({
         { duration: 7000 },
       );
     },
-    [outOfRangeActivities],
+    [outOfRangeActivities, resolvedTimeZone],
   );
 
   const handleEventClick = useCallback(
@@ -240,8 +251,8 @@ export default function CoachPlayerCalendarView({
         <div>
           <p className="font-medium">{activity.title}</p>
           <p className="text-sm">
-            {formatCalendarDateTime(activity.start)} →{" "}
-            {formatCalendarDateTime(activity.end)}
+            {formatCalendarDateTime(activity.start, resolvedTimeZone)} →{" "}
+            {formatCalendarDateTime(activity.end, resolvedTimeZone)}
           </p>
           {activity.description ? (
             <p className="mt-1 text-sm">{activity.description}</p>
@@ -250,7 +261,7 @@ export default function CoachPlayerCalendarView({
         { duration: 6000 },
       );
     },
-    [calendarData.slots],
+    [calendarData.slots, resolvedTimeZone],
   );
 
   const handleAssignTask = useCallback(
@@ -293,17 +304,27 @@ export default function CoachPlayerCalendarView({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold text-slate-800">
-            Player vs coach calendar
-          </p>
-          <p className="text-sm text-slate-500">
-            Views for sessions, events, and so on. Coach events are highlighted
-            in violet.
-          </p>
+      <div className="flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-sm lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-800">
+              Player vs coach calendar
+            </p>
+            <p className="text-sm text-slate-500">
+              Views for sessions, events, and so on. Coach events are
+              highlighted in violet.
+            </p>
+          </div>
+          <Tabs value={activeView} onValueChange={handleViewChange}>
+            <TabsList>
+              <TabsTrigger value="agenda">Agenda</TabsTrigger>
+              <TabsTrigger value="day">Day</TabsTrigger>
+              <TabsTrigger value="week">Week</TabsTrigger>
+              <TabsTrigger value="month">Month</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
           {coachId ? (
             <Button
               size="sm"
@@ -313,19 +334,6 @@ export default function CoachPlayerCalendarView({
               {compareWithCoach ? "Hide coach overlay" : "Show coach overlay"}
             </Button>
           ) : null}
-          <Tabs
-            value={activeView}
-            onValueChange={(value) =>
-              setActiveView(value as keyof typeof VIEW_TO_FULLCALENDAR)
-            }
-          >
-            <TabsList>
-              <TabsTrigger value="agenda">Agenda</TabsTrigger>
-              <TabsTrigger value="day">Day</TabsTrigger>
-              <TabsTrigger value="week">Week</TabsTrigger>
-              <TabsTrigger value="month">Month</TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
       </div>
 
@@ -370,7 +378,7 @@ export default function CoachPlayerCalendarView({
                 onClick={() => showOutOfRangeItems("after")}
               >
                 <ArrowDown className="mr-1 h-4 w-4" />
-                {outOfRangeActivities.after.length} after 21:00
+                {outOfRangeActivities.after.length} after 22:00
               </Button>
             ) : null}
           </div>
@@ -398,6 +406,7 @@ export default function CoachPlayerCalendarView({
             minute: "2-digit",
             hour12: false,
           }}
+          timeZone={resolvedTimeZone}
           datesSet={(arg: DatesSetArg) =>
             setVisibleRange({ start: arg.start, end: arg.end })
           }
@@ -423,6 +432,7 @@ export default function CoachPlayerCalendarView({
         }}
         onSubmit={handleAssignTask}
         slot={selectedSlot}
+        timeZone={resolvedTimeZone}
       />
     </div>
   );

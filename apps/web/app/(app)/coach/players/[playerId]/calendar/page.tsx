@@ -11,6 +11,7 @@ type PlayerSummary = {
 
 type CurrentUser = {
   id: string;
+  timezone?: string | null;
 };
 
 async function getPlayer(token: string, playerId: string) {
@@ -65,7 +66,11 @@ export default async function CoachPlayerCalendarPage({
         </p>
       </header>
 
-      <CoachPlayerCalendarView playerId={playerId} coachId={currentUser?.id} />
+      <CoachPlayerCalendarView
+        playerId={playerId}
+        coachId={currentUser?.id}
+        timeZone={currentUser?.timezone ?? null}
+      />
     </div>
   );
 }

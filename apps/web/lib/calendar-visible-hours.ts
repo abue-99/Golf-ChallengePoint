@@ -1,5 +1,5 @@
 export const VISIBLE_DAY_START_MINUTES = 6 * 60;
-export const VISIBLE_DAY_END_MINUTES = 21 * 60;
+export const VISIBLE_DAY_END_MINUTES = 22 * 60;
 
 export const VISIBLE_DAY_START_TIME = `${String(Math.floor(VISIBLE_DAY_START_MINUTES / 60)).padStart(2, "0")}:${String(VISIBLE_DAY_START_MINUTES % 60).padStart(2, "0")}:00`;
 export const VISIBLE_DAY_END_TIME = `${String(Math.floor(VISIBLE_DAY_END_MINUTES / 60)).padStart(2, "0")}:${String(VISIBLE_DAY_END_MINUTES % 60).padStart(2, "0")}:00`;

@@ -8,6 +8,7 @@ type CurrentUser = {
   id: string;
   role: string;
   country?: string | null;
+  timezone?: string | null;
   firstName?: string | null;
 };
 
@@ -73,6 +74,7 @@ export default async function CalendarPage() {
       <PlayerCalendarView
         userId={user.id}
         country={user.country ?? null}
+        timeZone={user.timezone ?? null}
         editable={editable}
       />
     </div>

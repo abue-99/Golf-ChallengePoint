@@ -25,11 +25,17 @@ import {
   VIEW_TO_FULLCALENDAR,
 } from "@/lib/calendar-activity";
 import {
+  loadCalendarViewPreference,
+  saveCalendarViewPreference,
+  type CalendarView,
+} from "@/lib/calendar-view-preference";
+import {
   classifyOutsideVisibleHours,
   VISIBLE_DAY_END_TIME,
   VISIBLE_DAY_START_TIME,
   type VisibleRange,
 } from "@/lib/calendar-visible-hours";
+import { formatDateInTimeZone, resolveCalendarTimeZone } from "@/lib/timezone";
 import { api } from "@/lib/api";
 import type {
   AvailabilityBlockType,
@@ -72,6 +78,7 @@ type Props = {
   userId: string;
   country: string | null;
   editable?: boolean;
+  timeZone?: string | null;
 };
 
 type CalendarPayload = {
@@ -82,8 +89,8 @@ type CalendarPayload = {
 
 type OptionalVisibleRange = VisibleRange | null;
 
-function formatRange(start: string, end: string) {
-  return `${formatCalendarDateTime(start)} → ${new Date(end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+function formatRange(start: string, end: string, timeZone: string) {
+  return `${formatCalendarDateTime(start, timeZone)} → ${formatDateInTimeZone(end, timeZone, { hour: "2-digit", minute: "2-digit", hour12: false })}`;
 }
 
 function availabilityBadge(type: AvailabilityBlockType) {
@@ -101,9 +108,8 @@ function availabilityBadge(type: AvailabilityBlockType) {
   }
 }
 
-function formatAgendaDate(value: string) {
-  const date = new Date(value);
-  return date.toLocaleDateString([], {
+function formatAgendaDate(value: string, timeZone: string) {
+  return formatDateInTimeZone(value, timeZone, {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -115,11 +121,13 @@ function ActivityDialog({
   open,
   onClose,
   onToggleTask,
+  timeZone,
 }: {
   activity: CalendarActivity | null;
   open: boolean;
   onClose: () => void;
   onToggleTask?: (activity: CalendarActivity) => Promise<void>;
+  timeZone: string;
 }) {
   if (!activity) return null;
 
@@ -163,7 +171,7 @@ function ActivityDialog({
 
           <div className="rounded-2xl bg-slate-50 px-4 py-3">
             <p className="font-medium text-slate-800">
-              {formatRange(activity.start, activity.end)}
+              {formatRange(activity.start, activity.end, timeZone)}
             </p>
             {activity.location ? (
               <p className="mt-1 text-xs text-slate-500">{activity.location}</p>
@@ -249,7 +257,9 @@ export default function PlayerCalendarView({
   userId,
   country,
   editable = true,
+  timeZone,
 }: Props) {
+  const resolvedTimeZone = resolveCalendarTimeZone(timeZone);
   const [calendarData, setCalendarData] = useState<CalendarPayload>({
     activities: [],
     slots: [],
@@ -268,11 +278,7 @@ export default function PlayerCalendarView({
     useState<CalendarActivity | null>(null);
   const [agendaExpanded, setAgendaExpanded] = useState(false);
   const [activeView, setActiveView] =
-    useState<keyof typeof VIEW_TO_FULLCALENDAR>(() =>
-      typeof window !== "undefined" && window.innerWidth >= 1024
-        ? "week"
-        : "agenda",
-    );
+    useState<CalendarView>(() => loadCalendarViewPreference() ?? "week");
   const [visibleRange, setVisibleRange] = useState<OptionalVisibleRange>(null);
   const calendarRef = useRef<FullCalendar>(null);
 
@@ -309,6 +315,12 @@ export default function PlayerCalendarView({
       apiInstance.changeView(VIEW_TO_FULLCALENDAR[activeView]);
     }
   }, [activeView]);
+
+  const handleViewChange = useCallback((value: string) => {
+    const nextView = value as CalendarView;
+    setActiveView(nextView);
+    saveCalendarViewPreference(nextView);
+  }, []);
 
   const events = useMemo<EventInput[]>(() => {
     return calendarData.activities.map((activity) =>
@@ -364,11 +376,12 @@ export default function PlayerCalendarView({
       toast.info(
         <div className="space-y-1">
           <p className="font-semibold">
-            {position === "before" ? "Before 06:00" : "After 21:00"}
+            {position === "before" ? "Before 06:00" : "After 22:00"}
           </p>
           {items.slice(0, 6).map((item) => (
             <p key={`${position}-${item.id}`} className="text-sm">
-              {item.title} · {formatRange(item.start, item.end)}
+              {item.title} ·{" "}
+              {formatRange(item.start, item.end, resolvedTimeZone)}
             </p>
           ))}
           {items.length > 6 ? (
@@ -378,7 +391,7 @@ export default function PlayerCalendarView({
         { duration: 7000 },
       );
     },
-    [outOfRangeActivities],
+    [outOfRangeActivities, resolvedTimeZone],
   );
 
   const handleDateClick = useCallback(
@@ -538,22 +551,17 @@ export default function PlayerCalendarView({
       <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
         <div className="space-y-4">
           <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-            <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-slate-800">
-                  Unified Calendar
-                </p>
-                <p className="text-sm text-slate-500">
-                  Views for sessions, events, and so on.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Tabs
-                  value={activeView}
-                  onValueChange={(value) =>
-                    setActiveView(value as keyof typeof VIEW_TO_FULLCALENDAR)
-                  }
-                >
+            <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">
+                    Unified Calendar
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    Views for sessions, events, and so on.
+                  </p>
+                </div>
+                <Tabs value={activeView} onValueChange={handleViewChange}>
                   <TabsList>
                     <TabsTrigger value="agenda">Agenda</TabsTrigger>
                     <TabsTrigger value="day">Day</TabsTrigger>
@@ -561,6 +569,8 @@ export default function PlayerCalendarView({
                     <TabsTrigger value="month">Month</TabsTrigger>
                   </TabsList>
                 </Tabs>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                 {editable ? (
                   <Button
                     size="sm"
@@ -609,13 +619,17 @@ export default function PlayerCalendarView({
                         className="rounded-2xl border bg-slate-50 px-4 py-3"
                       >
                         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                          {formatAgendaDate(activity.start)}
+                          {formatAgendaDate(activity.start, resolvedTimeZone)}
                         </p>
                         <p className="mt-1 font-semibold text-slate-800">
                           {activity.title}
                         </p>
                         <p className="mt-1 text-sm text-slate-600">
-                          {formatRange(activity.start, activity.end)}
+                          {formatRange(
+                            activity.start,
+                            activity.end,
+                            resolvedTimeZone,
+                          )}
                         </p>
                         <div className="mt-3 flex gap-2">
                           <Button
@@ -667,7 +681,7 @@ export default function PlayerCalendarView({
                         onClick={() => showOutOfRangeItems("after")}
                       >
                         <ArrowDown className="mr-1 h-4 w-4" />
-                        {outOfRangeActivities.after.length} after 21:00
+                        {outOfRangeActivities.after.length} after 22:00
                       </Button>
                     ) : null}
                   </div>
@@ -696,6 +710,7 @@ export default function PlayerCalendarView({
                     minute: "2-digit",
                     hour12: false,
                   }}
+                  timeZone={resolvedTimeZone}
                   datesSet={(arg: DatesSetArg) =>
                     setVisibleRange({ start: arg.start, end: arg.end })
                   }
@@ -787,6 +802,7 @@ export default function PlayerCalendarView({
         }}
         onSubmit={handleSlotSubmit}
         onDelete={editTarget ? handleSlotDelete : undefined}
+        timeZone={resolvedTimeZone}
         defaultValues={
           editTarget
             ? {
@@ -814,6 +830,7 @@ export default function PlayerCalendarView({
         }}
         onSubmit={handleAvailabilitySubmit}
         onDelete={selectedAvailability ? handleAvailabilityDelete : undefined}
+        timeZone={resolvedTimeZone}
         defaultValues={
           selectedAvailability
             ? {
@@ -836,6 +853,7 @@ export default function PlayerCalendarView({
         open={Boolean(selectedActivity)}
         onClose={() => setSelectedActivity(null)}
         onToggleTask={editable ? handleTaskToggle : undefined}
+        timeZone={resolvedTimeZone}
       />
     </div>
   );
