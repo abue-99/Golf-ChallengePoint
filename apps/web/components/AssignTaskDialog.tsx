@@ -6,6 +6,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  fromTimeZoneDateTimeToIso,
+  toTimeZoneDateInputValue,
+  toTimeZoneTimeInputValue,
+} from "@/lib/timezone";
 
 type FormValues = {
   title: string;
@@ -41,20 +46,16 @@ type Props = {
   onClose: () => void;
   onSubmit: (slotId: string, data: AssignTaskPayload) => Promise<void>;
   slot: SlotInfo | null;
+  timeZone?: string | null;
 };
 
-function toLocalDate(iso: string) {
-  return iso.slice(0, 10);
-}
-
-function toUTCTime(iso: string) {
-  const d = new Date(iso);
-  const hh = String(d.getUTCHours()).padStart(2, "0");
-  const mm = String(d.getUTCMinutes()).padStart(2, "0");
-  return `${hh}:${mm}`;
-}
-
-export default function AssignTaskDialog({ open, onClose, onSubmit, slot }: Props) {
+export default function AssignTaskDialog({
+  open,
+  onClose,
+  onSubmit,
+  slot,
+  timeZone,
+}: Props) {
   const {
     register,
     handleSubmit,
@@ -80,8 +81,8 @@ export default function AssignTaskDialog({ open, onClose, onSubmit, slot }: Prop
         title: "",
         description: "",
         durationMinutes: 30,
-        scheduledDate: toLocalDate(slot.occurrenceStart),
-        scheduledTime: toUTCTime(slot.occurrenceStart),
+        scheduledDate: toTimeZoneDateInputValue(slot.occurrenceStart, timeZone),
+        scheduledTime: toTimeZoneTimeInputValue(slot.occurrenceStart, timeZone),
         isRecurring: false,
         recurrenceCount: 4,
         recurrenceWeeks: 4,
@@ -93,9 +94,11 @@ export default function AssignTaskDialog({ open, onClose, onSubmit, slot }: Prop
 
   const onFormSubmit = handleSubmit(async (values) => {
     if (!slot) return;
-    const scheduledDate = new Date(
-      `${values.scheduledDate}T${values.scheduledTime}:00Z`
-    ).toISOString();
+    const scheduledDate = fromTimeZoneDateTimeToIso(
+      values.scheduledDate,
+      values.scheduledTime,
+      timeZone,
+    );
 
     await onSubmit(slot.id, {
       title: values.title,

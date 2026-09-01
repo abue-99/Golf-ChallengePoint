@@ -11,6 +11,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  fromTimeZoneDateTimeToIso,
+  fromTimeZoneDateToIso,
+  toTimeZoneDateInputValue,
+  toTimeZoneTimeInputValue,
+} from "@/lib/timezone";
 
 type AvailabilityCategory =
   | "SCHOOL"
@@ -59,31 +65,18 @@ type Props = {
   };
   mode?: "create" | "edit";
   selectedDate?: string;
+  timeZone?: string | null;
 };
 
-function toLocalDate(iso: string) {
-  const date = new Date(iso);
-  const offsetDate = new Date(
-    date.getTime() - date.getTimezoneOffset() * 60000,
+function isAllDayBlock(
+  startIso: string,
+  endIso: string,
+  timeZone?: string | null,
+) {
+  return (
+    toTimeZoneTimeInputValue(startIso, timeZone) === "00:00" &&
+    toTimeZoneTimeInputValue(endIso, timeZone) === "23:59"
   );
-  return offsetDate.toISOString().slice(0, 10);
-}
-
-function toUTCTime(iso: string) {
-  const date = new Date(iso);
-  return `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
-}
-
-function isAllDayBlock(startIso: string, endIso: string) {
-  const start = new Date(startIso);
-  const end = new Date(endIso);
-  const startsAtMidnight =
-    start.getUTCHours() === 0 && start.getUTCMinutes() === 0;
-  const endsAtDayEnd =
-    end.getUTCHours() === 23 &&
-    end.getUTCMinutes() === 59 &&
-    end.getUTCSeconds() === 59;
-  return startsAtMidnight && endsAtDayEnd;
 }
 
 function normalizeCategory(
@@ -108,6 +101,7 @@ export default function AvailabilityBlockDialog({
   defaultValues,
   mode = "create",
   selectedDate,
+  timeZone,
 }: Props) {
   const {
     control,
@@ -138,15 +132,19 @@ export default function AvailabilityBlockDialog({
           defaultValues.type === "CUSTOM"
             ? "OTHER"
             : (defaultValues.type as AvailabilityCategory),
-        allDay: isAllDayBlock(defaultValues.startTime, defaultValues.endTime),
-        startDate: toLocalDate(defaultValues.startTime),
-        endDate: toLocalDate(defaultValues.endTime),
-        startTime: toUTCTime(defaultValues.startTime),
-        endTime: toUTCTime(defaultValues.endTime),
+        allDay: isAllDayBlock(
+          defaultValues.startTime,
+          defaultValues.endTime,
+          timeZone,
+        ),
+        startDate: toTimeZoneDateInputValue(defaultValues.startTime, timeZone),
+        endDate: toTimeZoneDateInputValue(defaultValues.endTime, timeZone),
+        startTime: toTimeZoneTimeInputValue(defaultValues.startTime, timeZone),
+        endTime: toTimeZoneTimeInputValue(defaultValues.endTime, timeZone),
         recurrence:
           (defaultValues.recurrence as FormValues["recurrence"]) ?? "NONE",
         recurrenceEndDate: defaultValues.recurrenceEndDate
-          ? toLocalDate(defaultValues.recurrenceEndDate)
+          ? toTimeZoneDateInputValue(defaultValues.recurrenceEndDate, timeZone)
           : "",
         notes: defaultValues.notes ?? "",
       });
@@ -174,11 +172,11 @@ export default function AvailabilityBlockDialog({
 
   const submit = handleSubmit(async (values) => {
     const startTime = values.allDay
-      ? new Date(`${values.startDate}T00:00:00Z`).toISOString()
-      : new Date(`${values.startDate}T${values.startTime}:00Z`).toISOString();
+      ? fromTimeZoneDateToIso(values.startDate, timeZone)
+      : fromTimeZoneDateTimeToIso(values.startDate, values.startTime, timeZone);
     const endTime = values.allDay
-      ? new Date(`${values.endDate}T23:59:59Z`).toISOString()
-      : new Date(`${values.endDate}T${values.endTime}:00Z`).toISOString();
+      ? fromTimeZoneDateToIso(values.endDate, timeZone, true)
+      : fromTimeZoneDateTimeToIso(values.endDate, values.endTime, timeZone);
 
     await onSubmit({
       title: values.title,
@@ -188,7 +186,7 @@ export default function AvailabilityBlockDialog({
       recurrence: values.recurrence,
       recurrenceEndDate:
         values.recurrence !== "NONE" && values.recurrenceEndDate
-          ? new Date(`${values.recurrenceEndDate}T00:00:00Z`).toISOString()
+          ? fromTimeZoneDateToIso(values.recurrenceEndDate, timeZone)
           : undefined,
       notes: values.notes || undefined,
     });

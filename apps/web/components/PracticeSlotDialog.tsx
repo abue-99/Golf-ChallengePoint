@@ -7,7 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import {
+  fromTimeZoneDateTimeToIso,
+  fromTimeZoneDateToIso,
+  toTimeZoneDateInputValue,
+  toTimeZoneTimeInputValue,
+} from "@/lib/timezone";
 
 const schema = z.object({
   title: z.string().min(1),
@@ -44,19 +49,8 @@ type Props = {
   mode?: "create" | "edit";
   /** Pre-selected date (YYYY-MM-DD) when creating from a calendar click */
   selectedDate?: string;
+  timeZone?: string | null;
 };
-
-function toLocalDate(iso: string) {
-  const d = new Date(iso);
-  return d.toISOString().slice(0, 10);
-}
-
-function toUTCTime(iso: string) {
-  const d = new Date(iso);
-  const hh = String(d.getUTCHours()).padStart(2, "0");
-  const mm = String(d.getUTCMinutes()).padStart(2, "0");
-  return `${hh}:${mm}`;
-}
 
 export default function PracticeSlotDialog({
   open,
@@ -66,6 +60,7 @@ export default function PracticeSlotDialog({
   defaultValues,
   mode = "create",
   selectedDate,
+  timeZone,
 }: Props) {
   const {
     register,
@@ -89,12 +84,12 @@ export default function PracticeSlotDialog({
     if (open && defaultValues) {
       reset({
         title: defaultValues.title,
-        date: toLocalDate(defaultValues.startTime),
-        startTime: toUTCTime(defaultValues.startTime),
-        endTime: toUTCTime(defaultValues.endTime),
+        date: toTimeZoneDateInputValue(defaultValues.startTime, timeZone),
+        startTime: toTimeZoneTimeInputValue(defaultValues.startTime, timeZone),
+        endTime: toTimeZoneTimeInputValue(defaultValues.endTime, timeZone),
         recurrence: (defaultValues.recurrence as FormValues["recurrence"]) ?? "NONE",
         recurrenceEndDate: defaultValues.recurrenceEndDate
-          ? toLocalDate(defaultValues.recurrenceEndDate)
+          ? toTimeZoneDateInputValue(defaultValues.recurrenceEndDate, timeZone)
           : "",
       });
     } else if (open && !defaultValues) {
@@ -112,8 +107,16 @@ export default function PracticeSlotDialog({
   const recurrence = watch("recurrence");
 
   const onFormSubmit = handleSubmit(async (values) => {
-    const startTime = new Date(`${values.date}T${values.startTime}:00Z`).toISOString();
-    const endTime = new Date(`${values.date}T${values.endTime}:00Z`).toISOString();
+    const startTime = fromTimeZoneDateTimeToIso(
+      values.date,
+      values.startTime,
+      timeZone,
+    );
+    const endTime = fromTimeZoneDateTimeToIso(
+      values.date,
+      values.endTime,
+      timeZone,
+    );
     await onSubmit({
       title: values.title,
       startTime,
@@ -121,7 +124,7 @@ export default function PracticeSlotDialog({
       recurrence: values.recurrence,
       recurrenceEndDate:
         values.recurrence !== "NONE" && values.recurrenceEndDate
-          ? new Date(`${values.recurrenceEndDate}T00:00:00Z`).toISOString()
+          ? fromTimeZoneDateToIso(values.recurrenceEndDate, timeZone)
           : undefined,
     });
     onClose();

@@ -1,5 +1,6 @@
 import type { EventInput } from "@fullcalendar/core";
 import type { CalendarActivity } from "@/types/calendar";
+import { formatDateInTimeZone, resolveCalendarTimeZone } from "@/lib/timezone";
 
 export const VIEW_TO_FULLCALENDAR = {
   agenda: "listWeek",
@@ -90,8 +91,8 @@ export function getActivityLabel(activity: CalendarActivity) {
   }
 }
 
-export function formatCalendarDateTime(value: string) {
-  return new Date(value).toLocaleString([], {
+export function formatCalendarDateTime(value: string, timeZone?: string | null) {
+  return formatDateInTimeZone(value, resolveCalendarTimeZone(timeZone), {
     weekday: "short",
     month: "short",
     day: "numeric",

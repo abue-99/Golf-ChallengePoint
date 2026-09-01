@@ -22,6 +22,7 @@ import {
   CalendarDays,
   Flame,
 } from "lucide-react";
+import { formatDateInTimeZone, resolveCalendarTimeZone } from "@/lib/timezone";
 
 const FOCUS_AREA_EMOJI: Record<string, string> = {
   SETUP: "🏌️",
@@ -49,8 +50,8 @@ type GamificationProfile = {
   nextLevelXp: number;
 };
 
-function formatScheduleTime(value: string) {
-  return new Date(value).toLocaleTimeString([], {
+function formatScheduleTime(value: string, timeZone: string) {
+  return formatDateInTimeZone(value, timeZone, {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -337,9 +338,11 @@ function CurrentJourneyCard({ plan }: { plan: PlayerDevelopmentPlan | null }) {
 function CalendarSummaryCard({
   activities,
   nowIso,
+  timeZone,
 }: {
   activities: CalendarActivity[];
   nowIso: string;
+  timeZone: string;
 }) {
   const now = nowIso ? new Date(nowIso).getTime() : 0;
   const today = nowIso ? new Date(nowIso) : new Date(0);
@@ -375,7 +378,7 @@ function CalendarSummaryCard({
               </p>
               {nextUp ? (
                 <p className="text-xs text-slate-500">
-                  {formatScheduleTime(nextUp.start)}
+                   {formatScheduleTime(nextUp.start, timeZone)}
                 </p>
               ) : null}
             </div>
@@ -393,7 +396,7 @@ function CalendarSummaryCard({
             ) : (
               todayItems.map((item) => (
                 <div key={item.id} className="text-sm text-slate-600">
-                  {formatScheduleTime(item.start)} {item.title}
+                  {formatScheduleTime(item.start, timeZone)} {item.title}
                 </div>
               ))
             )}
@@ -446,10 +449,13 @@ function WeeklyCompletionCard({
 export default function PlayerHomeDashboard({
   firstName,
   playerId,
+  timeZone,
 }: {
   firstName: string;
   playerId: string;
+  timeZone?: string | null;
 }) {
+  const resolvedTimeZone = resolveCalendarTimeZone(timeZone);
   const [plans, setPlans] = useState<PlayerDevelopmentPlan[]>([]);
   const [gamification, setGamification] = useState<GamificationProfile>({
     xp: 0,
@@ -551,7 +557,11 @@ export default function PlayerHomeDashboard({
           {loading ? (
             <div className="rounded-2xl bg-slate-100 animate-pulse h-36" />
           ) : (
-            <CalendarSummaryCard activities={calendarActivities} nowIso={calendarNowIso} />
+            <CalendarSummaryCard
+              activities={calendarActivities}
+              nowIso={calendarNowIso}
+              timeZone={resolvedTimeZone}
+            />
           )}
 
           {loading ? (

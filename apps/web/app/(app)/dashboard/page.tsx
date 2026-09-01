@@ -7,6 +7,7 @@ import { CalendarDays, User, Users } from "lucide-react";
 import Link from "next/link";
 import PlayerHomeDashboard from "@/components/PlayerHomeDashboard";
 import type { CalendarActivity as BaseCalendarActivity } from "@/types/calendar";
+import { formatDateInTimeZone, resolveCalendarTimeZone } from "@/lib/timezone";
 
 type Team = {
   id: string;
@@ -22,8 +23,8 @@ type CalendarActivity = Pick<
 
 const DEFAULT_PLAYER_ID = "local-player";
 
-function formatScheduleTime(value: string) {
-  return new Date(value).toLocaleTimeString([], {
+function formatScheduleTime(value: string, timeZone: string) {
+  return formatDateInTimeZone(value, timeZone, {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -40,6 +41,7 @@ export default function Dashboard() {
   const [coachCalendarActivities, setCoachCalendarActivities] = useState<
     CalendarActivity[]
   >([]);
+  const [viewerTimeZone, setViewerTimeZone] = useState<string>("local");
   const [coachNowIso, setCoachNowIso] = useState<string>(() =>
     new Date().toISOString(),
   );
@@ -51,6 +53,7 @@ export default function Dashboard() {
         if (me?.role) setRole(me.role);
         if (me?.id) setPlayerId(String(me.id));
         if (me?.firstName) setPlayerFirstName(me.firstName);
+        setViewerTimeZone(resolveCalendarTimeZone(me?.timezone));
       });
   }, []);
 
@@ -118,7 +121,7 @@ export default function Dashboard() {
                     </p>
                     {coachNextUp ? (
                       <p className="text-xs text-slate-500">
-                        {formatScheduleTime(coachNextUp.start)}
+                        {formatScheduleTime(coachNextUp.start, viewerTimeZone)}
                       </p>
                     ) : null}
                   </div>
@@ -167,6 +170,7 @@ export default function Dashboard() {
           <PlayerHomeDashboard
             firstName={playerFirstName}
             playerId={playerId}
+            timeZone={viewerTimeZone}
           />
         </section>
       )}
