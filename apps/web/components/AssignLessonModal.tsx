@@ -160,7 +160,6 @@ export default function AssignLessonModal({
         playerId: selectedPlayerId || undefined,
         teamId: selectedTeamId || undefined,
       });
-      toast.success("Lesson assigned successfully.");
       onAssigned?.(result);
       handleClose(false);
     } catch {

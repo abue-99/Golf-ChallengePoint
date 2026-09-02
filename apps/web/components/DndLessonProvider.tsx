@@ -129,7 +129,12 @@ export function DndLessonProvider({ children, onAssigned, onQueueDrop }: Props) 
       const lesson = activeLesson;
       setActiveLesson(null);
 
-      if (!lesson || !event.over) return;
+      if (!lesson || !event.over) {
+        if (lesson) {
+          trackCoachTelemetry("LessonAssignmentCancelled", { lessonId: lesson.id });
+        }
+        return;
+      }
 
       const overId = String(event.over.id);
       if (overId.startsWith("player:")) {
