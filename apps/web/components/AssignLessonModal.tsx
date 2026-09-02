@@ -270,7 +270,7 @@ export default function AssignLessonModal({
       </label>
 
       <div className="flex justify-end gap-2 pt-1">
-        <Button variant="outline" size="sm" onClick={handleClose} disabled={submitting}>
+        <Button variant="outline" size="sm" onClick={() => handleClose()} disabled={submitting}>
           Cancel
         </Button>
         <Button size="sm" onClick={handleSubmit} disabled={submitting}>

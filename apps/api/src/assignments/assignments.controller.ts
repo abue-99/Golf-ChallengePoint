@@ -75,7 +75,12 @@ export class AssignmentsController {
       isInTrainingQueue?: boolean;
     },
   ) {
-    return this.service.updateAssignment(user.id, user.role as string, id, body);
+    return this.service.updateAssignment(
+      user.id,
+      user.role as string,
+      id,
+      body,
+    );
   }
 
   @Post(':id/queue')

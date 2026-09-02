@@ -7,6 +7,7 @@ export {
   LessonPriority,
   AssignmentStatus,
   AssignmentTargetType,
+  AssignmentSourceType,
   CalendarTaskStatus,
   AvailabilityBlockType,
   TournamentPriority,

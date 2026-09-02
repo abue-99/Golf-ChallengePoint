@@ -11,7 +11,10 @@ export class CoachWorkspaceController {
 
   @Get('workspace')
   getWorkspace(@CurrentUser() user: AuthenticatedUser) {
-    return this.assignmentsService.getCoachWorkspace(user.id, user.role as string);
+    return this.assignmentsService.getCoachWorkspace(
+      user.id,
+      user.role as string,
+    );
   }
 
   @Post('players/:playerId/assignments')
