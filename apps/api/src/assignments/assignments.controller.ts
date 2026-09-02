@@ -37,6 +37,8 @@ export class AssignmentsController {
     body: {
       lessonId: string;
       targetType?: string;
+      sourceType?: string;
+      sourceReference?: string;
       playerId?: string;
       teamId?: string;
       groupName?: string;

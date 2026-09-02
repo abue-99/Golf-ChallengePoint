@@ -13,7 +13,7 @@ type Props = {
    *  - "training-queue"                 → adds to queue
    */
   id: string;
-  children: ReactNode;
+  children: ReactNode | ((state: { isOver: boolean }) => ReactNode);
   className?: string;
   /** Visual hint shown when a draggable is hovering over this zone */
   activeClassName?: string;
@@ -38,7 +38,7 @@ export default function DroppableZone({
       ref={setNodeRef}
       className={cn(className, isOver && !disabled && (activeClassName ?? "ring-2 ring-primary ring-offset-1"))}
     >
-      {children}
+      {typeof children === "function" ? children({ isOver }) : children}
     </div>
   );
 }

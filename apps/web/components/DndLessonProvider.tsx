@@ -19,11 +19,21 @@ import {
 } from "@dnd-kit/core";
 import { api } from "@/lib/api";
 import type { TrainingLesson } from "@/lib/lesson-types";
+import { trackCoachTelemetry } from "@/lib/telemetry";
 
 type AssignmentTarget =
   | { kind: "player"; playerId: string; playerName: string }
   | { kind: "team"; teamId: string; teamName: string }
   | { kind: "queue" };
+
+type AssignmentResult = {
+  id?: string;
+  teamId?: string;
+  lessonId?: string;
+  playersAffected?: number;
+  assignmentsCreated?: number;
+  assignments?: { id: string; playerId: string | null }[];
+};
 
 type DndLessonContextValue = {
   /** Lesson currently being dragged, if any */
@@ -31,7 +41,10 @@ type DndLessonContextValue = {
   /** Call when a drag starts */
   onDragStart: (lesson: TrainingLesson) => void;
   /** Programmatically trigger an assignment (e.g., from button click) */
-  assignLesson: (lesson: TrainingLesson, target: AssignmentTarget) => Promise<void>;
+  assignLesson: (
+    lesson: TrainingLesson,
+    target: AssignmentTarget,
+  ) => Promise<AssignmentResult | void>;
   /** Last error message, if any */
   lastError: string | null;
   clearError: () => void;
@@ -48,7 +61,7 @@ export function useDndLesson() {
 type Props = {
   children: ReactNode;
   /** Called after a successful player/team assignment so the parent can refresh data */
-  onAssigned?: (target: AssignmentTarget) => void;
+  onAssigned?: (target: AssignmentTarget, result?: AssignmentResult | void) => void;
   /**
    * Called when a lesson is dropped on the "training-queue" target.
    * The parent should open the AssignLessonModal with the lesson pre-selected
@@ -68,7 +81,7 @@ export function DndLessonProvider({ children, onAssigned, onQueueDrop }: Props) 
       activationConstraint: { distance: 5 },
     }),
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 200, tolerance: 5 },
+      activationConstraint: { delay: 500, tolerance: 5 },
     }),
   );
 
@@ -81,15 +94,22 @@ export function DndLessonProvider({ children, onAssigned, onQueueDrop }: Props) 
       }
       try {
         const payload: Record<string, unknown> = { lessonId: lesson.id };
+        let result: AssignmentResult | void = undefined;
         if (target.kind === "player") {
-          payload.playerId = target.playerId;
-          payload.targetType = "PLAYER";
+          result = await api.assignLessonToPlayer(target.playerId, payload);
+          trackCoachTelemetry("LessonAssignedToPlayer", {
+            lessonId: lesson.id,
+            playerId: target.playerId,
+          });
         } else if (target.kind === "team") {
-          payload.teamId = target.teamId;
-          payload.targetType = "TEAM";
+          result = await api.assignLessonToTeam(target.teamId, payload);
+          trackCoachTelemetry("LessonAssignedToTeam", {
+            lessonId: lesson.id,
+            teamId: target.teamId,
+          });
         }
-        await api.createStandaloneAssignment(payload);
-        onAssigned?.(target);
+        onAssigned?.(target, result);
+        return result;
       } catch (err) {
         const msg =
           err instanceof Error ? err.message : "Failed to assign lesson";
@@ -101,6 +121,7 @@ export function DndLessonProvider({ children, onAssigned, onQueueDrop }: Props) 
 
   const onDragStart = useCallback((lesson: TrainingLesson) => {
     setActiveLesson(lesson);
+    trackCoachTelemetry("LessonDragStarted", { lessonId: lesson.id });
   }, []);
 
   const handleDragEnd = useCallback(

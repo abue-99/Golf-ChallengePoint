@@ -100,6 +100,12 @@ enum AssignmentTargetType {
   GROUP
 }
 
+enum AssignmentSourceType {
+  PLAYER
+  TEAM
+  GROUP
+}
+
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -397,6 +403,8 @@ model LessonAssignment {
   lessonId       String
   lesson         TrainingLesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   targetType     AssignmentTargetType @default(PLAYER)
+  sourceType     AssignmentSourceType @default(PLAYER)
+  sourceReference String?
   playerId       String?
   player         User?            @relation("PlayerAssignments", fields: [playerId], references: [id], onDelete: Cascade)
   teamId         String?

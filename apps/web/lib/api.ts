@@ -276,6 +276,22 @@ export const api = {
     }).then(handleResponse),
   moveStandaloneAssignmentToQueue: (id: string) =>
     fetch(`/api/assignments/${id}/queue`, { method: "POST" }).then(handleResponse),
+
+  // Coach workspace assignment endpoints
+  getCoachWorkspace: () =>
+    fetch("/api/coach/workspace", { cache: "no-store" }).then(handleResponse),
+  assignLessonToPlayer: (playerId: string, payload: Record<string, unknown>) =>
+    fetch(`/api/coach/players/${playerId}/assignments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then(handleResponse),
+  assignLessonToTeam: (teamId: string, payload: Record<string, unknown>) =>
+    fetch(`/api/coach/teams/${teamId}/assignments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then(handleResponse),
 };
 
 /**

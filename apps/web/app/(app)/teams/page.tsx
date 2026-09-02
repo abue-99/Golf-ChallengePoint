@@ -25,6 +25,7 @@ import { PlayerCapabilitiesRadarCard } from "@/components/player-capabilities-wi
 import { DevelopmentPlanManager } from "@/components/DevelopmentPlanManager";
 import TeamTrainingWindowsView from "@/components/TeamTrainingWindowsView";
 import AssignLessonModal from "@/components/AssignLessonModal";
+import CoachWorkspaceAssignmentPanel from "@/components/CoachWorkspaceAssignmentPanel";
 import { toast } from "sonner";
 
 // Common icons represented as emoji for team assignment
@@ -162,6 +163,8 @@ export default function TeamsPage() {
   // Badge counts: teamId → count (loaded in background after teams are fetched)
   const [teamWindowCounts, setTeamWindowCounts] = useState<Record<string, number>>({});
   const [teamPlanCounts, setTeamPlanCounts] = useState<Record<string, number>>({});
+  const [playerQueueById, setPlayerQueueById] = useState<Record<string, number>>({});
+  const [teamPendingById, setTeamPendingById] = useState<Record<string, number>>({});
   const [assignTeamId, setAssignTeamId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -203,6 +206,21 @@ export default function TeamsPage() {
         });
       });
     }).catch(() => setLoading(false));
+  }, [role]);
+
+  function refreshWorkspaceCounters() {
+    fetch("/api/coach/workspace", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((workspace) => {
+        setPlayerQueueById(workspace?.queueCounters?.playerQueueById ?? {});
+        setTeamPendingById(workspace?.queueCounters?.teamPendingById ?? {});
+      })
+      .catch(() => {});
+  }
+
+  useEffect(() => {
+    if (role !== "COACH" && role !== "ADMIN") return;
+    refreshWorkspaceCounters();
   }, [role]);
 
   function resolvedCategory() {
@@ -355,6 +373,14 @@ export default function TeamsPage() {
   return (
     <div className="p-6 space-y-3 max-w-6xl">
       <h1 className="text-2xl font-bold">Teams</h1>
+
+      <CoachWorkspaceAssignmentPanel
+        teams={teams}
+        players={myPlayers}
+        playerQueueById={playerQueueById}
+        teamPendingById={teamPendingById}
+        onAssigned={refreshWorkspaceCounters}
+      />
 
       {/* New Team Form */}
       {showForm && (
@@ -791,6 +817,7 @@ export default function TeamsPage() {
         preselectedTeamId={assignTeamId}
         onAssigned={() => {
           toast.success("Lesson assigned to team.");
+          refreshWorkspaceCounters();
           setAssignTeamId(null);
         }}
       />

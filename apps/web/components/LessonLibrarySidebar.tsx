@@ -46,6 +46,7 @@ function DraggableLessonCard({
         isDragging && "opacity-50 ring-2 ring-primary",
       )}
       title={`Drag to assign "${lesson.name}"`}
+      onClick={() => onLessonClick?.(lesson)}
     >
       <div {...attributes} {...listeners} className="flex items-center flex-1 gap-2 min-w-0">
         <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-40 group-hover:opacity-80" />
@@ -60,7 +61,10 @@ function DraggableLessonCard({
         <button
           type="button"
           className="shrink-0 rounded px-1 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/10"
-          onClick={() => onLessonClick(lesson)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onLessonClick(lesson);
+          }}
           title="Quick-assign"
         >
           Assign
@@ -125,12 +129,14 @@ type Props = {
   onClose?: () => void;
   /** Called when user clicks a lesson card (non-DnD quick-assign fallback) */
   onLessonClick?: (lesson: TrainingLesson) => void;
+  inlineFullWidth?: boolean;
 };
 
 export default function LessonLibrarySidebar({
   floating = false,
   onClose,
   onLessonClick,
+  inlineFullWidth = false,
 }: Props) {
   const [lessons, setLessons] = useState<TrainingLesson[] | null>(null);
   const [q, setQ] = useState("");
@@ -168,7 +174,9 @@ export default function LessonLibrarySidebar({
         "flex flex-col bg-background border-border",
         floating
           ? "fixed right-0 top-0 h-full w-72 border-l shadow-xl z-40"
-          : "h-full w-64 border-r",
+          : inlineFullWidth
+            ? "h-full w-full border-0"
+            : "h-full w-64 border-r",
       )}
     >
       {/* Header */}
