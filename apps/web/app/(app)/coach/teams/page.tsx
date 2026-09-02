@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import TeamsPage from "@/app/(app)/teams/page";
 
 export default function CoachTeamsAliasPage() {
-  redirect("/teams");
+  return <TeamsPage />;
 }

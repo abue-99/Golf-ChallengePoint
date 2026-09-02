@@ -134,6 +134,10 @@ function initials(p: Player) {
   return `${p.firstName?.[0] ?? ""}${p.lastName?.[0] ?? ""}`.toUpperCase() || "?";
 }
 
+function queueCountLabel(count: number) {
+  return count > 99 ? "99+" : String(count);
+}
+
 export default function TeamsPage() {
   const [role, setRole] = useState<string | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -552,6 +556,7 @@ export default function TeamsPage() {
                 const isAddingToThisTeam = addMemberTeamId === team.id;
                 const availablePlayers = (isAddingToThisTeam ? teamPlayers : allPlayers)
                   .filter((p) => !teamMemberIds.has(p.id));
+                const teamPendingCount = teamPendingById[team.id] ?? 0;
                 const club = myClubs.find((c) => c.id === team.clubId);
                 const clubDisplayName = club ? (club.shortId || club.name) : null;
                 const clubFullName = club?.name;
@@ -568,6 +573,14 @@ export default function TeamsPage() {
                           {m.user?.profileImage && <AvatarImage src={m.user.profileImage} alt={initials(m.user)} />}
                           <AvatarFallback className="bg-blue-100 text-blue-700">{m.user ? initials(m.user) : "?"}</AvatarFallback>
                         </Avatar>
+                        {(playerQueueById[m.userId] ?? 0) > 0 && (
+                          <span
+                            className="absolute -bottom-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold leading-none text-white"
+                            title={`Queued lessons: ${playerQueueById[m.userId] ?? 0}`}
+                          >
+                            {queueCountLabel(playerQueueById[m.userId] ?? 0)}
+                          </span>
+                        )}
                         <button
                           onClick={(e) => { e.stopPropagation(); handleRemoveMember(team.id, m.userId); }}
                           className="absolute -top-1 -right-1 hidden group-hover:flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white"
@@ -706,6 +719,11 @@ export default function TeamsPage() {
                         <div className="flex items-center gap-1.5">
                           {team.icon && <TeamIcon icon={team.icon} size={14} />}
                           <span className="whitespace-nowrap">{team.shortName}</span>
+                          {teamPendingCount > 0 && (
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 whitespace-nowrap">
+                              Queued {queueCountLabel(teamPendingCount)}
+                            </span>
+                          )}
                           {(team.category || team.description) && (
                             <span className="sm:hidden flex items-center gap-1 min-w-0">
                               {team.category && (
@@ -798,6 +816,7 @@ export default function TeamsPage() {
       <PlayersSection
         players={myPlayers}
         myClubs={myClubs}
+        playerQueueById={playerQueueById}
         onPlayerInvited={(newPlayer) =>
           setMyPlayers((prev) => {
             const exists = prev.some((p) => p.id === newPlayer.id);
@@ -1518,11 +1537,13 @@ function AddPlayerDialog({
 function PlayersSection({
   players,
   myClubs,
+  playerQueueById,
   onPlayerInvited,
   onPlayerRemoved,
 }: {
   players: Player[];
   myClubs: ClubOption[];
+  playerQueueById: Record<string, number>;
   onPlayerInvited: (player: Player) => void;
   onPlayerRemoved: (playerId: string) => void;
 }) {
@@ -1579,6 +1600,7 @@ function PlayersSection({
             const name = `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.email || "—";
             const playerInitials = `${p.firstName?.[0] ?? ""}${p.lastName?.[0] ?? ""}`.toUpperCase() || "?";
             const isInactive = !p.lastLogin;
+            const queueCount = playerQueueById[p.id] ?? 0;
 
             return (
               <div
@@ -1610,10 +1632,21 @@ function PlayersSection({
                       title="Inactive"
                     />
                   )}
+                  {queueCount > 0 && (
+                    <span
+                      className="absolute -bottom-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white"
+                      title={`Queued lessons: ${queueCount}`}
+                    >
+                      {queueCountLabel(queueCount)}
+                    </span>
+                  )}
                 </div>
                 <span className="text-sm font-medium text-center text-gray-800 leading-snug">
                   {name}
                 </span>
+                {queueCount > 0 && (
+                  <span className="text-[11px] font-medium text-amber-700">Queued {queueCountLabel(queueCount)}</span>
+                )}
               </div>
             );
           })}
