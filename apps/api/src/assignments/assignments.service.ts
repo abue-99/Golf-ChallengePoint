@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   AssignmentStatus,
+  AssignmentSourceType,
   AssignmentTargetType,
   LessonPriority,
   OwnerType,
@@ -16,6 +17,8 @@ import { PrismaService } from '../prisma/prisma.service';
 type CreateAssignmentInput = {
   lessonId: string;
   targetType?: string;
+  sourceType?: string;
+  sourceReference?: string;
   playerId?: string;
   teamId?: string;
   groupName?: string;
@@ -50,7 +53,9 @@ export class AssignmentsService {
 
   private requireCoachOrAdmin(role: string) {
     if (role !== 'COACH' && role !== 'ADMIN') {
-      throw new ForbiddenException('Only coaches and admins can manage assignments');
+      throw new ForbiddenException(
+        'Only coaches and admins can manage assignments',
+      );
     }
   }
 
@@ -94,7 +99,10 @@ export class AssignmentsService {
       return true;
     }
 
-    if (assignment.targetType === AssignmentTargetType.TEAM && assignment.teamId) {
+    if (
+      assignment.targetType === AssignmentTargetType.TEAM &&
+      assignment.teamId
+    ) {
       const membership = await this.prisma.teamMember.findFirst({
         where: { teamId: assignment.teamId, userId },
         select: { id: true },
@@ -140,7 +148,11 @@ export class AssignmentsService {
     } satisfies Prisma.LessonAssignmentInclude;
   }
 
-  async createAssignment(coachId: string, role: string, data: CreateAssignmentInput) {
+  async createAssignment(
+    coachId: string,
+    role: string,
+    data: CreateAssignmentInput,
+  ) {
     this.requireCoachOrAdmin(role);
 
     const lesson = await this.prisma.trainingLesson.findUnique({
@@ -154,7 +166,8 @@ export class AssignmentsService {
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
 
-    const targetType = (data.targetType as AssignmentTargetType | undefined) ??
+    const targetType =
+      (data.targetType as AssignmentTargetType | undefined) ??
       (data.playerId
         ? AssignmentTargetType.PLAYER
         : data.teamId
@@ -164,24 +177,40 @@ export class AssignmentsService {
     let playerId: string | null = null;
     let teamId: string | null = null;
     let groupName: string | null = null;
+    let sourceType: AssignmentSourceType =
+      (data.sourceType as AssignmentSourceType | undefined) ??
+      AssignmentSourceType.PLAYER;
+    let sourceReference: string | null = data.sourceReference ?? null;
 
     if (targetType === AssignmentTargetType.PLAYER) {
       if (!data.playerId) {
-        throw new BadRequestException('playerId is required for player assignments');
+        throw new BadRequestException(
+          'playerId is required for player assignments',
+        );
       }
       playerId = data.playerId;
       if (role !== 'ADMIN') await this.assertCoachPlayerLink(coachId, playerId);
+      sourceType = sourceType ?? AssignmentSourceType.PLAYER;
+      sourceReference = sourceReference ?? playerId;
     } else if (targetType === AssignmentTargetType.TEAM) {
       if (!data.teamId) {
-        throw new BadRequestException('teamId is required for team assignments');
+        throw new BadRequestException(
+          'teamId is required for team assignments',
+        );
       }
       teamId = data.teamId;
       if (role !== 'ADMIN') await this.assertCoachOwnsTeam(coachId, teamId);
+      sourceType = AssignmentSourceType.TEAM;
+      sourceReference = teamId;
     } else {
       groupName = data.groupName?.trim() || null;
       if (!groupName) {
-        throw new BadRequestException('groupName is required for group assignments');
+        throw new BadRequestException(
+          'groupName is required for group assignments',
+        );
       }
+      sourceType = AssignmentSourceType.GROUP;
+      sourceReference = groupName;
     }
 
     if (data.blockId) {
@@ -209,15 +238,70 @@ export class AssignmentsService {
         teamId &&
         teamEvent.teamId !== teamId
       ) {
-        throw new BadRequestException('Assignment team must match team event team');
+        throw new BadRequestException(
+          'Assignment team must match team event team',
+        );
       }
     }
 
     return this.prisma.$transaction(async (tx) => {
+      if (targetType === AssignmentTargetType.TEAM && teamId) {
+        const members = await tx.teamMember.findMany({
+          where: { teamId, user: { role: 'PLAYER' } },
+          select: { userId: true },
+        });
+        const uniquePlayerIds = [...new Set(members.map((m) => m.userId))];
+        if (uniquePlayerIds.length === 0) {
+          return {
+            teamId,
+            lessonId: data.lessonId,
+            playersAffected: 0,
+            assignmentsCreated: 0,
+            assignments: [],
+          };
+        }
+
+        const created = await Promise.all(
+          uniquePlayerIds.map((memberPlayerId) =>
+            tx.lessonAssignment.create({
+              data: {
+                lessonId: data.lessonId,
+                targetType: AssignmentTargetType.PLAYER,
+                sourceType: AssignmentSourceType.TEAM,
+                sourceReference: teamId,
+                playerId: memberPlayerId,
+                teamId,
+                groupName: null,
+                blockId: data.blockId ?? null,
+                teamEventId: data.teamEventId ?? null,
+                coachId,
+                dueDate: data.dueDate ? new Date(data.dueDate) : null,
+                priority: (data.priority ??
+                  LessonPriority.MEDIUM) as LessonPriority,
+                sortOrder: data.sortOrder ?? 0,
+                isInTrainingQueue: true,
+                status: AssignmentStatus.OPEN,
+              },
+              include: this.assignmentInclude(),
+            }),
+          ),
+        );
+
+        return {
+          teamId,
+          lessonId: data.lessonId,
+          playersAffected: uniquePlayerIds.length,
+          assignmentsCreated: created.length,
+          assignments: created,
+        };
+      }
+
       const assignment = await tx.lessonAssignment.create({
         data: {
           lessonId: data.lessonId,
           targetType,
+          sourceType,
+          sourceReference,
           playerId,
           teamId,
           groupName,
@@ -228,7 +312,9 @@ export class AssignmentsService {
           priority: (data.priority ?? LessonPriority.MEDIUM) as LessonPriority,
           sortOrder: data.sortOrder ?? 0,
           isInTrainingQueue: Boolean(data.isInTrainingQueue),
-          status: AssignmentStatus.NEW,
+          status: data.isInTrainingQueue
+            ? AssignmentStatus.OPEN
+            : AssignmentStatus.NEW,
         },
       });
 
@@ -239,15 +325,21 @@ export class AssignmentsService {
         });
         if (!slot) throw new NotFoundException('Practice slot not found');
         if (slot.ownerType === OwnerType.PLAYER && slot.playerId) {
-          if (role !== 'ADMIN') await this.assertCoachPlayerLink(coachId, slot.playerId);
+          if (role !== 'ADMIN')
+            await this.assertCoachPlayerLink(coachId, slot.playerId);
           if (playerId && slot.playerId !== playerId) {
-            throw new BadRequestException('Schedule slot player must match assignment player');
+            throw new BadRequestException(
+              'Schedule slot player must match assignment player',
+            );
           }
         }
         if (slot.ownerType === OwnerType.TEAM && slot.teamId) {
-          if (role !== 'ADMIN') await this.assertCoachOwnsTeam(coachId, slot.teamId);
+          if (role !== 'ADMIN')
+            await this.assertCoachOwnsTeam(coachId, slot.teamId);
           if (teamId && slot.teamId !== teamId) {
-            throw new BadRequestException('Schedule slot team must match assignment team');
+            throw new BadRequestException(
+              'Schedule slot team must match assignment team',
+            );
           }
         }
 
@@ -265,7 +357,8 @@ export class AssignmentsService {
               data.schedule.description?.trim() ||
               lesson.trainingObjective ||
               lesson.name,
-            durationMinutes: data.schedule.durationMinutes ?? lesson.durationMinutes,
+            durationMinutes:
+              data.schedule.durationMinutes ?? lesson.durationMinutes,
             scheduledDate,
             lessonId: lesson.id,
             assignmentId: assignment.id,
@@ -284,6 +377,146 @@ export class AssignmentsService {
         include: this.assignmentInclude(),
       });
     });
+  }
+
+  async assignLessonToPlayer(
+    coachId: string,
+    role: string,
+    playerId: string,
+    data: { lessonId: string; dueDate?: string; priority?: string },
+  ) {
+    return this.createAssignment(coachId, role, {
+      lessonId: data.lessonId,
+      targetType: AssignmentTargetType.PLAYER,
+      playerId,
+      dueDate: data.dueDate,
+      priority: data.priority,
+      isInTrainingQueue: true,
+      sourceType: AssignmentSourceType.PLAYER,
+      sourceReference: playerId,
+    });
+  }
+
+  async assignLessonToTeam(
+    coachId: string,
+    role: string,
+    teamId: string,
+    data: { lessonId: string; dueDate?: string; priority?: string },
+  ) {
+    return this.createAssignment(coachId, role, {
+      lessonId: data.lessonId,
+      targetType: AssignmentTargetType.TEAM,
+      teamId,
+      dueDate: data.dueDate,
+      priority: data.priority,
+      isInTrainingQueue: true,
+      sourceType: AssignmentSourceType.TEAM,
+      sourceReference: teamId,
+    });
+  }
+
+  async getCoachWorkspace(coachId: string, role: string) {
+    this.requireCoachOrAdmin(role);
+
+    const [teams, links] = await Promise.all([
+      this.prisma.team.findMany({
+        where: role === 'ADMIN' ? {} : { coachId },
+        include: {
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  profileImage: true,
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.coachPlayerLink.findMany({
+        where: role === 'ADMIN' ? {} : { coachId },
+        include: {
+          player: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              profileImage: true,
+              email: true,
+              lastLogin: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    const players = links.flatMap((link) => (link.player ? [link.player] : []));
+    const playerIds = players.map((player) => player.id);
+    const teamIds = teams.map((team) => team.id);
+
+    const activeStatuses: AssignmentStatus[] = [
+      AssignmentStatus.NEW,
+      AssignmentStatus.OPEN,
+      AssignmentStatus.IN_PROGRESS,
+    ];
+
+    const [playerQueueCounts, teamQueueCounts] = await Promise.all([
+      playerIds.length === 0
+        ? []
+        : this.prisma.lessonAssignment.groupBy({
+            by: ['playerId'],
+            where: {
+              playerId: { in: playerIds },
+              isInTrainingQueue: true,
+              status: { in: activeStatuses },
+            },
+            _count: { _all: true },
+          }),
+      teamIds.length === 0
+        ? []
+        : this.prisma.lessonAssignment.groupBy({
+            by: ['sourceReference'],
+            where: {
+              sourceType: AssignmentSourceType.TEAM,
+              sourceReference: { in: teamIds },
+              status: { in: activeStatuses },
+            },
+            _count: { _all: true },
+          }),
+    ]);
+
+    const playerQueueById = Object.fromEntries(
+      playerQueueCounts
+        .filter((row) => Boolean(row.playerId))
+        .map((row) => [row.playerId as string, row._count._all]),
+    );
+    const teamPendingById = Object.fromEntries(
+      teamQueueCounts
+        .filter((row) => Boolean(row.sourceReference))
+        .map((row) => [row.sourceReference as string, row._count._all]),
+    );
+
+    return {
+      teams,
+      players,
+      queueCounters: {
+        playerQueueById,
+        teamPendingById,
+      },
+      assignmentSummary: {
+        totalPlayers: players.length,
+        totalTeams: teams.length,
+        totalPendingAssignments: Object.values(teamPendingById).reduce(
+          (sum, value) => sum + value,
+          0,
+        ),
+      },
+    };
   }
 
   async listMyAssignments(
@@ -306,7 +539,9 @@ export class AssignmentsService {
                 ]
               : []),
           ],
-          ...(filters.status ? { status: filters.status as AssignmentStatus } : {}),
+          ...(filters.status
+            ? { status: filters.status as AssignmentStatus }
+            : {}),
           ...(filters.queueOnly === 'true' ? { isInTrainingQueue: true } : {}),
         },
         include: this.assignmentInclude(),
@@ -318,7 +553,9 @@ export class AssignmentsService {
     return this.prisma.lessonAssignment.findMany({
       where: {
         ...(role === 'ADMIN' ? {} : { coachId: userId }),
-        ...(filters.status ? { status: filters.status as AssignmentStatus } : {}),
+        ...(filters.status
+          ? { status: filters.status as AssignmentStatus }
+          : {}),
         ...(filters.queueOnly === 'true' ? { isInTrainingQueue: true } : {}),
       },
       include: this.assignmentInclude(),
@@ -357,7 +594,9 @@ export class AssignmentsService {
         Object.prototype.hasOwnProperty.call(data, 'priority') ||
         Object.prototype.hasOwnProperty.call(data, 'sortOrder');
       if (triesToEditRestrictedFields) {
-        throw new ForbiddenException('Players can only update progress and queue state');
+        throw new ForbiddenException(
+          'Players can only update progress and queue state',
+        );
       }
     }
 
@@ -367,7 +606,9 @@ export class AssignmentsService {
         ...(data.status !== undefined
           ? { status: data.status as AssignmentStatus }
           : {}),
-        ...(data.playerNotes !== undefined ? { playerNotes: data.playerNotes } : {}),
+        ...(data.playerNotes !== undefined
+          ? { playerNotes: data.playerNotes }
+          : {}),
         ...(data.selfAssessment !== undefined
           ? { selfAssessment: data.selfAssessment }
           : {}),

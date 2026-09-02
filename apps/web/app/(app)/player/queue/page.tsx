@@ -33,7 +33,10 @@ function QueueItem({
   onStatusChange: (id: string, status: string) => Promise<void>;
 }) {
   const [busy, setBusy] = useState(false);
-  const isTeam = assignment.targetType === "TEAM";
+  const isTeam =
+    assignment.sourceType === "TEAM" ||
+    assignment.targetType === "TEAM" ||
+    Boolean(assignment.teamId);
 
   async function act(status: string) {
     setBusy(true);

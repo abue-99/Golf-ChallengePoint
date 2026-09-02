@@ -10,11 +10,14 @@ export type StandaloneAssignmentStatus =
   | "ARCHIVED";
 
 export type StandaloneAssignmentTargetType = "PLAYER" | "TEAM" | "GROUP";
+export type StandaloneAssignmentSourceType = "PLAYER" | "TEAM" | "GROUP";
 
 export type StandaloneAssignment = {
   id: string;
   lessonId: string;
   targetType: StandaloneAssignmentTargetType;
+  sourceType: StandaloneAssignmentSourceType;
+  sourceReference: string | null;
   playerId: string | null;
   teamId: string | null;
   groupName: string | null;

@@ -37,6 +37,8 @@ export class AssignmentsController {
     body: {
       lessonId: string;
       targetType?: string;
+      sourceType?: string;
+      sourceReference?: string;
       playerId?: string;
       teamId?: string;
       groupName?: string;
@@ -73,7 +75,12 @@ export class AssignmentsController {
       isInTrainingQueue?: boolean;
     },
   ) {
-    return this.service.updateAssignment(user.id, user.role as string, id, body);
+    return this.service.updateAssignment(
+      user.id,
+      user.role as string,
+      id,
+      body,
+    );
   }
 
   @Post(':id/queue')
