@@ -43,12 +43,17 @@ function DraggableLessonCard({
       style={{ transform: CSS.Translate.toString(transform) }}
       className={cn(
         "group flex items-center gap-2 rounded-md border bg-card px-2 py-1.5 text-sm cursor-grab active:cursor-grabbing select-none transition-transform transition-shadow",
-        isDragging && "z-50 scale-[1.02] shadow-xl ring-2 ring-primary opacity-75",
+        isDragging &&
+          "z-50 scale-[1.02] shadow-xl ring-2 ring-primary opacity-75",
       )}
       title={`Drag or tap to assign "${lesson.name}"`}
       onClick={() => onLessonClick?.(lesson)}
     >
-      <div {...attributes} {...listeners} className="flex items-center flex-1 gap-2 min-w-0">
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex items-center flex-1 gap-2 min-w-0"
+      >
         <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-40 group-hover:opacity-80" />
         <span className="truncate flex-1">{lesson.name}</span>
       </div>
@@ -100,7 +105,11 @@ function FocusSection({
       {open && (
         <div className="ml-1 mt-0.5 space-y-1 pb-1">
           {lessons.map((l) => (
-            <DraggableLessonCard key={l.id} lesson={l} onLessonClick={onLessonClick} />
+            <DraggableLessonCard
+              key={l.id}
+              lesson={l}
+              onLessonClick={onLessonClick}
+            />
           ))}
         </div>
       )}
@@ -141,7 +150,9 @@ export default function LessonLibrarySidebar({
       (l) =>
         !q ||
         l.name.toLowerCase().includes(lower) ||
-        getFocusAreaPath(l.focusArea, l.subCapability).toLowerCase().includes(lower),
+        getFocusAreaPath(l.focusArea, l.subCapability)
+          .toLowerCase()
+          .includes(lower),
     );
   }, [lessons, q]);
 
@@ -171,7 +182,12 @@ export default function LessonLibrarySidebar({
         <BookOpen className="h-4 w-4 text-primary shrink-0" />
         <span className="font-semibold text-sm flex-1">Lesson Library</span>
         {onClose && (
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={onClose}
+          >
             <X className="h-4 w-4" />
           </Button>
         )}
@@ -192,7 +208,8 @@ export default function LessonLibrarySidebar({
 
       {/* Drag hint */}
       <p className="px-3 py-1.5 text-[11px] text-muted-foreground border-b">
-        Drag a lesson onto a player or team. Short tap opens quick assign on touch devices.
+        Drag a lesson onto a player or team. Short tap opens quick assign on
+        touch devices.
       </p>
 
       {/* Lesson list */}
@@ -200,7 +217,9 @@ export default function LessonLibrarySidebar({
         {lessons === null ? (
           <p className="text-xs text-muted-foreground px-1">Loading…</p>
         ) : filtered.length === 0 ? (
-          <p className="text-xs text-muted-foreground px-1">No lessons found.</p>
+          <p className="text-xs text-muted-foreground px-1">
+            No lessons found.
+          </p>
         ) : (
           FOCUS_AREAS.filter((fa) => byArea.has(fa.value)).map((fa, idx) => (
             <FocusSection

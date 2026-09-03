@@ -148,7 +148,7 @@ export class UsersService {
       });
       this.logger.log(`Invite email sent to ${to}`);
     } catch (err) {
-      this.logger.error(`Failed to send invite email to ${to}: ${err}`);
+      this.logger.error(`Failed to send invite email to ${to}: ${String(err)}`);
       throw err;
     }
   }
@@ -314,7 +314,7 @@ export class UsersService {
           coaches: playerCoachLinks.map((pcl) => pcl.coach).filter(Boolean),
         };
       })
-      .filter(Boolean);
+      .filter((player): player is NonNullable<typeof player> => player !== null);
 
     const playerIds = players.map((player) => player.id);
     const activeStatuses: AssignmentStatus[] = [

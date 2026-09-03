@@ -1,8 +1,8 @@
 import { AssignmentStatus } from '@challengepoint/db';
 import {
- Injectable,
- NotFoundException,
- ForbiddenException,
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
