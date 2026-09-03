@@ -1,11 +1,20 @@
 export type CoachTelemetryEvent =
   | "LessonDragStarted"
+  | "JourneyDragStarted"
   | "LessonAssignedToPlayer"
   | "LessonAssignedToTeam"
+  | "JourneyAssignedToPlayer"
+  | "JourneyAssignedToTeam"
   | "LessonAssignmentCancelled"
   | "LessonAssignmentUndone"
   | "QuickAssignOpened"
-  | "QuickAssignCompleted";
+  | "QuickAssignCompleted"
+  | "LessonDragStart"
+  | "PlayerDropTargetEnter"
+  | "PlayerDropTriggered"
+  | "PlayerAssignmentRequest"
+  | "PlayerAssignmentSuccess"
+  | "PlayerAssignmentFailed";
 
 export function trackCoachTelemetry(
   event: CoachTelemetryEvent,

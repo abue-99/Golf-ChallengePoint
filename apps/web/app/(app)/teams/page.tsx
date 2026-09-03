@@ -40,6 +40,9 @@ import TeamTrainingWindowsView from "@/components/TeamTrainingWindowsView";
 import AssignLessonModal from "@/components/AssignLessonModal";
 import LessonLibrarySidebar from "@/components/LessonLibrarySidebar";
 import type { TrainingLesson } from "@/lib/lesson-types";
+import { api } from "@/lib/api";
+import JourneyTemplateLibrarySidebar from "@/components/JourneyTemplateLibrarySidebar";
+import type { JourneyTemplate } from "@/types/journey-template";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -162,6 +165,7 @@ type AssignmentTarget =
 type AssignmentResult = {
   id?: string;
   lesson?: { name?: string | null };
+  journeyTemplate?: { name?: string | null };
   assignmentsCreated?: number;
   assignments?: {
     id: string;
@@ -206,6 +210,10 @@ function assignmentLessonName(result?: AssignmentResult) {
   return (
     result?.lesson?.name ?? result?.assignments?.[0]?.lesson?.name ?? "Lesson"
   );
+}
+
+function assignmentJourneyName(result?: AssignmentResult) {
+  return result?.journeyTemplate?.name ?? "Journey";
 }
 
 function playerDisplayName(player: Player) {
@@ -642,6 +650,25 @@ export default function TeamsPage() {
     });
   }
 
+  function handleJourneyAssignmentSuccess(
+    target: AssignmentTarget,
+    result?: AssignmentResult,
+  ) {
+    applyOptimisticAssignment(target, result);
+    const journeyName = assignmentJourneyName(result);
+
+    if (target.kind === "player") {
+      toast.success(`${journeyName} assigned to ${target.playerName}`);
+      return;
+    }
+
+    const assignmentsCreated =
+      result?.assignmentsCreated ?? result?.assignments?.length ?? 0;
+    toast.success(`${journeyName} assigned to ${target.teamName}`, {
+      description: `${assignmentsCreated} journeys queued`,
+    });
+  }
+
   function validateForm(): boolean {
     if (!form.shortName.trim()) {
       setFormError("Short name is required.");
@@ -819,8 +846,15 @@ export default function TeamsPage() {
 
   return (
     <DndLessonProvider
-      onAssigned={(target, result) => {
+      onAssigned={(target, result, sourceType) => {
         if (target.kind === "queue") return;
+        if (sourceType === "journey") {
+          handleJourneyAssignmentSuccess(
+            target,
+            result as AssignmentResult | undefined,
+          );
+          return;
+        }
         handleAssignmentSuccess(target, result as AssignmentResult | undefined);
       }}
     >
@@ -1337,14 +1371,77 @@ export default function TeamsPage() {
             </div>
           </div>
 
-          <div className="xl:sticky xl:top-6">
-            <div className="overflow-hidden rounded-xl border bg-background xl:max-h-[calc(100vh-3rem)]">
+          <div className="space-y-3 xl:sticky xl:top-6">
+            <div className="overflow-hidden rounded-xl border bg-background max-h-[calc(50vh-2rem)] xl:max-h-[calc(58vh-2rem)]">
               <LessonLibrarySidebar
                 inlineFullWidth
                 onLessonClick={(lesson) => {
                   setAssignLesson(lesson);
                   setAssignPlayerId(null);
                   setAssignTeamId(null);
+                }}
+              />
+            </div>
+            <div className="overflow-hidden rounded-xl border bg-background max-h-[calc(42vh-2rem)] xl:max-h-[calc(40vh-2rem)]">
+              <JourneyTemplateLibrarySidebar
+                onJourneyClick={async (journey: JourneyTemplate) => {
+                  if (myPlayers.length === 0 && teams.length === 0) {
+                    toast.error("No player or team available for assignment.");
+                    return;
+                  }
+                  try {
+                    const target = window.prompt(
+                      "Assign journey to player or team (p:<playerId> or t:<teamId>):",
+                    );
+                    if (!target) return;
+                    if (target.startsWith("p:")) {
+                      const playerId = target.slice(2).trim();
+                      const player = myPlayers.find((entry) => entry.id === playerId);
+                      if (!player) {
+                        toast.error("Unknown player id.");
+                        return;
+                      }
+                      const result = await api.assignJourneyToPlayer(
+                        journey.id,
+                        playerId,
+                      );
+                      handleJourneyAssignmentSuccess(
+                        {
+                          kind: "player",
+                          playerId,
+                          playerName: playerDisplayName(player),
+                        },
+                        result as AssignmentResult,
+                      );
+                    } else if (target.startsWith("t:")) {
+                      const teamId = target.slice(2).trim();
+                      const team = teams.find((entry) => entry.id === teamId);
+                      if (!team) {
+                        toast.error("Unknown team id.");
+                        return;
+                      }
+                      const result = await api.assignJourneyToTeam(
+                        journey.id,
+                        teamId,
+                      );
+                      handleJourneyAssignmentSuccess(
+                        {
+                          kind: "team",
+                          teamId,
+                          teamName: team.shortName,
+                        },
+                        result as AssignmentResult,
+                      );
+                    } else {
+                      toast.error("Use p:<playerId> or t:<teamId>.");
+                    }
+                  } catch (error) {
+                    toast.error(
+                      error instanceof Error
+                        ? error.message
+                        : "Journey assignment failed.",
+                    );
+                  }
                 }}
               />
             </div>

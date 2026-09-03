@@ -289,6 +289,51 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     }).then(handleResponse),
+
+  // Journey Templates
+  listJourneyTemplates: () =>
+    fetch("/api/journeys", { cache: "no-store" }).then(handleResponse),
+  getJourneyTemplate: (id: string) =>
+    fetch(`/api/journeys/${id}`, { cache: "no-store" }).then(handleResponse),
+  createJourneyTemplate: (payload: Record<string, unknown>) =>
+    fetch("/api/journeys", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then(handleResponse),
+  updateJourneyTemplate: (id: string, payload: Record<string, unknown>) =>
+    fetch(`/api/journeys/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then(handleResponse),
+  deleteJourneyTemplate: (id: string) =>
+    fetch(`/api/journeys/${id}`, { method: "DELETE" }).then(handleResponse),
+  duplicateJourneyTemplate: (id: string) =>
+    fetch(`/api/journeys/${id}/duplicate`, { method: "POST" }).then(
+      handleResponse,
+    ),
+  assignJourneyToPlayer: (journeyId: string, playerId: string) =>
+    fetch(`/api/coach/journeys/${journeyId}/assign/player/${playerId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    }).then(handleResponse),
+  assignJourneyToTeam: (journeyId: string, teamId: string) =>
+    fetch(`/api/coach/journeys/${journeyId}/assign/team/${teamId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    }).then(handleResponse),
+  updateJourneyAssignment: (
+    assignmentId: string,
+    payload: { status?: string; isInTrainingQueue?: boolean },
+  ) =>
+    fetch(`/api/journeys/assignments/${assignmentId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then(handleResponse),
 };
 
 /**

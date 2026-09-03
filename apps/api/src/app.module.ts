@@ -10,6 +10,7 @@ import { LessonsModule } from './lessons/lessons.module';
 import { DevelopmentPlansModule } from './development-plans/development-plans.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { AssignmentsModule } from './assignments/assignments.module';
+import { JourneysModule } from './journeys/journeys.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AssignmentsModule } from './assignments/assignments.module';
     DevelopmentPlansModule,
     GamificationModule,
     AssignmentsModule,
+    JourneysModule,
   ],
   controllers: [AppController],
 })

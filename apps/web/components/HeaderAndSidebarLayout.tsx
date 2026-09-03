@@ -33,7 +33,8 @@ export default function HeaderAndSidebarLayout({
        { href: '/teams', icon: Users, label: 'Teams' },
        { href: '/calendar', icon: CalendarDays, label: 'Calendar' },
        { href: '/coach/lessons', icon: BookOpen, label: 'Lessons' },
-       { href: '/settings', icon: Settings, label: 'Settings' },
+      { href: '/coach/journeys', icon: RouteIcon, label: 'Journey Templates' },
+      { href: '/settings', icon: Settings, label: 'Settings' },
      ]
    : role === 'PLAYER'
    ? [

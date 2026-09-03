@@ -28,11 +28,16 @@ const STATUS_LABELS: Record<string, string> = {
 function QueueItem({
   assignment,
   onStatusChange,
+  onJourneyAccept,
+  onJourneyKeepInQueue,
 }: {
   assignment: StandaloneAssignment;
   onStatusChange: (id: string, status: string) => Promise<void>;
+  onJourneyAccept: (id: string) => Promise<void>;
+  onJourneyKeepInQueue: (id: string) => Promise<void>;
 }) {
   const [busy, setBusy] = useState(false);
+  const isJourney = assignment.itemType === "journey";
   const isTeam =
     assignment.sourceType === "TEAM" ||
     assignment.targetType === "TEAM" ||
@@ -53,11 +58,7 @@ function QueueItem({
       <button
         type="button"
         className="mt-0.5 shrink-0 text-muted-foreground hover:text-primary"
-        onClick={() =>
-          act(
-            assignment.status === "COMPLETED" ? "OPEN" : "COMPLETED",
-          )
-        }
+        onClick={() => act(assignment.status === "COMPLETED" ? "OPEN" : "COMPLETED")}
         title="Toggle complete"
         disabled={busy}
       >
@@ -76,7 +77,9 @@ function QueueItem({
               assignment.status === "COMPLETED" && "line-through text-muted-foreground",
             )}
           >
-            {assignment.lesson?.name ?? "—"}
+            {isJourney
+              ? assignment.journeyTemplate?.name ?? "Journey"
+              : assignment.lesson?.name ?? "—"}
           </p>
           <Badge
             variant="outline"
@@ -89,19 +92,39 @@ function QueueItem({
           >
             {isTeam ? "TEAM" : "PERSONAL"}
           </Badge>
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-[10px] px-1.5 py-0 shrink-0",
+              isJourney
+                ? "border-violet-500 text-violet-700 dark:text-violet-400"
+                : "border-blue-500 text-blue-700 dark:text-blue-400",
+            )}
+          >
+            {isJourney
+              ? "🛣️ NEW Journey"
+              : assignment.isNew
+                ? "NEW Lesson"
+                : "Lesson"}
+          </Badge>
         </div>
 
         <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-          {assignment.lesson?.focusArea && (
+          {!isJourney && assignment.lesson?.focusArea && (
             <span className="text-xs text-muted-foreground">
               {FOCUS_AREA_EMOJI[assignment.lesson.focusArea] ?? ""}{" "}
               {assignment.lesson.focusArea.replace(/_/g, " ")}
             </span>
           )}
-          {assignment.lesson?.durationMinutes && (
+          {!isJourney && assignment.lesson?.durationMinutes && (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
               {assignment.lesson.durationMinutes}m
+            </span>
+          )}
+          {isJourney && assignment.journeyTemplate?.category && (
+            <span className="text-xs text-muted-foreground">
+              {assignment.journeyTemplate.category}
             </span>
           )}
           <span className="text-xs text-muted-foreground">
@@ -111,12 +134,51 @@ function QueueItem({
       </div>
 
       {/* Secondary actions */}
-      {!isTeam && assignment.status !== "COMPLETED" && (
+      {!isTeam && !isJourney && assignment.status !== "COMPLETED" && (
         <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" asChild title="Schedule">
           <a href="/calendar">
             <CalendarPlus className="h-4 w-4" />
           </a>
         </Button>
+      )}
+      {isJourney && assignment.status !== "COMPLETED" && (
+        <div className="flex items-center gap-1 shrink-0">
+          <Button variant="outline" size="sm" className="h-7 text-xs" asChild>
+            <a href="/player">Open Journey</a>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await onJourneyAccept(assignment.id);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            Add To My Journeys
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await onJourneyKeepInQueue(assignment.id);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            Keep In Queue
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -153,6 +215,38 @@ export default function TrainingQueuePage() {
         load();
       } catch {
         toast.error("Failed to update status.");
+      }
+    },
+    [load],
+  );
+
+  const handleJourneyAccept = useCallback(
+    async (id: string) => {
+      try {
+        await api.updateJourneyAssignment(id, {
+          status: "OPEN",
+          isInTrainingQueue: false,
+        });
+        toast.success("Journey added to My Journeys.");
+        load();
+      } catch {
+        toast.error("Failed to accept journey.");
+      }
+    },
+    [load],
+  );
+
+  const handleJourneyKeepInQueue = useCallback(
+    async (id: string) => {
+      try {
+        await api.updateJourneyAssignment(id, {
+          status: "NEW",
+          isInTrainingQueue: true,
+        });
+        toast.success("Journey kept in queue.");
+        load();
+      } catch {
+        toast.error("Failed to update journey.");
       }
     },
     [load],
@@ -221,6 +315,8 @@ export default function TrainingQueuePage() {
               key={a.id}
               assignment={a}
               onStatusChange={handleStatusChange}
+              onJourneyAccept={handleJourneyAccept}
+              onJourneyKeepInQueue={handleJourneyKeepInQueue}
             />
           ))}
         </div>
