@@ -35,15 +35,6 @@ export class TeamsController {
     return this.teamsService.getCoachTeams(user.id);
   }
 
-  @Get(':id')
-  getTeam(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
-  ) {
-    this.requireCoachOrAdmin(user);
-    return this.teamsService.getTeamById(user.id, id);
-  }
-
   @Get('categories')
   getCategories(@CurrentUser() user: AuthenticatedUser) {
     this.requireCoachOrAdmin(user);
@@ -57,6 +48,12 @@ export class TeamsController {
   ) {
     this.requireCoachOrAdmin(user);
     return this.teamsService.getClubUsers(user.id, clubId);
+  }
+
+  @Get(':id')
+  getTeam(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    this.requireCoachOrAdmin(user);
+    return this.teamsService.getTeamById(user.id, id);
   }
 
   @Post()
