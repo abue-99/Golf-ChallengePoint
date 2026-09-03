@@ -92,7 +92,9 @@ export class JourneysService {
     role: string,
     lessons: JourneyTemplateLessonInput[],
   ) {
-    const lessonIds = [...new Set(lessons.map((entry) => entry.lessonId).filter(Boolean))];
+    const lessonIds = [
+      ...new Set(lessons.map((entry) => entry.lessonId).filter(Boolean)),
+    ];
     if (lessonIds.length === 0) return;
 
     const found = await tx.trainingLesson.findMany({
@@ -148,7 +150,11 @@ export class JourneysService {
     return template;
   }
 
-  async createTemplate(userId: string, role: string, data: UpsertJourneyTemplateInput) {
+  async createTemplate(
+    userId: string,
+    role: string,
+    data: UpsertJourneyTemplateInput,
+  ) {
     this.requireCoachOrAdmin(role);
     const name = data.name?.trim();
     if (!name) throw new BadRequestException('name is required');
@@ -198,7 +204,9 @@ export class JourneysService {
     }
 
     const lessons =
-      data.lessons !== undefined ? this.normalizeLessonEntries(data.lessons) : undefined;
+      data.lessons !== undefined
+        ? this.normalizeLessonEntries(data.lessons)
+        : undefined;
 
     return this.prisma.$transaction(async (tx) => {
       if (lessons !== undefined) {
@@ -218,7 +226,9 @@ export class JourneysService {
           ...(data.description !== undefined
             ? { description: data.description?.trim() || null }
             : {}),
-          ...(data.category !== undefined ? { category: data.category?.trim() || null } : {}),
+          ...(data.category !== undefined
+            ? { category: data.category?.trim() || null }
+            : {}),
           ...(data.difficulty !== undefined
             ? { difficulty: this.parseDifficulty(data.difficulty) }
             : {}),
@@ -318,7 +328,9 @@ export class JourneysService {
           blockId: block.id,
           lessonId: entry.lessonId,
           targetType: AssignmentTargetType.PLAYER,
-          sourceType: teamId ? AssignmentSourceType.TEAM : AssignmentSourceType.PLAYER,
+          sourceType: teamId
+            ? AssignmentSourceType.TEAM
+            : AssignmentSourceType.PLAYER,
           sourceReference: teamId ?? playerId,
           playerId,
           teamId: teamId ?? null,
@@ -463,7 +475,8 @@ export class JourneysService {
       where: { id: assignmentId },
       select: { id: true, playerId: true, coachId: true },
     });
-    if (!assignment) throw new NotFoundException('Journey assignment not found');
+    if (!assignment)
+      throw new NotFoundException('Journey assignment not found');
 
     const isCoachOrAdmin = role === 'COACH' || role === 'ADMIN';
     if (isCoachOrAdmin) {

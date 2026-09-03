@@ -38,10 +38,18 @@ export class JourneysController {
       category?: string | null;
       difficulty?: string | null;
       coverImageUrl?: string | null;
-      lessons?: { lessonId: string; sortOrder?: number; isRequired?: boolean }[];
+      lessons?: {
+        lessonId: string;
+        sortOrder?: number;
+        isRequired?: boolean;
+      }[];
     },
   ) {
-    return this.journeysService.createTemplate(user.id, user.role as string, body);
+    return this.journeysService.createTemplate(
+      user.id,
+      user.role as string,
+      body,
+    );
   }
 
   @Patch(':id')
@@ -55,7 +63,11 @@ export class JourneysController {
       category?: string | null;
       difficulty?: string | null;
       coverImageUrl?: string | null;
-      lessons?: { lessonId: string; sortOrder?: number; isRequired?: boolean }[];
+      lessons?: {
+        lessonId: string;
+        sortOrder?: number;
+        isRequired?: boolean;
+      }[];
     },
   ) {
     return this.journeysService.updateTemplate(
@@ -67,13 +79,27 @@ export class JourneysController {
   }
 
   @Delete(':id')
-  deleteTemplate(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
-    return this.journeysService.deleteTemplate(user.id, user.role as string, id);
+  deleteTemplate(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.journeysService.deleteTemplate(
+      user.id,
+      user.role as string,
+      id,
+    );
   }
 
   @Post(':id/duplicate')
-  duplicateTemplate(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
-    return this.journeysService.duplicateTemplate(user.id, user.role as string, id);
+  duplicateTemplate(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.journeysService.duplicateTemplate(
+      user.id,
+      user.role as string,
+      id,
+    );
   }
 
   @Patch('assignments/:assignmentId')

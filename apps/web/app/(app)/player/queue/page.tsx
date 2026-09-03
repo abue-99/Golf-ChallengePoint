@@ -212,41 +212,41 @@ export default function TrainingQueuePage() {
         toast.success(
           status === "COMPLETED" ? "Marked as completed." : "Marked as open.",
         );
-
-        const handleJourneyAccept = useCallback(
-          async (id: string) => {
-            try {
-              await api.updateJourneyAssignment(id, {
-                status: "OPEN",
-                isInTrainingQueue: false,
-              });
-              toast.success("Journey added to My Journeys.");
-              load();
-            } catch {
-              toast.error("Failed to accept journey.");
-            }
-          },
-          [load],
-        );
-
-        const handleJourneyKeepInQueue = useCallback(
-          async (id: string) => {
-            try {
-              await api.updateJourneyAssignment(id, {
-                status: "NEW",
-                isInTrainingQueue: true,
-              });
-              toast.success("Journey kept in queue.");
-              load();
-            } catch {
-              toast.error("Failed to update journey.");
-            }
-          },
-          [load],
-        );
         load();
       } catch {
         toast.error("Failed to update status.");
+      }
+    },
+    [load],
+  );
+
+  const handleJourneyAccept = useCallback(
+    async (id: string) => {
+      try {
+        await api.updateJourneyAssignment(id, {
+          status: "OPEN",
+          isInTrainingQueue: false,
+        });
+        toast.success("Journey added to My Journeys.");
+        load();
+      } catch {
+        toast.error("Failed to accept journey.");
+      }
+    },
+    [load],
+  );
+
+  const handleJourneyKeepInQueue = useCallback(
+    async (id: string) => {
+      try {
+        await api.updateJourneyAssignment(id, {
+          status: "NEW",
+          isInTrainingQueue: true,
+        });
+        toast.success("Journey kept in queue.");
+        load();
+      } catch {
+        toast.error("Failed to update journey.");
       }
     },
     [load],

@@ -86,6 +86,18 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.lessonAssignment;
   }
 
+  get journeyTemplate() {
+    return this.client.journeyTemplate;
+  }
+
+  get journeyTemplateLesson() {
+    return this.client.journeyTemplateLesson;
+  }
+
+  get journeyTemplateAssignment() {
+    return this.client.journeyTemplateAssignment;
+  }
+
   get developmentPlanMilestone() {
     return this.client.developmentPlanMilestone;
   }

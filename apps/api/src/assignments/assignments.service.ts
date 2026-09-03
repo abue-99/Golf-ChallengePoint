@@ -47,10 +47,6 @@ type UpdateAssignmentInput = {
   isInTrainingQueue?: boolean;
 };
 
-type AssignmentWithIncludes = Prisma.LessonAssignmentGetPayload<{
-  include: Prisma.LessonAssignmentInclude;
-}>;
-
 @Injectable()
 export class AssignmentsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -144,7 +140,9 @@ export class AssignmentsService {
     } satisfies Prisma.LessonAssignmentInclude;
   }
 
-  private toQueueLessonItem(assignment: AssignmentWithIncludes) {
+  private toQueueLessonItem<T extends { status: AssignmentStatus }>(
+    assignment: T,
+  ) {
     return {
       ...assignment,
       itemType: 'lesson' as const,
