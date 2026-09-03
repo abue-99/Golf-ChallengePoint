@@ -1,3 +1,4 @@
+import { AssignmentStatus } from '@challengepoint/db';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
@@ -147,7 +148,7 @@ export class UsersService {
       });
       this.logger.log(`Invite email sent to ${to}`);
     } catch (err) {
-      this.logger.error(`Failed to send invite email to ${to}: ${err}`);
+      this.logger.error(`Failed to send invite email to ${to}: ${String(err)}`);
       throw err;
     }
   }
@@ -304,7 +305,7 @@ export class UsersService {
         },
       },
     });
-    return links
+    const players = links
       .map((l) => {
         if (!l.player) return null;
         const { playerCoachLinks, ...playerData } = l.player;
@@ -313,7 +314,38 @@ export class UsersService {
           coaches: playerCoachLinks.map((pcl) => pcl.coach).filter(Boolean),
         };
       })
-      .filter(Boolean);
+      .filter((player): player is NonNullable<typeof player> => player !== null);
+
+    const playerIds = players.map((player) => player.id);
+    const activeStatuses: AssignmentStatus[] = [
+      AssignmentStatus.NEW,
+      AssignmentStatus.OPEN,
+      AssignmentStatus.IN_PROGRESS,
+    ];
+
+    const pendingCounts =
+      playerIds.length === 0
+        ? []
+        : await this.prisma.lessonAssignment.groupBy({
+            by: ['playerId'],
+            where: {
+              playerId: { in: playerIds },
+              isInTrainingQueue: true,
+              status: { in: activeStatuses },
+            },
+            _count: { _all: true },
+          });
+
+    const pendingByPlayerId = Object.fromEntries(
+      pendingCounts
+        .filter((row) => Boolean(row.playerId))
+        .map((row) => [row.playerId as string, row._count._all]),
+    );
+
+    return players.map((player) => ({
+      ...player,
+      pendingLessons: pendingByPlayerId[player.id] ?? 0,
+    }));
   }
 
   /** Coaches currently linked to the given player. */

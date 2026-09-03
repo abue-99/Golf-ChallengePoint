@@ -52,7 +52,12 @@ type Props = {
   preselectedPlayerId?: string | null;
   preselectedTeamId?: string | null;
   defaultAddToQueue?: boolean;
-  onAssigned?: (result?: unknown) => void;
+  onAssigned?: (payload: {
+    target:
+      | { kind: "player"; playerId: string }
+      | { kind: "team"; teamId: string };
+    result?: unknown;
+  }) => void;
 };
 
 export default function AssignLessonModal({
@@ -61,7 +66,6 @@ export default function AssignLessonModal({
   preselectedLesson,
   preselectedPlayerId,
   preselectedTeamId,
-  defaultAddToQueue,
   onAssigned,
 }: Props) {
   const [lessons, setLessons] = useState<TrainingLesson[]>([]);
@@ -74,7 +78,6 @@ export default function AssignLessonModal({
   const [targetType, setTargetType] = useState<"player" | "team">("player");
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>("");
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
-  const [addToQueue, setAddToQueue] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -96,11 +99,15 @@ export default function AssignLessonModal({
     });
     fetch("/api/players/my")
       .then((r) => (r.ok ? r.json() : []))
-      .then((data: Player[] | unknown) => setPlayers(Array.isArray(data) ? data : []))
+      .then((data: Player[] | unknown) =>
+        setPlayers(Array.isArray(data) ? data : []),
+      )
       .catch(() => {});
     fetch("/api/teams")
       .then((r) => (r.ok ? r.json() : []))
-      .then((data: Team[] | unknown) => setTeams(Array.isArray(data) ? data : []))
+      .then((data: Team[] | unknown) =>
+        setTeams(Array.isArray(data) ? data : []),
+      )
       .catch(() => {});
   }, [open, preselectedPlayerId, preselectedTeamId]);
 
@@ -115,8 +122,7 @@ export default function AssignLessonModal({
       setTargetType("team");
       setSelectedTeamId(preselectedTeamId);
     }
-    if (defaultAddToQueue) setAddToQueue(true);
-  }, [open, preselectedLesson, preselectedPlayerId, preselectedTeamId, defaultAddToQueue]);
+  }, [open, preselectedLesson, preselectedPlayerId, preselectedTeamId]);
 
   const filteredLessons = useMemo(() => {
     const lower = lessonSearch.toLowerCase();
@@ -124,7 +130,9 @@ export default function AssignLessonModal({
       (l) =>
         !lessonSearch ||
         l.name.toLowerCase().includes(lower) ||
-        getFocusAreaPath(l.focusArea, l.subCapability).toLowerCase().includes(lower),
+        getFocusAreaPath(l.focusArea, l.subCapability)
+          .toLowerCase()
+          .includes(lower),
     );
   }, [lessons, lessonSearch]);
 
@@ -135,20 +143,20 @@ export default function AssignLessonModal({
     setTargetType("player");
     setSelectedPlayerId("");
     setSelectedTeamId("");
-    setAddToQueue(false);
     onClose();
   }
 
   async function handleSubmit() {
     if (!selectedLessonId) return toast.error("Please select a lesson.");
-    if (targetType === "player" && !selectedPlayerId) return toast.error("Please select a player.");
-    if (targetType === "team" && !selectedTeamId) return toast.error("Please select a team.");
+    if (targetType === "player" && !selectedPlayerId)
+      return toast.error("Please select a player.");
+    if (targetType === "team" && !selectedTeamId)
+      return toast.error("Please select a team.");
 
     setSubmitting(true);
     try {
       const payload: Record<string, unknown> = {
         lessonId: selectedLessonId,
-        isInTrainingQueue: addToQueue,
       };
       const result =
         targetType === "player"
@@ -160,7 +168,17 @@ export default function AssignLessonModal({
         playerId: selectedPlayerId || undefined,
         teamId: selectedTeamId || undefined,
       });
-      onAssigned?.(result);
+      onAssigned?.(
+        targetType === "player"
+          ? {
+              target: { kind: "player", playerId: selectedPlayerId },
+              result,
+            }
+          : {
+              target: { kind: "team", teamId: selectedTeamId },
+              result,
+            },
+      );
       handleClose(false);
     } catch {
       toast.error("Failed to assign lesson.");
@@ -191,7 +209,10 @@ export default function AssignLessonModal({
               <SelectItem key={l.id} value={l.id}>
                 {l.name}
                 <span className="ml-1 text-xs text-muted-foreground">
-                  ({FOCUS_AREAS.find((f) => f.value === l.focusArea)?.label ?? l.focusArea})
+                  (
+                  {FOCUS_AREAS.find((f) => f.value === l.focusArea)?.label ??
+                    l.focusArea}
+                  )
                 </span>
               </SelectItem>
             ))}
@@ -233,7 +254,9 @@ export default function AssignLessonModal({
             <SelectContent>
               {players.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {[p.firstName, p.lastName].filter(Boolean).join(" ") || p.email || p.id}
+                  {[p.firstName, p.lastName].filter(Boolean).join(" ") ||
+                    p.email ||
+                    p.id}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -259,18 +282,13 @@ export default function AssignLessonModal({
         </div>
       )}
 
-      <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-        <input
-          type="checkbox"
-          checked={addToQueue}
-          onChange={(e) => setAddToQueue(e.target.checked)}
-          className="h-4 w-4 rounded border-border"
-        />
-        Also add to Training Queue
-      </label>
-
       <div className="flex justify-end gap-2 pt-1">
-        <Button variant="outline" size="sm" onClick={() => handleClose()} disabled={submitting}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleClose()}
+          disabled={submitting}
+        >
           Cancel
         </Button>
         <Button size="sm" onClick={handleSubmit} disabled={submitting}>
@@ -282,7 +300,12 @@ export default function AssignLessonModal({
 
   if (isMobile) {
     return (
-      <Sheet open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+      <Sheet
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) handleClose();
+        }}
+      >
         <SheetContent side="bottom" className="rounded-t-2xl">
           <SheetHeader className="px-0 pt-0">
             <SheetTitle className="flex items-center gap-2">
@@ -297,7 +320,12 @@ export default function AssignLessonModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) handleClose();
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>

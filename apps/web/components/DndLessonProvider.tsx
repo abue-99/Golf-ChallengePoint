@@ -54,14 +54,18 @@ const DndLessonContext = createContext<DndLessonContextValue | null>(null);
 
 export function useDndLesson() {
   const ctx = useContext(DndLessonContext);
-  if (!ctx) throw new Error("useDndLesson must be used inside DndLessonProvider");
+  if (!ctx)
+    throw new Error("useDndLesson must be used inside DndLessonProvider");
   return ctx;
 }
 
 type Props = {
   children: ReactNode;
   /** Called after a successful player/team assignment so the parent can refresh data */
-  onAssigned?: (target: AssignmentTarget, result?: AssignmentResult | void) => void;
+  onAssigned?: (
+    target: AssignmentTarget,
+    result?: AssignmentResult | void,
+  ) => void;
   /**
    * Called when a lesson is dropped on the "training-queue" target.
    * The parent should open the AssignLessonModal with the lesson pre-selected
@@ -71,7 +75,11 @@ type Props = {
   onQueueDrop?: (lesson: TrainingLesson) => void;
 };
 
-export function DndLessonProvider({ children, onAssigned, onQueueDrop }: Props) {
+export function DndLessonProvider({
+  children,
+  onAssigned,
+  onQueueDrop,
+}: Props) {
   const [activeLesson, setActiveLesson] = useState<TrainingLesson | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
 
@@ -131,7 +139,9 @@ export function DndLessonProvider({ children, onAssigned, onQueueDrop }: Props) 
 
       if (!lesson || !event.over) {
         if (lesson) {
-          trackCoachTelemetry("LessonAssignmentCancelled", { lessonId: lesson.id });
+          trackCoachTelemetry("LessonAssignmentCancelled", {
+            lessonId: lesson.id,
+          });
         }
         return;
       }
@@ -180,7 +190,7 @@ export function DndLessonProvider({ children, onAssigned, onQueueDrop }: Props) 
         {children}
         <DragOverlay>
           {activeLesson ? (
-            <div className="rounded-lg border border-primary bg-card px-3 py-2 shadow-lg opacity-90 text-sm font-medium w-48 truncate">
+            <div className="w-56 truncate rounded-lg border border-primary bg-card px-3 py-2 text-sm font-medium shadow-2xl ring-1 ring-primary/20">
               {activeLesson.name}
             </div>
           ) : null}
