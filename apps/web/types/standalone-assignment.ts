@@ -14,7 +14,7 @@ export type StandaloneAssignmentSourceType = "PLAYER" | "TEAM" | "GROUP";
 
 export type StandaloneAssignment = {
   id: string;
-  lessonId: string;
+  lessonId: string | null;
   targetType: StandaloneAssignmentTargetType;
   sourceType: StandaloneAssignmentSourceType;
   sourceReference: string | null;
@@ -66,4 +66,15 @@ export type StandaloneAssignment = {
     durationMinutes: number | null;
     status: string;
   } | null;
+  itemType?: "lesson" | "journey";
+  isNew?: boolean;
+  source?: string;
+  journeyTemplate?: {
+    id: string;
+    name: string;
+    category: string | null;
+    difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | null;
+    coverImageUrl: string | null;
+  } | null;
+  playerPlanId?: string | null;
 };

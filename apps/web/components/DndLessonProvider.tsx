@@ -5,6 +5,7 @@ import React, {
   useContext,
   useState,
   useCallback,
+  useRef,
   type ReactNode,
 } from "react";
 import {
@@ -15,11 +16,13 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { api } from "@/lib/api";
 import type { TrainingLesson } from "@/lib/lesson-types";
 import { trackCoachTelemetry } from "@/lib/telemetry";
+import type { JourneyTemplate } from "@/types/journey-template";
 
 type AssignmentTarget =
   | { kind: "player"; playerId: string; playerName: string }
@@ -30,22 +33,29 @@ type AssignmentResult = {
   id?: string;
   teamId?: string;
   lessonId?: string;
+  journeyTemplateId?: string;
   playersAffected?: number;
   assignmentsCreated?: number;
-  assignments?: { id: string; playerId: string | null }[];
+  assignments?: { id: string; playerId: string | null; playerPlanId?: string }[];
 };
 
+type DndSource =
+  | { type: "lesson"; lesson: TrainingLesson }
+  | { type: "journey"; journey: JourneyTemplate };
+
 type DndLessonContextValue = {
-  /** Lesson currently being dragged, if any */
   activeLesson: TrainingLesson | null;
-  /** Call when a drag starts */
+  activeJourney: JourneyTemplate | null;
   onDragStart: (lesson: TrainingLesson) => void;
-  /** Programmatically trigger an assignment (e.g., from button click) */
+  onJourneyDragStart: (journey: JourneyTemplate) => void;
   assignLesson: (
     lesson: TrainingLesson,
     target: AssignmentTarget,
   ) => Promise<AssignmentResult | void>;
-  /** Last error message, if any */
+  assignJourney: (
+    journey: JourneyTemplate,
+    target: AssignmentTarget,
+  ) => Promise<AssignmentResult | void>;
   lastError: string | null;
   clearError: () => void;
 };
@@ -61,31 +71,41 @@ export function useDndLesson() {
 
 type Props = {
   children: ReactNode;
-  /** Called after a successful player/team assignment so the parent can refresh data */
   onAssigned?: (
     target: AssignmentTarget,
     result?: AssignmentResult | void,
+    sourceType?: "lesson" | "journey",
   ) => void;
-  /**
-   * Called when a lesson is dropped on the "training-queue" target.
-   * The parent should open the AssignLessonModal with the lesson pre-selected
-   * and `defaultAddToQueue=true` so the user can choose a target player.
-   * If not provided, queue drops are silently ignored.
-   */
   onQueueDrop?: (lesson: TrainingLesson) => void;
 };
+
+function logDiagnostic(
+  event:
+    | "LessonDragStart"
+    | "PlayerDropTargetEnter"
+    | "PlayerDropTriggered"
+    | "PlayerAssignmentRequest"
+    | "PlayerAssignmentSuccess"
+    | "PlayerAssignmentFailed",
+  payload?: Record<string, unknown>,
+) {
+  trackCoachTelemetry(event, payload);
+  if (typeof window !== "undefined") {
+    console.info(`[AssignmentDiagnostic] ${event}`, payload ?? {});
+  }
+}
 
 export function DndLessonProvider({
   children,
   onAssigned,
   onQueueDrop,
 }: Props) {
-  const [activeLesson, setActiveLesson] = useState<TrainingLesson | null>(null);
+  const [activeSource, setActiveSource] = useState<DndSource | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
+  const lastHoverTargetRef = useRef<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      // Activate drag only after 5 px of movement so taps still work on touch
       activationConstraint: { distance: 5 },
     }),
     useSensor(TouchSensor, {
@@ -93,56 +113,163 @@ export function DndLessonProvider({
     }),
   );
 
-  const assignLesson = useCallback(
-    async (lesson: TrainingLesson, target: AssignmentTarget) => {
-      // Queue drops require a player to be specified — delegate to parent via onQueueDrop
+  const assignItem = useCallback(
+    async (source: DndSource, target: AssignmentTarget) => {
       if (target.kind === "queue") {
-        onQueueDrop?.(lesson);
+        if (source.type === "lesson") onQueueDrop?.(source.lesson);
         return;
       }
+
+      const sourceId =
+        source.type === "lesson" ? source.lesson.id : source.journey.id;
+
+      if (target.kind === "player") {
+        logDiagnostic("PlayerDropTriggered", {
+          sourceType: source.type,
+          sourceId,
+          playerId: target.playerId,
+        });
+        logDiagnostic("PlayerAssignmentRequest", {
+          sourceType: source.type,
+          sourceId,
+          playerId: target.playerId,
+        });
+      }
+
       try {
-        const payload: Record<string, unknown> = { lessonId: lesson.id };
         let result: AssignmentResult | void = undefined;
+        if (source.type === "lesson") {
+          if (target.kind === "player") {
+            result = await api.assignLessonToPlayer(target.playerId, {
+              lessonId: source.lesson.id,
+            });
+            trackCoachTelemetry("LessonAssignedToPlayer", {
+              lessonId: source.lesson.id,
+              playerId: target.playerId,
+            });
+          } else {
+            result = await api.assignLessonToTeam(target.teamId, {
+              lessonId: source.lesson.id,
+            });
+            trackCoachTelemetry("LessonAssignedToTeam", {
+              lessonId: source.lesson.id,
+              teamId: target.teamId,
+            });
+          }
+        } else {
+          if (target.kind === "player") {
+            result = await api.assignJourneyToPlayer(source.journey.id, target.playerId);
+            trackCoachTelemetry("JourneyAssignedToPlayer", {
+              journeyId: source.journey.id,
+              playerId: target.playerId,
+            });
+          } else {
+            result = await api.assignJourneyToTeam(source.journey.id, target.teamId);
+            trackCoachTelemetry("JourneyAssignedToTeam", {
+              journeyId: source.journey.id,
+              teamId: target.teamId,
+            });
+          }
+        }
+
         if (target.kind === "player") {
-          result = await api.assignLessonToPlayer(target.playerId, payload);
-          trackCoachTelemetry("LessonAssignedToPlayer", {
-            lessonId: lesson.id,
+          logDiagnostic("PlayerAssignmentSuccess", {
+            sourceType: source.type,
+            sourceId,
             playerId: target.playerId,
           });
-        } else if (target.kind === "team") {
-          result = await api.assignLessonToTeam(target.teamId, payload);
-          trackCoachTelemetry("LessonAssignedToTeam", {
-            lessonId: lesson.id,
-            teamId: target.teamId,
-          });
         }
-        onAssigned?.(target, result);
+
+        onAssigned?.(target, result, source.type);
         return result;
       } catch (err) {
         const msg =
-          err instanceof Error ? err.message : "Failed to assign lesson";
+          err instanceof Error
+            ? err.message
+            : `Failed to assign ${source.type}`;
         setLastError(msg);
+        if (target.kind === "player") {
+          logDiagnostic("PlayerAssignmentFailed", {
+            sourceType: source.type,
+            sourceId,
+            playerId: target.playerId,
+            error: msg,
+          });
+        }
       }
     },
     [onAssigned, onQueueDrop],
   );
 
+  const assignLesson = useCallback(
+    async (lesson: TrainingLesson, target: AssignmentTarget) =>
+      assignItem({ type: "lesson", lesson }, target),
+    [assignItem],
+  );
+
+  const assignJourney = useCallback(
+    async (journey: JourneyTemplate, target: AssignmentTarget) =>
+      assignItem({ type: "journey", journey }, target),
+    [assignItem],
+  );
+
   const onDragStart = useCallback((lesson: TrainingLesson) => {
-    setActiveLesson(lesson);
+    setActiveSource({ type: "lesson", lesson });
     trackCoachTelemetry("LessonDragStarted", { lessonId: lesson.id });
+    logDiagnostic("LessonDragStart", { lessonId: lesson.id });
   }, []);
+
+  const onJourneyDragStart = useCallback((journey: JourneyTemplate) => {
+    setActiveSource({ type: "journey", journey });
+    trackCoachTelemetry("JourneyDragStarted", { journeyId: journey.id });
+  }, []);
+
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const data = event.active.data.current as
+        | { lesson?: TrainingLesson; journeyTemplate?: JourneyTemplate }
+        | undefined;
+      if (data?.lesson) {
+        onDragStart(data.lesson);
+      } else if (data?.journeyTemplate) {
+        onJourneyDragStart(data.journeyTemplate);
+      }
+    },
+    [onDragStart, onJourneyDragStart],
+  );
+
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      if (!activeSource || !event.over) return;
+      const overId = String(event.over.id);
+      if (overId.startsWith("player:") && lastHoverTargetRef.current !== overId) {
+        const [, playerId, ...rest] = overId.split(":");
+        const playerName = rest.join(":") || playerId;
+        lastHoverTargetRef.current = overId;
+        logDiagnostic("PlayerDropTargetEnter", {
+          sourceType: activeSource.type,
+          sourceId:
+            activeSource.type === "lesson"
+              ? activeSource.lesson.id
+              : activeSource.journey.id,
+          playerId,
+          playerName,
+        });
+      }
+    },
+    [activeSource],
+  );
 
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
-      const lesson = activeLesson;
-      setActiveLesson(null);
+      const source = activeSource;
+      setActiveSource(null);
+      lastHoverTargetRef.current = null;
 
-      if (!lesson || !event.over) {
-        if (lesson) {
-          trackCoachTelemetry("LessonAssignmentCancelled", {
-            lessonId: lesson.id,
-          });
-        }
+      if (!source || !event.over) {
+        trackCoachTelemetry("LessonAssignmentCancelled", {
+          sourceType: source?.type,
+        });
         return;
       }
 
@@ -150,34 +277,29 @@ export function DndLessonProvider({
       if (overId.startsWith("player:")) {
         const [, playerId, ...rest] = overId.split(":");
         const playerName = rest.join(":") || playerId;
-        await assignLesson(lesson, { kind: "player", playerId, playerName });
+        await assignItem(source, { kind: "player", playerId, playerName });
       } else if (overId.startsWith("team:")) {
         const [, teamId, ...rest] = overId.split(":");
         const teamName = rest.join(":") || teamId;
-        await assignLesson(lesson, { kind: "team", teamId, teamName });
+        await assignItem(source, { kind: "team", teamId, teamName });
       } else if (overId === "training-queue") {
-        await assignLesson(lesson, { kind: "queue" });
+        await assignItem(source, { kind: "queue" });
       }
     },
-    [activeLesson, assignLesson],
-  );
-
-  const handleDragStart = useCallback(
-    (event: DragStartEvent) => {
-      const data = event.active.data.current as
-        | { lesson?: TrainingLesson }
-        | undefined;
-      if (data?.lesson) onDragStart(data.lesson);
-    },
-    [onDragStart],
+    [activeSource, assignItem],
   );
 
   return (
     <DndLessonContext.Provider
       value={{
-        activeLesson,
+        activeLesson:
+          activeSource?.type === "lesson" ? activeSource.lesson : null,
+        activeJourney:
+          activeSource?.type === "journey" ? activeSource.journey : null,
         onDragStart,
+        onJourneyDragStart,
         assignLesson,
+        assignJourney,
         lastError,
         clearError: () => setLastError(null),
       }}
@@ -185,13 +307,16 @@ export function DndLessonProvider({
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
         {children}
         <DragOverlay>
-          {activeLesson ? (
+          {activeSource ? (
             <div className="w-56 truncate rounded-lg border border-primary bg-card px-3 py-2 text-sm font-medium shadow-2xl ring-1 ring-primary/20">
-              {activeLesson.name}
+              {activeSource.type === "lesson"
+                ? activeSource.lesson.name
+                : activeSource.journey.name}
             </div>
           ) : null}
         </DragOverlay>

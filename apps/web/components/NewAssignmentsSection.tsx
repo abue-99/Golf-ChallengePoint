@@ -15,11 +15,14 @@ function AssignmentCard({
   assignment,
   onMoveToQueue,
   onMarkOpen,
+  onAcceptJourney,
 }: {
   assignment: StandaloneAssignment;
   onMoveToQueue: (id: string) => Promise<void>;
   onMarkOpen: (id: string) => Promise<void>;
+  onAcceptJourney: (id: string) => Promise<void>;
 }) {
+  const isJourney = assignment.itemType === "journey";
   const isTeam = assignment.targetType === "TEAM";
   const [busy, setBusy] = useState(false);
 
@@ -55,20 +58,25 @@ function AssignmentCard({
           {isTeam ? "TEAM" : "PERSONAL"}
         </Badge>
         <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
-          NEW
+          {isJourney ? "NEW JOURNEY" : "NEW"}
         </span>
       </div>
 
       {/* Lesson info */}
       <div>
         <p className="font-semibold text-sm leading-snug">
-          {assignment.lesson?.name ?? "—"}
+          {isJourney
+            ? assignment.journeyTemplate?.name ?? "Journey"
+            : assignment.lesson?.name ?? "—"}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {assignment.lesson?.focusArea
+          {!isJourney && assignment.lesson?.focusArea
             ? (FOCUS_AREA_EMOJI[assignment.lesson.focusArea] ?? "") +
               " " +
               assignment.lesson.focusArea.replace(/_/g, " ")
+            : null}
+          {isJourney && assignment.journeyTemplate?.category
+            ? assignment.journeyTemplate.category
             : null}
           {isTeam && assignment.team
             ? ` · ${assignment.team.shortName}`
@@ -79,7 +87,7 @@ function AssignmentCard({
       {/* Actions */}
       {!isTeam && (
         <div className="flex flex-wrap gap-1.5 pt-0.5">
-          {!assignment.isInTrainingQueue && (
+          {!isJourney && !assignment.isInTrainingQueue && (
             <Button
               variant="outline"
               size="sm"
@@ -91,22 +99,42 @@ function AssignmentCard({
               Add to Queue
             </Button>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-xs gap-1"
-            disabled={busy}
-            onClick={() => handleAction(() => onMarkOpen(assignment.id))}
-          >
-            <CheckCircle className="h-3 w-3" />
-            Acknowledge
-          </Button>
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" asChild>
-            <a href="/calendar">
-              <CalendarPlus className="h-3 w-3" />
-              Schedule
-            </a>
-          </Button>
+          {isJourney ? (
+            <>
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1" asChild>
+                <a href="/player">Open Journey</a>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1"
+                disabled={busy}
+                onClick={() => handleAction(() => onAcceptJourney(assignment.id))}
+              >
+                <CheckCircle className="h-3 w-3" />
+                Add To My Journeys
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1"
+                disabled={busy}
+                onClick={() => handleAction(() => onMarkOpen(assignment.id))}
+              >
+                <CheckCircle className="h-3 w-3" />
+                Acknowledge
+              </Button>
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1" asChild>
+                <a href="/calendar">
+                  <CalendarPlus className="h-3 w-3" />
+                  Schedule
+                </a>
+              </Button>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -158,6 +186,22 @@ export default function NewAssignmentsSection() {
     [load],
   );
 
+  const handleAcceptJourney = useCallback(
+    async (id: string) => {
+      try {
+        await api.updateJourneyAssignment(id, {
+          status: "OPEN",
+          isInTrainingQueue: false,
+        });
+        toast.success("Journey added to My Journeys.");
+        load();
+      } catch {
+        toast.error("Failed to update journey.");
+      }
+    },
+    [load],
+  );
+
   if (loading) {
     return (
       <div className="text-sm text-muted-foreground py-2">
@@ -181,6 +225,7 @@ export default function NewAssignmentsSection() {
             assignment={a}
             onMoveToQueue={handleMoveToQueue}
             onMarkOpen={handleMarkOpen}
+            onAcceptJourney={handleAcceptJourney}
           />
         ))}
       </div>

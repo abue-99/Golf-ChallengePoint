@@ -47,6 +47,10 @@ type UpdateAssignmentInput = {
   isInTrainingQueue?: boolean;
 };
 
+type AssignmentWithIncludes = Prisma.LessonAssignmentGetPayload<{
+  include: Prisma.LessonAssignmentInclude;
+}>;
+
 @Injectable()
 export class AssignmentsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -74,14 +78,6 @@ export class AssignmentsService {
     if (!team) throw new NotFoundException('Team not found');
     if (team.coachId !== coachId) throw new ForbiddenException('Not your team');
     return team;
-  }
-
-  private async getActiveTeamIdsForPlayer(playerId: string) {
-    const memberships = await this.prisma.teamMember.findMany({
-      where: { userId: playerId },
-      select: { teamId: true },
-    });
-    return memberships.map((membership) => membership.teamId);
   }
 
   private async resolvePlayerAccess(
@@ -146,6 +142,15 @@ export class AssignmentsService {
         },
       },
     } satisfies Prisma.LessonAssignmentInclude;
+  }
+
+  private toQueueLessonItem(assignment: AssignmentWithIncludes) {
+    return {
+      ...assignment,
+      itemType: 'lesson' as const,
+      isNew: assignment.status === AssignmentStatus.NEW,
+      source: 'assignedByCoach',
+    };
   }
 
   async createAssignment(
@@ -421,20 +426,93 @@ export class AssignmentsService {
     filters: { status?: string; queueOnly?: string },
   ) {
     if (role === 'PLAYER') {
-      const activeTeamIds = await this.getActiveTeamIdsForPlayer(userId);
-      return this.prisma.lessonAssignment.findMany({
+      const [lessonAssignments, journeyAssignments] = await Promise.all([
+        this.prisma.lessonAssignment.findMany({
+          where: {
+            targetType: AssignmentTargetType.PLAYER,
+            playerId: userId,
+            ...(filters.status
+              ? { status: filters.status as AssignmentStatus }
+              : {}),
+            ...(filters.queueOnly === 'true'
+              ? { isInTrainingQueue: true }
+              : {}),
+          },
+          include: this.assignmentInclude(),
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.journeyTemplateAssignment.findMany({
+          where: {
+            playerId: userId,
+            ...(filters.status
+              ? { status: filters.status as AssignmentStatus }
+              : {}),
+            ...(filters.queueOnly === 'true'
+              ? { isInTrainingQueue: true }
+              : {}),
+          },
+          include: {
+            journeyTemplate: {
+              select: {
+                id: true,
+                name: true,
+                category: true,
+                difficulty: true,
+                coverImageUrl: true,
+              },
+            },
+            team: { select: { id: true, shortName: true, icon: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        }),
+      ]);
+
+      const lessonItems = lessonAssignments.map((assignment) =>
+        this.toQueueLessonItem(assignment),
+      );
+      const journeyItems = journeyAssignments.map((assignment) => ({
+        id: assignment.id,
+        lessonId: null,
+        targetType: AssignmentTargetType.PLAYER,
+        sourceType: assignment.teamId
+          ? AssignmentSourceType.TEAM
+          : AssignmentSourceType.PLAYER,
+        sourceReference: assignment.teamId ?? assignment.playerId,
+        playerId: assignment.playerId,
+        teamId: assignment.teamId,
+        groupName: null,
+        coachId: assignment.coachId,
+        status: assignment.status,
+        priority: LessonPriority.MEDIUM,
+        isInTrainingQueue: assignment.isInTrainingQueue,
+        dueDate: null,
+        playerNotes: null,
+        sortOrder: 0,
+        createdAt: assignment.createdAt,
+        updatedAt: assignment.updatedAt,
+        lesson: null,
+        player: null,
+        team: assignment.team,
+        teamEvent: null,
+        calendarTask: null,
+        itemType: 'journey' as const,
+        isNew: assignment.status === AssignmentStatus.NEW,
+        source: assignment.source,
+        journeyTemplate: assignment.journeyTemplate,
+        playerPlanId: assignment.playerPlanId,
+      }));
+
+      return [...lessonItems, ...journeyItems].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+    }
+
+    this.requireCoachOrAdmin(role);
+    const [lessonAssignments, journeyAssignments] = await Promise.all([
+      this.prisma.lessonAssignment.findMany({
         where: {
-          OR: [
-            { targetType: AssignmentTargetType.PLAYER, playerId: userId },
-            ...(activeTeamIds.length > 0
-              ? [
-                  {
-                    targetType: AssignmentTargetType.TEAM,
-                    teamId: { in: activeTeamIds },
-                  },
-                ]
-              : []),
-          ],
+          ...(role === 'ADMIN' ? {} : { coachId: userId }),
           ...(filters.status
             ? { status: filters.status as AssignmentStatus }
             : {}),
@@ -442,21 +520,73 @@ export class AssignmentsService {
         },
         include: this.assignmentInclude(),
         orderBy: { createdAt: 'desc' },
-      });
-    }
+      }),
+      this.prisma.journeyTemplateAssignment.findMany({
+        where: {
+          ...(role === 'ADMIN' ? {} : { coachId: userId }),
+          ...(filters.status
+            ? { status: filters.status as AssignmentStatus }
+            : {}),
+          ...(filters.queueOnly === 'true' ? { isInTrainingQueue: true } : {}),
+        },
+        include: {
+          journeyTemplate: {
+            select: {
+              id: true,
+              name: true,
+              category: true,
+              difficulty: true,
+              coverImageUrl: true,
+            },
+          },
+          team: { select: { id: true, shortName: true, icon: true } },
+          player: {
+            select: { id: true, firstName: true, lastName: true, email: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
 
-    this.requireCoachOrAdmin(role);
-    return this.prisma.lessonAssignment.findMany({
-      where: {
-        ...(role === 'ADMIN' ? {} : { coachId: userId }),
-        ...(filters.status
-          ? { status: filters.status as AssignmentStatus }
-          : {}),
-        ...(filters.queueOnly === 'true' ? { isInTrainingQueue: true } : {}),
-      },
-      include: this.assignmentInclude(),
-      orderBy: { createdAt: 'desc' },
-    });
+    const lessonItems = lessonAssignments.map((assignment) =>
+      this.toQueueLessonItem(assignment),
+    );
+    const journeyItems = journeyAssignments.map((assignment) => ({
+      id: assignment.id,
+      lessonId: null,
+      targetType: AssignmentTargetType.PLAYER,
+      sourceType: assignment.teamId
+        ? AssignmentSourceType.TEAM
+        : AssignmentSourceType.PLAYER,
+      sourceReference: assignment.teamId ?? assignment.playerId,
+      playerId: assignment.playerId,
+      teamId: assignment.teamId,
+      groupName: null,
+      coachId: assignment.coachId,
+      status: assignment.status,
+      priority: LessonPriority.MEDIUM,
+      isInTrainingQueue: assignment.isInTrainingQueue,
+      dueDate: null,
+      playerNotes: null,
+      sortOrder: 0,
+      createdAt: assignment.createdAt,
+      updatedAt: assignment.updatedAt,
+      lesson: null,
+      player: assignment.player,
+      team: assignment.team,
+      teamEvent: null,
+      calendarTask: null,
+      itemType: 'journey' as const,
+      isNew: assignment.status === AssignmentStatus.NEW,
+      source: assignment.source,
+      journeyTemplate: assignment.journeyTemplate,
+      playerPlanId: assignment.playerPlanId,
+    }));
+
+    return [...lessonItems, ...journeyItems].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
   }
 
   async updateAssignment(
