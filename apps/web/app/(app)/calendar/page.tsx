@@ -39,10 +39,6 @@ export default async function CalendarPage() {
     <div className="space-y-4">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">Calendar</h1>
-        <p className="text-sm text-muted-foreground">
-          Unified scheduling for practice, missions, events, tournaments,
-          milestones, and unavailable periods.
-        </p>
       </header>
 
       {user.role === "ADMIN" ? (
@@ -54,19 +50,6 @@ export default async function CalendarPage() {
             className="ml-2 font-semibold underline underline-offset-2"
           >
             Open coach dashboard
-          </Link>
-        </div>
-      ) : null}
-
-      {user.role === "COACH" ? (
-        <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-          You can add your own unavailability here and compare with a selected
-          player from the coach player calendar.
-          <Link
-            href="/coach/players"
-            className="ml-2 font-semibold underline underline-offset-2"
-          >
-            Open player list
           </Link>
         </div>
       ) : null}

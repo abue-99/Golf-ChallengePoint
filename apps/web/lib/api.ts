@@ -291,8 +291,12 @@ export const api = {
     }).then(handleResponse),
 
   // Journey Templates
-  listJourneyTemplates: () =>
-    fetch("/api/journeys", { cache: "no-store" }).then(handleResponse),
+  listJourneyTemplates: (params?: { visibility?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.visibility) qs.set("visibility", params.visibility);
+    const url = qs.toString() ? `/api/journeys?${qs}` : "/api/journeys";
+    return fetch(url, { cache: "no-store" }).then(handleResponse);
+  },
   getJourneyTemplate: (id: string) =>
     fetch(`/api/journeys/${id}`, { cache: "no-store" }).then(handleResponse),
   createJourneyTemplate: (payload: Record<string, unknown>) =>

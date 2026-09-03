@@ -8,12 +8,18 @@ async function getToken() {
   return cookieStore.get("token")?.value;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const token = await getToken();
   if (!token) return NextResponse.json(null, { status: 401 });
 
   try {
-    const res = await fetch(`${API_URL}/journeys`, {
+    const visibility = req.nextUrl.searchParams.get("visibility");
+    const params = new URLSearchParams();
+    if (visibility) params.set("visibility", visibility);
+    const url = params.toString()
+      ? `${API_URL}/journeys?${params}`
+      : `${API_URL}/journeys`;
+    const res = await fetch(url, {
       headers: { Authorization: "Bearer " + token },
       cache: "no-store",
     });

@@ -242,7 +242,8 @@ function DroppableTeamRows({
   onDoubleClick: () => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({
-    id: `team:${team.id}:${team.shortName}`,
+    id: `team:${team.id}`,
+    data: { teamName: team.shortName },
   });
   const affectedPlayers = team.members.length;
 
@@ -381,7 +382,8 @@ function DroppablePlayerCard({
   onRemove: () => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({
-    id: `player:${player.id}:${playerDisplayName(player)}`,
+    id: `player:${player.id}`,
+    data: { playerName: playerDisplayName(player) },
   });
   const name = playerDisplayName(player);
   const playerInitials =
@@ -778,7 +780,7 @@ export default function TeamsPage() {
   async function handleRemoveMember(teamId: string, userId: string) {
     if (
       !window.confirm(
-        "Remove this member from the team? Their team-assigned training windows and development plans will also be removed.",
+        "Remove this member from the team? Their team-assigned training windows and journeys will also be removed.",
       )
     )
       return;
@@ -1259,8 +1261,8 @@ export default function TeamsPage() {
                               e.stopPropagation();
                               setJourneyTeam(team);
                             }}
-                            aria-label="Team Development Plans"
-                            title="Development Plans"
+                            aria-label="Team Journeys"
+                            title="Journeys"
                           >
                             <RouteIcon size={16} />
                           </Button>
@@ -2020,7 +2022,7 @@ function PlayerDetailDialog({
             <PlayerCapabilitiesRadarCard
               playerId={player.id}
               title="Skill Radar"
-              journeyLabel="Goto Development Plan"
+              journeyLabel="Goto Journey"
               journeyHref={`/coach/players/${player.id}`}
             />
           </div>
@@ -2500,7 +2502,7 @@ function TeamJourneyDialog({
           <DialogTitle>
             <span className="flex items-center gap-2">
               {team.icon && <TeamIcon icon={team.icon} size={18} />}
-              Development Plan — {team.shortName}
+              Journey — {team.shortName}
             </span>
           </DialogTitle>
         </DialogHeader>

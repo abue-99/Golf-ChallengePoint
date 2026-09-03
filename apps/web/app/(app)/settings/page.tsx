@@ -33,10 +33,6 @@ export default async function SettingsPage() {
         { label: "Notifications", href: "/settings/personal?section=notifications" },
       ],
     },
-    {
-      title: "Training & Tasks",
-      links: [],
-    },
     ...(isSysAdmin
       ? [
           {

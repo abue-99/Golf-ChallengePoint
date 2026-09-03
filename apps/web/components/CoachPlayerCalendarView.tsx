@@ -358,7 +358,7 @@ export default function CoachPlayerCalendarView({
         </div>
       ) : null}
 
-      <div className="rounded-2xl border bg-white p-3 shadow-sm [&_.fc-button]:!rounded [&_.fc-button-primary]:!bg-blue-600 [&_.fc-button-primary]:!border-blue-700 [&_.fc-button-primary.fc-button-active]:!bg-blue-800">
+      <div className="rounded-2xl border bg-white p-3 shadow-sm [&_.fc-button]:!h-9 [&_.fc-button]:!rounded-md [&_.fc-button]:!px-3 [&_.fc-button]:!text-sm [&_.fc-button-primary]:!bg-blue-600 [&_.fc-button-primary]:!border-blue-700 [&_.fc-button-primary.fc-button-active]:!bg-blue-800">
         {isTimeGridView ? (
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {outOfRangeActivities.before.length > 0 ? (

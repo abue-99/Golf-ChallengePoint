@@ -23,6 +23,7 @@ import { api } from "@/lib/api";
 import type { TrainingLesson } from "@/lib/lesson-types";
 import { trackCoachTelemetry } from "@/lib/telemetry";
 import type { JourneyTemplate } from "@/types/journey-template";
+import { toast } from "sonner";
 
 type AssignmentTarget =
   | { kind: "player"; playerId: string; playerName: string }
@@ -188,6 +189,7 @@ export function DndLessonProvider({
             ? err.message
             : `Failed to assign ${source.type}`;
         setLastError(msg);
+        toast.error(msg);
         if (target.kind === "player") {
           logDiagnostic("PlayerAssignmentFailed", {
             sourceType: source.type,
@@ -274,13 +276,17 @@ export function DndLessonProvider({
       }
 
       const overId = String(event.over.id);
+      const overData = event.over.data.current as
+        | { playerName?: string; teamName?: string }
+        | undefined;
       if (overId.startsWith("player:")) {
         const [, playerId, ...rest] = overId.split(":");
-        const playerName = rest.join(":") || playerId;
+        const playerName =
+          overData?.playerName || rest.join(":") || playerId;
         await assignItem(source, { kind: "player", playerId, playerName });
       } else if (overId.startsWith("team:")) {
         const [, teamId, ...rest] = overId.split(":");
-        const teamName = rest.join(":") || teamId;
+        const teamName = overData?.teamName || rest.join(":") || teamId;
         await assignItem(source, { kind: "team", teamId, teamName });
       } else if (overId === "training-queue") {
         await assignItem(source, { kind: "queue" });

@@ -91,14 +91,14 @@ export function DevelopmentPlanManager({ playerId, teamId }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-800">Development Plans</h2>
+        <h2 className="text-lg font-semibold text-slate-800">Journeys</h2>
         <Button
           size="sm"
           className="bg-blue-600 text-white hover:bg-blue-500"
           onClick={() => setShowNewPlan(true)}
         >
           <Plus className="mr-1.5 h-4 w-4" />
-          Add Plan
+          Add Journey
         </Button>
       </div>
 
@@ -118,7 +118,7 @@ export function DevelopmentPlanManager({ playerId, teamId }: Props) {
         <Card className="border border-dashed">
           <CardContent className="p-8 text-center text-slate-500">
             <Target className="mx-auto mb-3 h-8 w-8 text-slate-300" />
-            <p className="font-medium">No development plans yet</p>
+            <p className="font-medium">No journeys yet</p>
             <p className="text-sm">{teamId ? "Create a structured training journey for this team." : "Create a structured training journey for this player."}</p>
           </CardContent>
         </Card>
@@ -177,12 +177,12 @@ function NewPlanForm({
       const plan = await api.createPlan(payload);
       if (plan?.id) {
         onCreated(plan);
-        toast.success("Development plan created");
+        toast.success("Journey created");
       } else {
-        toast.error("Failed to create plan");
+        toast.error("Failed to create journey");
       }
     } catch {
-      toast.error("Failed to create plan");
+      toast.error("Failed to create journey");
     } finally {
       setSaving(false);
     }
@@ -192,12 +192,12 @@ function NewPlanForm({
     <Card className="border border-blue-200 bg-blue-50/50">
       <CardContent className="p-4">
         <form onSubmit={handleSubmit} className="space-y-3">
-          <h3 className="font-medium text-slate-800">New Development Plan</h3>
+          <h3 className="font-medium text-slate-800">New Journey</h3>
           <input
             autoFocus
             required
             className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-            placeholder="Plan name (e.g. Putting Improvement Plan)"
+            placeholder="Journey name (e.g. Putting Improvement Journey)"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -230,7 +230,7 @@ function NewPlanForm({
           </div>
           <div className="flex gap-2">
             <Button type="submit" size="sm" disabled={saving} className="bg-blue-600 text-white hover:bg-blue-500">
-              {saving ? "Creating…" : "Create Plan"}
+              {saving ? "Creating…" : "Create Journey"}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={onCancel}>
               Cancel
@@ -272,12 +272,12 @@ function EditPlanForm({
       });
       if (updated?.id) {
         onSaved(updated);
-        toast.success("Plan updated");
+        toast.success("Journey updated");
       } else {
-        toast.error("Failed to update plan");
+        toast.error("Failed to update journey");
       }
     } catch {
-      toast.error("Failed to update plan");
+      toast.error("Failed to update journey");
     } finally {
       setSaving(false);
     }
@@ -287,12 +287,12 @@ function EditPlanForm({
     <Card className="border border-amber-200 bg-amber-50/40">
       <CardContent className="p-4">
         <form onSubmit={handleSubmit} className="space-y-3">
-          <h3 className="font-medium text-slate-800">Edit Plan</h3>
+          <h3 className="font-medium text-slate-800">Edit Journey</h3>
           <input
             autoFocus
             required
             className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200"
-            placeholder="Plan name"
+            placeholder="Journey name"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -362,14 +362,14 @@ function PlanCard({
   const progress = totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0;
 
   async function handleDelete() {
-    if (!confirm(`Delete plan "${plan.name}"? This will also delete all training blocks and assignments.`)) return;
+    if (!confirm(`Delete journey "${plan.name}"? This will also delete all training blocks and assignments.`)) return;
     setDeleting(true);
     try {
       await api.deletePlan(plan.id);
-      toast.success("Plan deleted");
+      toast.success("Journey deleted");
       onDeleted();
     } catch {
-      toast.error("Failed to delete plan");
+      toast.error("Failed to delete journey");
       setDeleting(false);
     }
   }
@@ -414,7 +414,7 @@ function PlanCard({
             size="sm"
             onClick={() => setEditing(true)}
             className="text-slate-400 hover:text-amber-600 hover:bg-amber-50 h-8 w-8 p-0"
-            title="Edit plan"
+            title="Edit journey"
           >
             <Pencil className="h-3.5 w-3.5" />
           </Button>
@@ -424,7 +424,7 @@ function PlanCard({
             disabled={deleting}
             onClick={handleDelete}
             className="text-slate-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 p-0"
-            title="Delete plan"
+            title="Delete journey"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>

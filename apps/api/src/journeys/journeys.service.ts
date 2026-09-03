@@ -3,6 +3,7 @@ import {
   AssignmentStatus,
   AssignmentTargetType,
   JourneyDifficulty,
+  JourneyVisibility,
   LessonPriority,
   OwnerType,
   type Prisma,
@@ -26,6 +27,7 @@ type UpsertJourneyTemplateInput = {
   description?: string | null;
   category?: string | null;
   difficulty?: string | null;
+  visibility?: string | null;
   coverImageUrl?: string | null;
   lessons?: JourneyTemplateLessonInput[];
 };
@@ -66,6 +68,14 @@ export class JourneysService {
       return value as JourneyDifficulty;
     }
     throw new BadRequestException('Invalid journey difficulty');
+  }
+
+  private parseVisibility(value?: string | null): JourneyVisibility {
+    if (!value) return JourneyVisibility.PRIVATE;
+    if (value in JourneyVisibility) {
+      return value as JourneyVisibility;
+    }
+    throw new BadRequestException('Invalid journey visibility');
   }
 
   private includeTemplate() {
@@ -128,10 +138,35 @@ export class JourneysService {
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   }
 
-  async listTemplates(userId: string, role: string) {
+  async listTemplates(
+    userId: string,
+    role: string,
+    filters?: { visibility?: string },
+  ) {
     this.requireCoachOrAdmin(role);
+    const visibilityFilter = filters?.visibility;
     return this.prisma.journeyTemplate.findMany({
-      where: role === 'ADMIN' ? {} : { coachId: userId },
+      where:
+        role === 'ADMIN'
+          ? {
+              ...(visibilityFilter
+                ? { visibility: this.parseVisibility(visibilityFilter) }
+                : {}),
+            }
+          : visibilityFilter === 'PRIVATE'
+            ? {
+                coachId: userId,
+                visibility: JourneyVisibility.PRIVATE,
+              }
+            : {
+                ...(visibilityFilter
+                  ? { visibility: this.parseVisibility(visibilityFilter) }
+                  : {}),
+                OR: [
+                  { coachId: userId },
+                  { visibility: JourneyVisibility.PUBLIC },
+                ],
+              },
       include: this.includeTemplate(),
       orderBy: { createdAt: 'desc' },
     });
@@ -144,7 +179,11 @@ export class JourneysService {
       include: this.includeTemplate(),
     });
     if (!template) throw new NotFoundException('Journey template not found');
-    if (role !== 'ADMIN' && template.coachId !== userId) {
+    if (
+      role !== 'ADMIN' &&
+      template.coachId !== userId &&
+      template.visibility !== JourneyVisibility.PUBLIC
+    ) {
       throw new ForbiddenException('Not your journey template');
     }
     return template;
@@ -169,6 +208,7 @@ export class JourneysService {
           description: data.description?.trim() || null,
           category: data.category?.trim() || null,
           difficulty: this.parseDifficulty(data.difficulty),
+          visibility: this.parseVisibility(data.visibility),
           coverImageUrl: data.coverImageUrl?.trim() || null,
           lessons: lessons.length
             ? {
@@ -232,6 +272,9 @@ export class JourneysService {
           ...(data.difficulty !== undefined
             ? { difficulty: this.parseDifficulty(data.difficulty) }
             : {}),
+          ...(data.visibility !== undefined
+            ? { visibility: this.parseVisibility(data.visibility) }
+            : {}),
           ...(data.coverImageUrl !== undefined
             ? { coverImageUrl: data.coverImageUrl?.trim() || null }
             : {}),
@@ -261,6 +304,7 @@ export class JourneysService {
         description: template.description,
         category: template.category,
         difficulty: template.difficulty,
+        visibility: template.visibility,
         coverImageUrl: template.coverImageUrl,
         lessons: {
           create: template.lessons.map((entry, index) => ({
@@ -385,7 +429,11 @@ export class JourneysService {
       },
     });
     if (!template) throw new NotFoundException('Journey template not found');
-    if (role !== 'ADMIN' && template.coachId !== coachId) {
+    if (
+      role !== 'ADMIN' &&
+      template.coachId !== coachId &&
+      template.visibility !== JourneyVisibility.PUBLIC
+    ) {
       throw new ForbiddenException('Not your journey template');
     }
 
@@ -417,7 +465,11 @@ export class JourneysService {
       },
     });
     if (!template) throw new NotFoundException('Journey template not found');
-    if (role !== 'ADMIN' && template.coachId !== coachId) {
+    if (
+      role !== 'ADMIN' &&
+      template.coachId !== coachId &&
+      template.visibility !== JourneyVisibility.PUBLIC
+    ) {
       throw new ForbiddenException('Not your journey template');
     }
 

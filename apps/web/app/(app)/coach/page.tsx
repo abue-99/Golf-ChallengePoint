@@ -194,7 +194,7 @@ export default function CoachHome() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Coach Dashboard</h1>
           <p className="text-sm text-slate-500">
-            Teams und Spieler mit aktuellem Development Plan oder Trainingsfenster.
+            Teams und Spieler mit aktueller Journey oder Trainingsfenster.
           </p>
         </div>
         <div className="relative max-w-sm">
@@ -228,7 +228,7 @@ export default function CoachHome() {
         {loading ? (
           <SkeletonGrid />
         ) : visibleTeams.length === 0 ? (
-          <EmptyState text="Keine Teams mit aktuellem Development Plan oder Trainingsfenster." />
+          <EmptyState text="Keine Teams mit aktueller Journey oder Trainingsfenster." />
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {visibleTeams.map((team) => (
@@ -257,7 +257,7 @@ export default function CoachHome() {
         {loading ? (
           <SkeletonGrid />
         ) : visiblePlayers.length === 0 ? (
-          <EmptyState text="Keine Spieler mit aktuellem Development Plan oder Trainingsfenster." />
+          <EmptyState text="Keine Spieler mit aktueller Journey oder Trainingsfenster." />
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {visiblePlayers.map((player) => {

@@ -19,12 +19,19 @@ export type JourneyTemplateLesson = {
 export type JourneyTemplate = {
   id: string;
   coachId: string;
+  visibility: "PUBLIC" | "PRIVATE";
   name: string;
   description: string | null;
   category: string | null;
   difficulty: JourneyTemplateDifficulty | null;
   coverImageUrl: string | null;
   lessons: JourneyTemplateLesson[];
+  coach?: {
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    email: string;
+  } | null;
   createdAt: string;
   updatedAt: string;
 };

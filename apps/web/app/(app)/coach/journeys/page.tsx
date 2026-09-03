@@ -1,366 +1,195 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Copy, Trash2, Pencil, ArrowUp, ArrowDown } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Globe, Lock, Plus, Route as RouteIcon, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import type { JourneyTemplate } from "@/types/journey-template";
-import type { TrainingLesson } from "@/lib/lesson-types";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-type LessonDraft = {
-  lessonId: string;
-  sortOrder: number;
-  isRequired: boolean;
-};
-
-type FormState = {
-  name: string;
-  description: string;
-  category: string;
-  difficulty: "" | "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
-  coverImageUrl: string;
-  lessons: LessonDraft[];
-};
-
-const EMPTY_FORM: FormState = {
-  name: "",
-  description: "",
-  category: "",
-  difficulty: "",
-  coverImageUrl: "",
-  lessons: [],
-};
-
-export default function CoachJourneyTemplatesPage() {
-  const [templates, setTemplates] = useState<JourneyTemplate[]>([]);
-  const [lessons, setLessons] = useState<TrainingLesson[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [selectedLessonId, setSelectedLessonId] = useState<string>("");
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
-
-  async function loadData() {
-    setLoading(true);
-    try {
-      const [journeyData, lessonData] = await Promise.all([
-        api.listJourneyTemplates(),
-        api.listLessons(),
-      ]);
-      setTemplates(Array.isArray(journeyData) ? (journeyData as JourneyTemplate[]) : []);
-      setLessons(Array.isArray(lessonData) ? (lessonData as TrainingLesson[]) : []);
-    } finally {
-      setLoading(false);
-    }
+function visibilityBadge(visibility: JourneyTemplate["visibility"]) {
+  if (visibility === "PUBLIC") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+        <Globe className="h-3 w-3" /> Public
+      </span>
+    );
   }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+      <Lock className="h-3 w-3" /> Private
+    </span>
+  );
+}
+
+export default function CoachJourneysPage() {
+  const router = useRouter();
+  const [journeys, setJourneys] = useState<JourneyTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [visibilityFilter, setVisibilityFilter] = useState("");
+  const [myId, setMyId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadData();
+    fetch("/api/auth/me")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((me) => {
+        if (me?.id) setMyId(me.id);
+      })
+      .catch(() => {});
   }, []);
 
-  const lessonMap = useMemo(
-    () => new Map(lessons.map((lesson) => [lesson.id, lesson])),
-    [lessons],
-  );
-
-  function resetForm() {
-    setEditingId(null);
-    setForm(EMPTY_FORM);
-    setSelectedLessonId("");
-  }
-
-  function startEditing(template: JourneyTemplate) {
-    setEditingId(template.id);
-    setForm({
-      name: template.name,
-      description: template.description ?? "",
-      category: template.category ?? "",
-      difficulty: template.difficulty ?? "",
-      coverImageUrl: template.coverImageUrl ?? "",
-      lessons: template.lessons
-        .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map((entry, index) => ({
-          lessonId: entry.lessonId,
-          sortOrder: entry.sortOrder ?? index,
-          isRequired: entry.isRequired,
-        })),
-    });
-  }
-
-  function addLessonToForm() {
-    if (!selectedLessonId) return;
-    setForm((prev) => ({
-      ...prev,
-      lessons: [
-        ...prev.lessons,
-        {
-          lessonId: selectedLessonId,
-          sortOrder: prev.lessons.length,
-          isRequired: false,
-        },
-      ],
-    }));
-  }
-
-  function reorderLessons(from: number, to: number) {
-    setForm((prev) => {
-      const next = [...prev.lessons];
-      const [moved] = next.splice(from, 1);
-      next.splice(to, 0, moved);
-      return {
-        ...prev,
-        lessons: next.map((entry, index) => ({ ...entry, sortOrder: index })),
-      };
-    });
-  }
-
-  function removeLesson(index: number) {
-    setForm((prev) => ({
-      ...prev,
-      lessons: prev.lessons
-        .filter((_, i) => i !== index)
-        .map((entry, idx) => ({ ...entry, sortOrder: idx })),
-    }));
-  }
-
-  async function saveTemplate() {
-    if (!form.name.trim()) {
-      toast.error("Template name is required.");
-      return;
-    }
-
-    const payload = {
-      name: form.name.trim(),
-      description: form.description.trim() || null,
-      category: form.category.trim() || null,
-      difficulty: form.difficulty || null,
-      coverImageUrl: form.coverImageUrl.trim() || null,
-      lessons: form.lessons.map((entry, index) => ({
-        lessonId: entry.lessonId,
-        sortOrder: index,
-        isRequired: entry.isRequired,
-      })),
-    };
-
-    setSaving(true);
-    try {
-      if (editingId) {
-        await api.updateJourneyTemplate(editingId, payload);
-        toast.success("Journey template updated.");
-      } else {
-        await api.createJourneyTemplate(payload);
-        toast.success("Journey template created.");
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      try {
+        const data = await api.listJourneyTemplates(
+          visibilityFilter ? { visibility: visibilityFilter } : undefined,
+        );
+        if (!ignore) setJourneys(Array.isArray(data) ? (data as JourneyTemplate[]) : []);
+      } finally {
+        if (!ignore) setLoading(false);
       }
-      await loadData();
-      resetForm();
+    })();
+    return () => {
+      ignore = true;
+    };
+  }, [visibilityFilter]);
+
+  const filtered = useMemo(() => {
+    const lower = q.toLowerCase();
+    return journeys.filter((journey) => {
+      if (!q) return true;
+      return (
+        journey.name.toLowerCase().includes(lower) ||
+        (journey.category ?? "").toLowerCase().includes(lower) ||
+        (journey.description ?? "").toLowerCase().includes(lower)
+      );
+    });
+  }, [journeys, q]);
+
+  async function assignJourney(journey: JourneyTemplate) {
+    try {
+      const target = window.prompt("Assign journey to player or team (p:<playerId> or t:<teamId>):");
+      if (!target) return;
+      if (target.startsWith("p:")) {
+        await api.assignJourneyToPlayer(journey.id, target.slice(2).trim());
+        toast.success(`${journey.name} assigned to player.`);
+        return;
+      }
+      if (target.startsWith("t:")) {
+        await api.assignJourneyToTeam(journey.id, target.slice(2).trim());
+        toast.success(`${journey.name} assigned to team.`);
+        return;
+      }
+      toast.error("Use p:<playerId> or t:<teamId>.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save template.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function duplicateTemplate(id: string) {
-    try {
-      await api.duplicateJourneyTemplate(id);
-      toast.success("Journey template duplicated.");
-      await loadData();
-    } catch {
-      toast.error("Failed to duplicate template.");
-    }
-  }
-
-  async function deleteTemplate(id: string) {
-    if (!window.confirm("Delete this journey template?")) return;
-    try {
-      await api.deleteJourneyTemplate(id);
-      toast.success("Journey template deleted.");
-      if (editingId === id) resetForm();
-      await loadData();
-    } catch {
-      toast.error("Failed to delete template.");
+      toast.error(error instanceof Error ? error.message : "Journey assignment failed.");
     }
   }
 
   return (
-    <section className="space-y-4">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-bold">Journey Templates</h1>
-        <p className="text-sm text-muted-foreground">
-          Build reusable training journeys and assign them to players or teams.
-        </p>
+    <div className="space-y-6">
+      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Journey Library</h1>
+          <p className="text-sm text-slate-500">Create reusable journeys and assign them to players or teams.</p>
+        </div>
+        <Link href="/coach/journeys/new">
+          <Button className="bg-green-600 text-white hover:bg-green-500">
+            <Plus className="mr-2 h-4 w-4" /> New Journey
+          </Button>
+        </Link>
       </header>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold">Template Library</h2>
-            <Button variant="outline" size="sm" onClick={resetForm}>
-              <Plus className="mr-1 h-4 w-4" /> New
-            </Button>
-          </div>
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Loading templates…</p>
-          ) : templates.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No journey templates yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {templates.map((template) => (
-                <article key={template.id} className="rounded-lg border p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="font-medium">{template.name}</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {template.category ?? "Uncategorized"} · {template.difficulty ?? "No level"}
-                      </p>
-                      <p className="text-xs text-emerald-700 mt-1">
-                        {template.lessons.length} lesson{template.lessons.length === 1 ? "" : "s"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => startEditing(template)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button size="icon" variant="ghost" onClick={() => duplicateTemplate(template.id)}>
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      <Button size="icon" variant="ghost" onClick={() => deleteTemplate(template.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center">
+        <div className="relative w-full md:max-w-sm">
+          <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
+          <Input
+            value={q}
+            onChange={(event) => setQ(event.target.value)}
+            placeholder="Search journeys…"
+            className="pl-8"
+          />
         </div>
-
-        <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3">
-          <h2 className="font-semibold">Journey Builder</h2>
-          <Input
-            value={form.name}
-            onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-            placeholder="Template name"
-          />
-          <Textarea
-            value={form.description}
-            onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-            placeholder="Description"
-            rows={3}
-          />
-          <Input
-            value={form.category}
-            onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
-            placeholder="Category"
-          />
-          <select
-            className="h-9 w-full rounded-md border px-3 text-sm"
-            value={form.difficulty}
-            onChange={(e) =>
-              setForm((prev) => ({
-                ...prev,
-                difficulty: e.target.value as FormState["difficulty"],
-              }))
-            }
-          >
-            <option value="">Difficulty</option>
-            <option value="BEGINNER">Beginner</option>
-            <option value="INTERMEDIATE">Intermediate</option>
-            <option value="ADVANCED">Advanced</option>
-          </select>
-          <Input
-            value={form.coverImageUrl}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, coverImageUrl: e.target.value }))
-            }
-            placeholder="Cover image URL"
-          />
-
-          <div className="space-y-2 rounded-lg border p-3">
-            <div className="flex items-center gap-2">
-              <select
-                className="h-9 flex-1 rounded-md border px-2 text-sm"
-                value={selectedLessonId}
-                onChange={(e) => setSelectedLessonId(e.target.value)}
-              >
-                <option value="">Add lesson…</option>
-                {lessons.map((lesson) => (
-                  <option key={lesson.id} value={lesson.id}>
-                    {lesson.name}
-                  </option>
-                ))}
-              </select>
-              <Button type="button" variant="outline" onClick={addLessonToForm}>
-                Add
-              </Button>
-            </div>
-
-            {form.lessons.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No lessons added yet.</p>
-            ) : (
-              <div className="space-y-1.5">
-                {form.lessons.map((entry, index) => {
-                  const lesson = lessonMap.get(entry.lessonId);
-                  return (
-                    <div key={`${entry.lessonId}-${index}`} className="flex items-center gap-2 rounded-md border px-2 py-1.5">
-                      <span className="text-xs text-muted-foreground w-5">{index + 1}</span>
-                      <span className="text-sm flex-1 truncate">{lesson?.name ?? entry.lessonId}</span>
-                      <label className="flex items-center gap-1 text-xs">
-                        <input
-                          type="checkbox"
-                          checked={entry.isRequired}
-                          onChange={(e) =>
-                            setForm((prev) => ({
-                              ...prev,
-                              lessons: prev.lessons.map((item, idx) =>
-                                idx === index
-                                  ? { ...item, isRequired: e.target.checked }
-                                  : item,
-                              ),
-                            }))
-                          }
-                        />
-                        Required
-                      </label>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        disabled={index === 0}
-                        onClick={() => reorderLessons(index, index - 1)}
-                      >
-                        <ArrowUp className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        disabled={index === form.lessons.length - 1}
-                        onClick={() => reorderLessons(index, index + 1)}
-                      >
-                        <ArrowDown className="h-4 w-4" />
-                      </Button>
-                      <Button size="icon" variant="ghost" onClick={() => removeLesson(index)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-2">
-            <Button onClick={saveTemplate} disabled={saving}>
-              {saving ? "Saving…" : editingId ? "Update Template" : "Create Template"}
-            </Button>
-            <Button variant="outline" onClick={resetForm}>
-              Cancel
-            </Button>
-          </div>
-        </div>
+        <select
+          value={visibilityFilter}
+          onChange={(event) => setVisibilityFilter(event.target.value)}
+          className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none"
+        >
+          <option value="">All Visibility</option>
+          <option value="PUBLIC">Public</option>
+          <option value="PRIVATE">Private</option>
+        </select>
       </div>
-    </section>
+
+      {loading ? (
+        <p className="text-sm text-slate-500">Loading journeys…</p>
+      ) : filtered.length === 0 ? (
+        <Card className="border border-dashed">
+          <CardContent className="p-10 text-center text-slate-500">
+            {journeys.length === 0 ? "No journeys yet. Create your first journey!" : "No journeys match your filters."}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((journey) => {
+            const isOwner = myId && journey.coachId === myId;
+            return (
+              <Card
+                key={journey.id}
+                className="cursor-pointer border border-gray-200 bg-white shadow-[0_4px_16px_-4px_rgba(2,6,23,.1)] transition-shadow hover:shadow-[0_8px_24px_-6px_rgba(2,6,23,.15)]"
+                onClick={() => router.push(`/coach/journeys/${journey.id}`)}
+              >
+                <CardContent className="p-5 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-100">
+                        <RouteIcon className="h-4 w-4 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-800">{journey.name}</p>
+                        <p className="text-xs text-slate-500">{journey.category ?? "Uncategorized"}</p>
+                      </div>
+                    </div>
+                    {visibilityBadge(journey.visibility)}
+                  </div>
+
+                  {journey.description ? (
+                    <p className="text-xs text-slate-600 line-clamp-3">{journey.description}</p>
+                  ) : null}
+
+                  <div className="text-xs text-slate-500">
+                    {journey.lessons.length} lesson{journey.lessons.length === 1 ? "" : "s"}
+                  </div>
+
+                  <div className="flex items-center justify-between" onClick={(event) => event.stopPropagation()}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-green-300 text-green-700 hover:bg-green-50"
+                      onClick={() => assignJourney(journey)}
+                    >
+                      Assign
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="bg-green-600 text-white hover:bg-green-500"
+                      onClick={() => router.push(`/coach/journeys/${journey.id}${isOwner ? "?mode=edit" : ""}`)}
+                    >
+                      {isOwner ? "Edit" : "Open"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
