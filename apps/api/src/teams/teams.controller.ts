@@ -51,10 +51,7 @@ export class TeamsController {
   }
 
   @Get(':id')
-  getTeam(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
-  ) {
+  getTeam(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     this.requireCoachOrAdmin(user);
     return this.teamsService.getTeamById(user.id, id);
   }
