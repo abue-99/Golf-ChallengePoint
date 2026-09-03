@@ -133,13 +133,6 @@ type AssignmentResult = {
   }[];
 };
 
-type AssignLessonModalResult = {
-  target:
-    | { kind: "player"; playerId: string }
-    | { kind: "team"; teamId: string };
-  result?: AssignmentResult;
-};
-
 type FormState = {
   icon: string;
   shortName: string;
@@ -1676,7 +1669,11 @@ function AddPlayerDialog({
         body: JSON.stringify({ playerId: player.id }),
       });
       if (res.ok) {
-        onPlayerAdded(player);
+        const data = await res.json().catch(() => []);
+        const linkedPlayer = Array.isArray(data)
+          ? data.find((entry: Player) => entry.id === player.id) ?? player
+          : player;
+        onPlayerAdded(linkedPlayer);
         onClose();
       } else {
         const data = await res.json().catch(() => ({}));

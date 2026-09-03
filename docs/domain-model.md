@@ -18,7 +18,9 @@
 | `LessonVisibility` | `PUBLIC` · `PRIVATE` |
 | `LessonPriority` | `LOW` · `MEDIUM` · `HIGH` |
 | `GoalAchieved` | `YES` · `PARTIALLY` · `NO` |
-| `AssignmentStatus` | `OUTSTANDING` · `STARTED` · `FINISHED` · `REVIEWED` |
+| `AssignmentStatus` | `NEW` · `OPEN` · `IN_PROGRESS` · `COMPLETED` · `ARCHIVED` |
+| `AssignmentTargetType` | `PLAYER` · `TEAM` · `GROUP` |
+| `AssignmentSourceType` | `PLAYER` · `TEAM` · `GROUP` |
 | `CalendarTaskStatus` | `PLANNED` · `COMPLETED` |
 | `AvailabilityBlockType` | `SCHOOL` · `WORK` · `HOLIDAY` · `TRAVEL` · `CUSTOM` |
 | `TournamentPriority` | `PRIORITY_1` · `PRIORITY_2` · `PRIORITY_3` |
@@ -298,23 +300,37 @@ A phase or section within a `PlayerDevelopmentPlan`. Contains ordered lesson ass
 
 ### `LessonAssignment` (table: `lesson_assignments`)
 
-Junction: assigns a `TrainingLesson` to a `TrainingBlock` for a specific player.
+Reusable assignment/queue record. It can belong to a `TrainingBlock`, or exist standalone as a direct coach assignment into the training queue.
 
 | Field | Type | Notes |
 |---|---|---|
 | `id` | String (cuid) | PK |
-| `blockId` | FK → TrainingBlock | |
+| `blockId` | FK → TrainingBlock? | Optional when created outside a development plan |
 | `lessonId` | FK → TrainingLesson | |
-| `playerId` | FK → User | Assigned player |
-| `coachId` | String | Not a FK; assigning coach ID |
+| `targetType` | `AssignmentTargetType` | default `PLAYER` |
+| `sourceType` | `AssignmentSourceType` | default `PLAYER` |
+| `sourceReference` | String? | Player/team/group identifier used to track origin |
+| `playerId` | FK → User? | Assigned player when resolved to an individual queue item |
+| `teamId` | FK → Team? | Optional originating team |
+| `groupName` | String? | Optional group label |
+| `coachId` | FK → User | Assigning coach |
 | `dueDate` | DateTime? | |
+| `isInTrainingQueue` | Boolean | default `false`; direct coach assignment sets this to `true` |
+| `teamEventId` | FK → TeamEvent? | Optional link to a team event |
+| `calendarTaskId` | via `CalendarTask.assignmentId` | Optional scheduled task linkage |
 | `priority` | `LessonPriority` | default `MEDIUM` |
-| `status` | `AssignmentStatus` | default `OUTSTANDING` |
+| `status` | `AssignmentStatus` | default `NEW` |
 | `sortOrder` | Int | default 0 |
 | `playerNotes` | String? | |
 | `selfAssessment` | Int? | Player 1–10 rating |
 | `createdAt` | DateTime | auto |
 | `updatedAt` | DateTime | auto |
+
+**Operational notes**
+
+- Direct assignment to a single player creates one queue-backed `LessonAssignment`.
+- Direct assignment to a team resolves all active members and creates one separate `LessonAssignment` per member.
+- Team pending counters in the coach UI are aggregates of each member's open queue-backed assignments; they are not stored on the `Team` row itself.
 
 ---
 
@@ -450,6 +466,6 @@ Team ──< TeamEvent (coachId on User)
 
 1. **Coach–player link required**: `CoachPlayerLink` must exist before a coach can manage a player's data.
 2. **OwnerType pattern**: `PracticeSlot` and `PlayerDevelopmentPlan` set either `playerId` or `teamId` depending on `ownerType`; the unused FK is `null`.
-3. **Lesson assignment chain**: `LessonAssignment` always belongs to a `TrainingBlock`, which belongs to a `PlayerDevelopmentPlan`; lessons are reusable across multiple assignments.
+3. **Assignment-first + plan-linked model**: `LessonAssignment` can either stand alone as a queue item or belong to a `TrainingBlock`; lessons remain reusable across both flows.
 4. **Cascade deletes**: Removing a `User`, `Club`, `Team`, or `Plan` cascades to all child records. `CalendarTask.lessonId` uses `SetNull` on lesson delete.
 5. **Gamification**: `PlayerProfile.xp`, `level`, `currentStreak`, `longestStreak`, and `lastActivityAt` are updated by the `GamificationModule` on relevant player actions.

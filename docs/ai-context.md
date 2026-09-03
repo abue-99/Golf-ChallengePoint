@@ -112,6 +112,7 @@ Administrators manage clubs and user accounts.
 
 - **Coach–player link required**: before a coach can view/assign anything for a player, a `CoachPlayerLink` record must exist. Links are created via invite, manual coach addition, or player adding coach.
 - **OwnerType**: `PracticeSlot` and `PlayerDevelopmentPlan` support both `PLAYER` and `TEAM` owners. Check `ownerType` to know which FK (`playerId` vs `teamId`) is set.
-- **Lesson hierarchy**: `TrainingLesson` → assigned to a player via `LessonAssignment` inside a `TrainingBlock` inside a `PlayerDevelopmentPlan`.
+- **Lesson assignment model**: coaches can create standalone `LessonAssignment` queue items directly from the integrated `/teams` view, or attach lessons to `TrainingBlock`s inside a `PlayerDevelopmentPlan`.
+- **Pending lesson counters**: coach-facing `/teams` and `/users/me/players` responses include computed `pendingLessons`; team counts aggregate open queue items across all active members.
 - **Calendar hierarchy**: `PracticeSlot` (recurring time block) → `CalendarTask` (specific task on a date within the slot).
 - **Gamification**: `PlayerProfile` tracks `xp`, `level`, `currentStreak`, `longestStreak`, `lastActivityAt`.

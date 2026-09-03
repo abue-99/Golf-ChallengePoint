@@ -53,6 +53,7 @@ Base URL in dev: `http://localhost:4000`
 | `users/` | `UsersModule` | User CRUD, coach–player linking, invitations |
 | `calendar/` | `CalendarModule` | Practice slots, calendar tasks |
 | `lessons/` | `LessonsModule` | Training lesson CRUD |
+| `assignments/` | `AssignmentsModule` | Standalone lesson assignment + training queue flows |
 | `development-plans/` | `DevelopmentPlansModule` | Development plans, training blocks, lesson assignments |
 | `gamification/` | `GamificationModule` | XP, level, streak tracking |
 | `prisma/` | `PrismaModule` | Singleton Prisma client provider |
@@ -194,10 +195,11 @@ All require JWT + COACH or ADMIN.
 | `/coach/lessons` | `coach/lessons/page.tsx` | Lesson library |
 | `/coach/lessons/new` | `coach/lessons/new/page.tsx` | Create lesson |
 | `/coach/lessons/[id]` | `coach/lessons/[id]/page.tsx` | Edit lesson |
+| `/coach/teams` | `coach/teams/page.tsx` | Alias to the integrated teams + players coaching view |
 | `/coach` | `coach/page.tsx` | Coach home |
 | `/player` | `player/page.tsx` | Player home |
 | `/calendar` | `calendar/page.tsx` | FullCalendar view |
-| `/teams` | `teams/page.tsx` | Team management |
+| `/teams` | `teams/page.tsx` | Primary coach teams/players view with integrated lesson library + assignment drag/drop |
 | `/planning` | `planning/page.tsx` | Planning hub |
 | `/training-windows` | `training-windows/page.tsx` | Training window scheduling |
 | `/club` | `club/page.tsx` | Club view |
@@ -246,6 +248,9 @@ app/api/
 | `player-capabilities-widget.tsx` | Skill-area visualisation |
 | `VideoUploadField.tsx` | Video URL attachment field |
 | `LessonStatusBadge.tsx` | Colour-coded status badge |
+| `AssignLessonModal.tsx` | Quick-assign dialog / mobile bottom sheet for lesson assignment |
+| `DndLessonProvider.tsx` | Shared lesson drag/drop provider for player and team targets |
+| `LessonLibrarySidebar.tsx` | Reusable searchable lesson library sidebar |
 
 ### Key library files (`apps/web/lib/`)
 

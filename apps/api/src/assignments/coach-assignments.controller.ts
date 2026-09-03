@@ -6,7 +6,7 @@ import { AssignmentsService } from './assignments.service';
 
 @Controller('coach')
 @UseGuards(JwtAuthGuard)
-export class CoachWorkspaceController {
+export class CoachAssignmentsController {
   constructor(private readonly assignmentsService: AssignmentsService) {}
 
   @Post('players/:playerId/assignments')
