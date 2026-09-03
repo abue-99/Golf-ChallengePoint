@@ -9,6 +9,7 @@ export {
   AssignmentTargetType,
   AssignmentSourceType,
   JourneyDifficulty,
+  JourneyVisibility,
   CalendarTaskStatus,
   AvailabilityBlockType,
   TournamentPriority,

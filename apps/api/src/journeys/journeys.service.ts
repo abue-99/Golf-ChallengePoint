@@ -67,15 +67,15 @@ export class JourneysService {
     if (value in JourneyDifficulty) {
       return value as JourneyDifficulty;
     }
-
-    private parseVisibility(value?: string | null): JourneyVisibility {
-      if (!value) return JourneyVisibility.PRIVATE;
-      if (value in JourneyVisibility) {
-        return value as JourneyVisibility;
-      }
-      throw new BadRequestException('Invalid journey visibility');
-    }
     throw new BadRequestException('Invalid journey difficulty');
+  }
+
+  private parseVisibility(value?: string | null): JourneyVisibility {
+    if (!value) return JourneyVisibility.PRIVATE;
+    if (value in JourneyVisibility) {
+      return value as JourneyVisibility;
+    }
+    throw new BadRequestException('Invalid journey visibility');
   }
 
   private includeTemplate() {
@@ -162,7 +162,10 @@ export class JourneysService {
                 ...(visibilityFilter
                   ? { visibility: this.parseVisibility(visibilityFilter) }
                   : {}),
-                OR: [{ coachId: userId }, { visibility: JourneyVisibility.PUBLIC }],
+                OR: [
+                  { coachId: userId },
+                  { visibility: JourneyVisibility.PUBLIC },
+                ],
               },
       include: this.includeTemplate(),
       orderBy: { createdAt: 'desc' },
