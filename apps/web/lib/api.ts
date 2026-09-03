@@ -24,6 +24,14 @@ async function req(path: string, init?: RequestInit) {
   return res.json();
 }
 
+async function fetchJsonWithAuth(path: string, init?: RequestInit) {
+  const res = await fetchWithAuth(path, {
+    ...init,
+    headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
+  });
+  return handleResponse(res);
+}
+
 export const api = {
   listTemplates: () => req("/task-templates"),
   listEvents: (playerId: string) =>
@@ -256,11 +264,10 @@ export const api = {
 
   // Standalone Lesson Assignments (Assignment-First model)
   createStandaloneAssignment: (payload: Record<string, unknown>) =>
-    fetch("/api/assignments", {
+    fetchJsonWithAuth("/api/assignments", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    }).then(handleResponse),
+    }),
   listMyStandaloneAssignments: (params?: { status?: string; queueOnly?: boolean }) => {
     const qs = new URLSearchParams();
     if (params?.status) qs.set("status", params.status);
@@ -269,26 +276,23 @@ export const api = {
     return fetch(url, { cache: "no-store" }).then(handleResponse);
   },
   updateStandaloneAssignment: (id: string, payload: Record<string, unknown>) =>
-    fetch(`/api/assignments/${id}`, {
+    fetchJsonWithAuth(`/api/assignments/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    }).then(handleResponse),
+    }),
   moveStandaloneAssignmentToQueue: (id: string) =>
-    fetch(`/api/assignments/${id}/queue`, { method: "POST" }).then(handleResponse),
+    fetchJsonWithAuth(`/api/assignments/${id}/queue`, { method: "POST" }),
 
   assignLessonToPlayer: (playerId: string, payload: Record<string, unknown>) =>
-    fetch(`/api/coach/players/${playerId}/assignments`, {
+    fetchJsonWithAuth(`/api/coach/players/${playerId}/assignments`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    }).then(handleResponse),
+    }),
   assignLessonToTeam: (teamId: string, payload: Record<string, unknown>) =>
-    fetch(`/api/coach/teams/${teamId}/assignments`, {
+    fetchJsonWithAuth(`/api/coach/teams/${teamId}/assignments`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    }).then(handleResponse),
+    }),
 
   // Journey Templates
   listJourneyTemplates: (params?: { visibility?: string }) => {
@@ -300,17 +304,15 @@ export const api = {
   getJourneyTemplate: (id: string) =>
     fetch(`/api/journeys/${id}`, { cache: "no-store" }).then(handleResponse),
   createJourneyTemplate: (payload: Record<string, unknown>) =>
-    fetch("/api/journeys", {
+    fetchJsonWithAuth("/api/journeys", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    }).then(handleResponse),
+    }),
   updateJourneyTemplate: (id: string, payload: Record<string, unknown>) =>
-    fetch(`/api/journeys/${id}`, {
+    fetchJsonWithAuth(`/api/journeys/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    }).then(handleResponse),
+    }),
   deleteJourneyTemplate: (id: string) =>
     fetch(`/api/journeys/${id}`, { method: "DELETE" }).then(handleResponse),
   duplicateJourneyTemplate: (id: string) =>
@@ -318,17 +320,15 @@ export const api = {
       handleResponse,
     ),
   assignJourneyToPlayer: (journeyId: string, playerId: string) =>
-    fetch(`/api/coach/journeys/${journeyId}/assign/player/${playerId}`, {
+    fetchJsonWithAuth(`/api/coach/journeys/${journeyId}/assign/player/${playerId}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({}),
-    }).then(handleResponse),
+    }),
   assignJourneyToTeam: (journeyId: string, teamId: string) =>
-    fetch(`/api/coach/journeys/${journeyId}/assign/team/${teamId}`, {
+    fetchJsonWithAuth(`/api/coach/journeys/${journeyId}/assign/team/${teamId}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({}),
-    }).then(handleResponse),
+    }),
   updateJourneyAssignment: (
     assignmentId: string,
     payload: { status?: string; isInTrainingQueue?: boolean },
