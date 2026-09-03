@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -19,8 +20,13 @@ export class JourneysController {
   constructor(private readonly journeysService: JourneysService) {}
 
   @Get()
-  listTemplates(@CurrentUser() user: AuthenticatedUser) {
-    return this.journeysService.listTemplates(user.id, user.role as string);
+  listTemplates(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('visibility') visibility?: string,
+  ) {
+    return this.journeysService.listTemplates(user.id, user.role as string, {
+      visibility,
+    });
   }
 
   @Get(':id')
@@ -37,6 +43,7 @@ export class JourneysController {
       description?: string | null;
       category?: string | null;
       difficulty?: string | null;
+      visibility?: string | null;
       coverImageUrl?: string | null;
       lessons?: {
         lessonId: string;
@@ -62,6 +69,7 @@ export class JourneysController {
       description?: string | null;
       category?: string | null;
       difficulty?: string | null;
+      visibility?: string | null;
       coverImageUrl?: string | null;
       lessons?: {
         lessonId: string;

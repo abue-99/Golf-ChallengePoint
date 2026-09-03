@@ -83,7 +83,7 @@ export default function JourneyTemplateLibrarySidebar({
     <section className="flex min-h-0 flex-col border-t">
       <div className="flex items-center gap-2 border-b px-3 py-2">
         <JourneyIcon className="h-4 w-4 text-primary shrink-0" />
-        <span className="font-semibold text-sm flex-1">Journey Templates</span>
+        <span className="font-semibold text-sm flex-1">Journeys</span>
       </div>
 
       <div className="px-3 py-2 border-b">
@@ -99,14 +99,14 @@ export default function JourneyTemplateLibrarySidebar({
       </div>
 
       <p className="px-3 py-1.5 text-[11px] text-muted-foreground border-b">
-        Drag a journey template onto a player or team.
+        Drag a journey onto a player or team.
       </p>
 
       <div className="flex-1 overflow-y-auto px-2 py-2 space-y-2">
         {journeys === null ? (
           <p className="text-xs text-muted-foreground px-1">Loading…</p>
         ) : filtered.length === 0 ? (
-          <p className="text-xs text-muted-foreground px-1">No journey templates found.</p>
+          <p className="text-xs text-muted-foreground px-1">No journeys found.</p>
         ) : (
           filtered.map((journey) => (
             <DraggableJourneyTemplateCard

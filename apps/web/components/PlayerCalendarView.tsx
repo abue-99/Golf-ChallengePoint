@@ -805,7 +805,7 @@ export default function PlayerCalendarView({
                 </div>
               </div>
             ) : (
-              <div className="p-3 [&_.fc-button]:!rounded [&_.fc-button-primary]:!bg-green-600 [&_.fc-button-primary]:!border-green-700 [&_.fc-button-primary.fc-button-active]:!bg-green-800">
+              <div className="p-3 [&_.fc-button]:!h-9 [&_.fc-button]:!rounded-md [&_.fc-button]:!px-3 [&_.fc-button]:!text-sm [&_.fc-button-primary]:!bg-green-600 [&_.fc-button-primary]:!border-green-700 [&_.fc-button-primary.fc-button-active]:!bg-green-800">
                 {isTimeGridView ? (
                   <div className="mb-3 flex flex-wrap items-center gap-2">
                     {outOfRangeActivities.before.length > 0 ? (

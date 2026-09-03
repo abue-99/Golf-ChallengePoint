@@ -112,6 +112,11 @@ enum JourneyDifficulty {
   ADVANCED
 }
 
+enum JourneyVisibility {
+  PUBLIC
+  PRIVATE
+}
+
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -450,6 +455,7 @@ model JourneyTemplate {
   description  String?
   category     String?
   difficulty   JourneyDifficulty?
+  visibility   JourneyVisibility      @default(PRIVATE)
   coverImageUrl String?
   lessons      JourneyTemplateLesson[]
   assignments  JourneyTemplateAssignment[]

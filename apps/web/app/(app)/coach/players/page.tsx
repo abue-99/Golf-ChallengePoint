@@ -135,7 +135,7 @@ function PlayerDetailDialog({
           <PlayerCapabilitiesRadarCard
             playerId={player.id}
             title="Skill Radar"
-            journeyLabel="Goto Development Plan"
+            journeyLabel="Goto Journey"
             journeyHref={`/coach/players/${player.id}`}
           />
         </div>

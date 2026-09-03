@@ -605,7 +605,7 @@ export default function PlayerJourney() {
           No Training Plans Yet
         </h2>
         <p className="mt-2 max-w-sm text-sm text-slate-500">
-          Your coach hasn&apos;t set up a development plan for you yet. Check
+          Your coach hasn&apos;t set up a journey for you yet. Check
           back soon!
         </p>
       </div>
