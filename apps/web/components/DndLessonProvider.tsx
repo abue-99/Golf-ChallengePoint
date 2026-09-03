@@ -180,7 +180,7 @@ export function DndLessonProvider({ children, onAssigned, onQueueDrop }: Props) 
         {children}
         <DragOverlay>
           {activeLesson ? (
-            <div className="rounded-lg border border-primary bg-card px-3 py-2 shadow-lg opacity-90 text-sm font-medium w-48 truncate">
+            <div className="w-56 truncate rounded-lg border border-primary bg-card px-3 py-2 text-sm font-medium shadow-2xl ring-1 ring-primary/20">
               {activeLesson.name}
             </div>
           ) : null}

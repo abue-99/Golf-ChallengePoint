@@ -1,7 +1,8 @@
+import { AssignmentStatus } from '@challengepoint/db';
 import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
+ Injectable,
+ NotFoundException,
+ ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -9,8 +10,8 @@ import { PrismaService } from '../prisma/prisma.service';
 export class TeamsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  getCoachTeams(coachId: string) {
-    return this.prisma.team.findMany({
+  async getCoachTeams(coachId: string) {
+    const teams = await this.prisma.team.findMany({
       where: { coachId },
       include: {
         members: {
@@ -29,6 +30,44 @@ export class TeamsService {
       },
       orderBy: { createdAt: 'asc' },
     });
+
+    const memberIds = [
+      ...new Set(
+        teams.flatMap((team) => team.members.map((member) => member.userId)),
+      ),
+    ];
+    const activeStatuses: AssignmentStatus[] = [
+      AssignmentStatus.NEW,
+      AssignmentStatus.OPEN,
+      AssignmentStatus.IN_PROGRESS,
+    ];
+
+    const pendingCounts =
+      memberIds.length === 0
+        ? []
+        : await this.prisma.lessonAssignment.groupBy({
+            by: ['playerId'],
+            where: {
+              playerId: { in: memberIds },
+              isInTrainingQueue: true,
+              status: { in: activeStatuses },
+            },
+            _count: { _all: true },
+          });
+
+    const pendingByPlayerId = Object.fromEntries(
+      pendingCounts
+        .filter((row) => Boolean(row.playerId))
+        .map((row) => [row.playerId as string, row._count._all]),
+    );
+
+    return teams.map((team) => ({
+      ...team,
+      pendingLessons: team.members.reduce(
+        (sum, member) => sum + (pendingByPlayerId[member.userId] ?? 0),
+        0,
+      ),
+    }));
   }
 
   async getCoachCategories(coachId: string) {

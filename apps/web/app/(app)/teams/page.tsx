@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useDroppable } from "@dnd-kit/core";
 import { Trash2, SquarePen, Plus, UserPlus, X, Search, ExternalLink, Route as RouteIcon, CalendarDays, BookOpen } from "lucide-react";
+import { DndLessonProvider } from "@/components/DndLessonProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,7 +27,9 @@ import { PlayerCapabilitiesRadarCard } from "@/components/player-capabilities-wi
 import { DevelopmentPlanManager } from "@/components/DevelopmentPlanManager";
 import TeamTrainingWindowsView from "@/components/TeamTrainingWindowsView";
 import AssignLessonModal from "@/components/AssignLessonModal";
-import CoachWorkspaceAssignmentPanel from "@/components/CoachWorkspaceAssignmentPanel";
+import LessonLibrarySidebar from "@/components/LessonLibrarySidebar";
+import type { TrainingLesson } from "@/lib/lesson-types";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 // Common icons represented as emoji for team assignment
@@ -94,6 +98,7 @@ type Player = {
   role?: string;
   userClubs?: { clubId: string; club: { id: string; name: string } | null }[];
   coaches?: { id: string; firstName: string | null; lastName: string | null; profileImage: string | null; email?: string }[];
+  pendingLessons?: number;
 };
 
 type TeamMember = {
@@ -110,6 +115,29 @@ type Team = {
   category: string;
   clubId: string | null;
   members: TeamMember[];
+  pendingLessons?: number;
+};
+
+type AssignmentTarget =
+  | { kind: "player"; playerId: string; playerName: string }
+  | { kind: "team"; teamId: string; teamName: string };
+
+type AssignmentResult = {
+  id?: string;
+  lesson?: { name?: string | null };
+  assignmentsCreated?: number;
+  assignments?: {
+    id: string;
+    playerId: string | null;
+    lesson?: { name?: string | null };
+  }[];
+};
+
+type AssignLessonModalResult = {
+  target:
+    | { kind: "player"; playerId: string }
+    | { kind: "team"; teamId: string };
+  result?: AssignmentResult;
 };
 
 type FormState = {
@@ -136,6 +164,184 @@ function initials(p: Player) {
 
 function queueCountLabel(count: number) {
   return count > 99 ? "99+" : String(count);
+}
+
+function pendingLessonsLabel(count: number) {
+  return `📚 ${queueCountLabel(count)} Pending`;
+}
+
+function assignmentLessonName(result?: AssignmentResult) {
+  return result?.lesson?.name ?? result?.assignments?.[0]?.lesson?.name ?? "Lesson";
+}
+
+function playerDisplayName(player: Player) {
+  return `${player.firstName ?? ""} ${player.lastName ?? ""}`.trim() || player.email || "—";
+}
+
+function DroppableTeamRows({
+  team,
+  teamPendingCount,
+  membersContent,
+  actionsContent,
+  clubDisplayName,
+  clubFullName,
+  onDoubleClick,
+}: {
+  team: Team;
+  teamPendingCount: number;
+  membersContent: React.ReactNode;
+  actionsContent: React.ReactNode;
+  clubDisplayName: string | null;
+  clubFullName?: string | null;
+  onDoubleClick: () => void;
+}) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: `team:${team.id}:${team.shortName}`,
+  });
+  const affectedPlayers = team.members.length;
+
+  return (
+    <tbody
+      ref={setNodeRef}
+      className={cn(
+        "transition-colors",
+        isOver && "bg-emerald-50/80",
+      )}
+    >
+      <tr
+        className={cn(
+          "align-top cursor-pointer hover:bg-gray-50 sm:border-b sm:border-gray-200",
+          isOver && "bg-emerald-50",
+        )}
+        onDoubleClick={onDoubleClick}
+        title="Double-click to edit"
+      >
+        <td className={cn("px-4 py-1.5 font-medium", isOver && "border-y border-emerald-300")}>
+          <div className="flex items-center gap-1.5">
+            {team.icon && <TeamIcon icon={team.icon} size={14} />}
+            <span className="whitespace-nowrap">{team.shortName}</span>
+            {(team.category || team.description) && (
+              <span className="sm:hidden flex items-center gap-1 min-w-0">
+                {team.category && (
+                  <span className="text-xs font-normal text-gray-500 whitespace-nowrap">· {team.category}</span>
+                )}
+                {team.description && (
+                  <span className="text-xs font-normal text-gray-400 truncate max-w-[100px]">
+                    · {team.description.slice(0, 50)}{team.description.length > 50 ? "…" : ""}
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
+          <div className="mt-1 space-y-0.5">
+            <span className="block text-[11px] font-medium text-amber-700">
+              {pendingLessonsLabel(teamPendingCount)}
+            </span>
+            {isOver && (
+              <>
+                <span className="block text-[11px] font-medium text-emerald-700">
+                  Assign to {team.shortName}
+                </span>
+                <span className="block text-[11px] text-emerald-700/90">
+                  {affectedPlayers} Players Affected
+                </span>
+              </>
+            )}
+          </div>
+        </td>
+        <td className={cn("hidden sm:table-cell px-4 py-1.5 text-gray-600 max-w-xs", isOver && "border-y border-emerald-300")}>
+          {team.description
+            ? `${team.description.slice(0, 50)}${team.description.length > 50 ? "…" : ""}`
+            : <span className="text-gray-400 italic">—</span>}
+        </td>
+        <td className={cn("hidden sm:table-cell px-4 py-1.5 whitespace-nowrap text-gray-500", isOver && "border-y border-emerald-300")}>{team.category}</td>
+        <td className={cn("hidden sm:table-cell px-4 py-1.5 whitespace-nowrap text-gray-500", isOver && "border-y border-emerald-300")}>
+          {clubDisplayName
+            ? <span title={clubFullName ?? undefined}>{clubDisplayName}</span>
+            : <span className="text-gray-400 italic">—</span>}
+        </td>
+        <td className={cn("hidden sm:table-cell px-4 py-1.5 min-w-[160px]", isOver && "border-y border-emerald-300")}>
+          {membersContent}
+        </td>
+        <td className={cn("hidden sm:table-cell px-4 py-1.5 text-right", isOver && "border-y border-emerald-300")}>
+          {actionsContent}
+        </td>
+      </tr>
+      <tr className={cn("sm:hidden border-b border-gray-200", isOver && "bg-emerald-50")}>
+        <td colSpan={1} className={cn("px-4 pb-2", isOver && "border-b border-emerald-300")}>
+          <div className="flex items-center justify-between gap-2">
+            {membersContent}
+            {actionsContent}
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  );
+}
+
+function DroppablePlayerCard({
+  player,
+  queueCount,
+  onOpen,
+  onRemove,
+}: {
+  player: Player;
+  queueCount: number;
+  onOpen: () => void;
+  onRemove: () => void;
+}) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: `player:${player.id}:${playerDisplayName(player)}`,
+  });
+  const name = playerDisplayName(player);
+  const playerInitials = `${player.firstName?.[0] ?? ""}${player.lastName?.[0] ?? ""}`.toUpperCase() || "?";
+  const isInactive = !player.lastLogin;
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "relative flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all cursor-pointer select-none group hover:shadow-md",
+        isOver && "border-emerald-400 bg-emerald-50 shadow-md ring-2 ring-emerald-400/60",
+      )}
+      onClick={onOpen}
+      title="Click to view details"
+    >
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
+        className="absolute top-1 right-1 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+        aria-label="Remove player"
+        title="Remove player"
+      >
+        <X size={10} />
+      </button>
+      <div className="relative">
+        <Avatar className="h-16 w-16">
+          {player.profileImage && (
+            <AvatarImage src={player.profileImage} alt={name} />
+          )}
+          <AvatarFallback className="text-xl bg-gray-200 text-gray-600">
+            {playerInitials}
+          </AvatarFallback>
+        </Avatar>
+        {isInactive && (
+          <span
+            className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-amber-400 border-2 border-white"
+            title="Inactive"
+          />
+        )}
+      </div>
+      <span className="text-sm font-medium text-center text-gray-800 leading-snug">
+        {name}
+      </span>
+      <span className={cn("text-[11px] font-medium", isOver ? "text-emerald-700" : "text-amber-700")}>
+        {isOver ? `Assign to ${name}` : pendingLessonsLabel(queueCount)}
+      </span>
+    </div>
+  );
 }
 
 export default function TeamsPage() {
@@ -169,6 +375,8 @@ export default function TeamsPage() {
   const [teamPlanCounts, setTeamPlanCounts] = useState<Record<string, number>>({});
   const [playerQueueById, setPlayerQueueById] = useState<Record<string, number>>({});
   const [teamPendingById, setTeamPendingById] = useState<Record<string, number>>({});
+  const [assignLesson, setAssignLesson] = useState<TrainingLesson | null>(null);
+  const [assignPlayerId, setAssignPlayerId] = useState<string | null>(null);
   const [assignTeamId, setAssignTeamId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -187,10 +395,17 @@ export default function TeamsPage() {
       fetch("/api/players/my").then((r) => r.ok ? r.json() : []),
     ]).then(([t, c, p, clubs, myP]) => {
       const loadedTeams: Team[] = Array.isArray(t) ? t : [];
+      const linkedPlayers: Player[] = Array.isArray(myP) ? myP.filter(Boolean) : [];
       setTeams(loadedTeams);
       setCategories(Array.isArray(c) ? c : []);
       setAllPlayers(Array.isArray(p) ? p.filter(Boolean) : []);
-      setMyPlayers(Array.isArray(myP) ? myP.filter(Boolean) : []);
+      setMyPlayers(linkedPlayers);
+      setPlayerQueueById(
+        Object.fromEntries(linkedPlayers.map((player) => [player.id, player.pendingLessons ?? 0])),
+      );
+      setTeamPendingById(
+        Object.fromEntries(loadedTeams.map((team) => [team.id, team.pendingLessons ?? 0])),
+      );
       // clubs/my returns UserClub[] with club embedded
       if (Array.isArray(clubs)) {
         setMyClubs(clubs.map((uc: { club: ClubOption }) => uc.club).filter(Boolean));
@@ -212,21 +427,6 @@ export default function TeamsPage() {
     }).catch(() => setLoading(false));
   }, [role]);
 
-  function refreshWorkspaceCounters() {
-    fetch("/api/coach/workspace", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((workspace) => {
-        setPlayerQueueById(workspace?.queueCounters?.playerQueueById ?? {});
-        setTeamPendingById(workspace?.queueCounters?.teamPendingById ?? {});
-      })
-      .catch(() => {});
-  }
-
-  useEffect(() => {
-    if (role !== "COACH" && role !== "ADMIN") return;
-    refreshWorkspaceCounters();
-  }, [role]);
-
   function resolvedCategory() {
     return form.categoryInput.trim() || form.category;
   }
@@ -241,6 +441,54 @@ export default function TeamsPage() {
       const planCount = plansResult.status === "fulfilled" && Array.isArray(plansResult.value) ? plansResult.value.length : 0;
       setTeamWindowCounts((prev) => ({ ...prev, [teamId]: windowCount }));
       setTeamPlanCounts((prev) => ({ ...prev, [teamId]: planCount }));
+    });
+  }
+
+  function applyOptimisticAssignment(target: AssignmentTarget, result?: AssignmentResult) {
+    const affectedPlayerIds =
+      target.kind === "player"
+        ? [target.playerId]
+        : (result?.assignments
+            ?.map((assignment) => assignment.playerId)
+            .filter((playerId): playerId is string => Boolean(playerId)) ??
+          teams.find((team) => team.id === target.teamId)?.members.map((member) => member.userId) ??
+          []);
+
+    setPlayerQueueById((prev) => {
+      const next = { ...prev };
+      affectedPlayerIds.forEach((playerId) => {
+        next[playerId] = (next[playerId] ?? 0) + 1;
+      });
+      return next;
+    });
+
+    setTeamPendingById((prev) => {
+      const next = { ...prev };
+      teams.forEach((team) => {
+        const increment = team.members.reduce(
+          (sum, member) => sum + (affectedPlayerIds.includes(member.userId) ? 1 : 0),
+          0,
+        );
+        if (increment > 0) {
+          next[team.id] = (next[team.id] ?? 0) + increment;
+        }
+      });
+      return next;
+    });
+  }
+
+  function handleAssignmentSuccess(target: AssignmentTarget, result?: AssignmentResult) {
+    applyOptimisticAssignment(target, result);
+    const lessonName = assignmentLessonName(result);
+
+    if (target.kind === "player") {
+      toast.success(`${lessonName} assigned to ${target.playerName}`);
+      return;
+    }
+
+    const assignmentsCreated = result?.assignmentsCreated ?? result?.assignments?.length ?? 0;
+    toast.success(`${lessonName} assigned to ${target.teamName}`, {
+      description: `${assignmentsCreated} queues updated`,
     });
   }
 
@@ -271,6 +519,7 @@ export default function TeamsPage() {
     if (res.ok) {
       const newTeam = await res.json();
       setTeams((prev) => [...prev, newTeam]);
+      setTeamPendingById((prev) => ({ ...prev, [newTeam.id]: newTeam.pendingLessons ?? 0 }));
       const cat = resolvedCategory();
       if (!categories.includes(cat)) setCategories((prev) => [...prev, cat]);
       setForm(EMPTY_FORM);
@@ -287,6 +536,11 @@ export default function TeamsPage() {
     if (res.ok) {
       setTeams((prev) => prev.filter((t) => t.id !== teamId));
       setEditingTeam((prev) => (prev?.id === teamId ? null : prev));
+      setTeamPendingById((prev) => {
+        const next = { ...prev };
+        delete next[teamId];
+        return next;
+      });
     }
   }
 
@@ -315,6 +569,7 @@ export default function TeamsPage() {
       const updated = await res.json();
       setTeams((prev) => prev.map((t) => (t.id === teamId ? updated : t)));
       setEditingTeam((prev) => (prev?.id === teamId ? updated : prev));
+      setTeamPendingById((prev) => ({ ...prev, [teamId]: updated.pendingLessons ?? 0 }));
       refreshTeamBadgeCounts(teamId);
     }
     setAddMemberTeamId(null);
@@ -329,6 +584,7 @@ export default function TeamsPage() {
       const updated = await res.json();
       setTeams((prev) => prev.map((t) => (t.id === teamId ? updated : t)));
       setEditingTeam((prev) => (prev?.id === teamId ? updated : prev));
+      setTeamPendingById((prev) => ({ ...prev, [teamId]: updated.pendingLessons ?? 0 }));
       refreshTeamBadgeCounts(teamId);
     }
   }
@@ -349,6 +605,7 @@ export default function TeamsPage() {
       const updated = await res.json();
       setTeams((prev) => prev.map((t) => (t.id === teamId ? updated : t)));
       setEditingTeam(updated);
+      setTeamPendingById((prev) => ({ ...prev, [teamId]: updated.pendingLessons ?? 0 }));
     }
     return res.ok;
   }
@@ -375,20 +632,15 @@ export default function TeamsPage() {
   if (loading) return <div className="p-6">Loading…</div>;
 
   return (
-    <div className="p-6 space-y-3 max-w-6xl">
-      <h1 className="text-2xl font-bold">Teams</h1>
+    <DndLessonProvider onAssigned={handleAssignmentSuccess}>
+      <div className="p-6">
+        <div className="mx-auto grid max-w-[1500px] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-3">
+            <h1 className="text-2xl font-bold">Teams</h1>
 
-      <CoachWorkspaceAssignmentPanel
-        teams={teams}
-        players={myPlayers}
-        playerQueueById={playerQueueById}
-        teamPendingById={teamPendingById}
-        onAssigned={refreshWorkspaceCounters}
-      />
-
-      {/* New Team Form */}
-      {showForm && (
-        <div className="rounded-xl border bg-white p-5 space-y-4 shadow-sm">
+            {/* New Team Form */}
+            {showForm && (
+              <div className="rounded-xl border bg-white p-5 space-y-4 shadow-sm">
           <h2 className="text-sm font-semibold text-gray-700">New Team</h2>
 
           {/* Icon picker */}
@@ -510,12 +762,12 @@ export default function TeamsPage() {
             </Button>
             <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
           </div>
-        </div>
-      )}
+              </div>
+            )}
 
-      {/* Teams Table */}
-      {/* Search bar + New Team button in one row directly above the table */}
-      <div className="flex items-center gap-2">
+            {/* Teams Table */}
+            {/* Search bar + New Team button in one row directly above the table */}
+            <div className="flex items-center gap-2">
         <div className="relative w-full max-w-xs">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
           <Input
@@ -531,14 +783,14 @@ export default function TeamsPage() {
         >
           <Plus size={16} className="mr-1" /> New Team
         </Button>
-      </div>
+            </div>
 
-      {teams.length === 0 ? (
-        <p className="text-sm text-gray-500">No teams yet. Create your first team above.</p>
-      ) : filtered.length === 0 ? (
-        <p className="text-sm text-gray-500">No matching teams found.</p>
-      ) : (
-        <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+            {teams.length === 0 ? (
+              <p className="text-sm text-gray-500">No teams yet. Create your first team above.</p>
+            ) : filtered.length === 0 ? (
+              <p className="text-sm text-gray-500">No matching teams found.</p>
+            ) : (
+              <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
               <tr>
@@ -550,7 +802,6 @@ export default function TeamsPage() {
                 <th className="hidden sm:table-cell px-4 py-2 text-right"></th>
               </tr>
             </thead>
-            <tbody>
               {filtered.map((team) => {
                 const teamMemberIds = new Set(team.members.map((m) => m.userId));
                 const isAddingToThisTeam = addMemberTeamId === team.id;
@@ -641,7 +892,12 @@ export default function TeamsPage() {
                       variant="ghost"
                       size="icon"
                       className="text-gray-500 hover:text-primary"
-                      onClick={(e) => { e.stopPropagation(); setAssignTeamId(team.id); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAssignLesson(null);
+                        setAssignPlayerId(null);
+                        setAssignTeamId(team.id);
+                      }}
                       aria-label="Assign lesson to team"
                       title="Assign Lesson"
                     >
@@ -709,138 +965,141 @@ export default function TeamsPage() {
                 );
 
                 return (
-                  <React.Fragment key={team.id}>
-                    <tr
-                      className="align-top cursor-pointer hover:bg-gray-50 sm:border-b sm:border-gray-200"
-                      onDoubleClick={() => setEditingTeam(team)}
-                      title="Double-click to edit"
-                    >
-                      <td className="px-4 py-1.5 font-medium">
-                        <div className="flex items-center gap-1.5">
-                          {team.icon && <TeamIcon icon={team.icon} size={14} />}
-                          <span className="whitespace-nowrap">{team.shortName}</span>
-                          {teamPendingCount > 0 && (
-                            <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 whitespace-nowrap">
-                              Queued {queueCountLabel(teamPendingCount)}
-                            </span>
-                          )}
-                          {(team.category || team.description) && (
-                            <span className="sm:hidden flex items-center gap-1 min-w-0">
-                              {team.category && (
-                                <span className="text-xs font-normal text-gray-500 whitespace-nowrap">· {team.category}</span>
-                              )}
-                              {team.description && (
-                                <span className="text-xs font-normal text-gray-400 truncate max-w-[100px]">
-                                  · {team.description.slice(0, 50)}{team.description.length > 50 ? "…" : ""}
-                                </span>
-                              )}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="hidden sm:table-cell px-4 py-1.5 text-gray-600 max-w-xs">
-                       {team.description
-                         ? `${team.description.slice(0, 50)}${team.description.length > 50 ? "…" : ""}`
-                         : <span className="text-gray-400 italic">—</span>}
-                      </td>
-                      <td className="hidden sm:table-cell px-4 py-1.5 whitespace-nowrap text-gray-500">{team.category}</td>
-                      <td className="hidden sm:table-cell px-4 py-1.5 whitespace-nowrap text-gray-500">
-                        {clubDisplayName
-                          ? <span title={clubFullName}>{clubDisplayName}</span>
-                          : <span className="text-gray-400 italic">—</span>}
-                      </td>
-                      <td className="hidden sm:table-cell px-4 py-1.5 min-w-[160px]">
-                        {membersContent}
-                      </td>
-                      <td className="hidden sm:table-cell px-4 py-1.5 text-right">
-                        {actionsContent}
-                      </td>
-                    </tr>
-                    {/* Mobile-only second row: members + action buttons */}
-                    <tr className="sm:hidden border-b border-gray-200">
-                      <td colSpan={1} className="px-4 pb-2">
-                        <div className="flex items-center justify-between gap-2">
-                          {membersContent}
-                          {actionsContent}
-                        </div>
-                      </td>
-                    </tr>
-                  </React.Fragment>
+                  <DroppableTeamRows
+                    key={team.id}
+                    team={team}
+                    teamPendingCount={teamPendingCount}
+                    membersContent={membersContent}
+                    actionsContent={actionsContent}
+                    clubDisplayName={clubDisplayName}
+                    clubFullName={clubFullName}
+                    onDoubleClick={() => setEditingTeam(team)}
+                  />
                 );
               })}
-            </tbody>
           </table>
+              </div>
+            )}
+
+            {/* ── Players Section ── */}
+            <div className="mt-10">
+              <PlayersSection
+                players={myPlayers}
+                myClubs={myClubs}
+                playerQueueById={playerQueueById}
+                onPlayerInvited={(newPlayer) => {
+                  setMyPlayers((prev) => {
+                    const exists = prev.some((p) => p.id === newPlayer.id);
+                    return exists ? prev : [...prev, newPlayer];
+                  });
+                  setPlayerQueueById((prev) => ({
+                    ...prev,
+                    [newPlayer.id]: newPlayer.pendingLessons ?? 0,
+                  }));
+                }}
+                onPlayerRemoved={(playerId) => {
+                  setMyPlayers((prev) => prev.filter((p) => p.id !== playerId));
+                  setPlayerQueueById((prev) => {
+                    const next = { ...prev };
+                    delete next[playerId];
+                    return next;
+                  });
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="xl:sticky xl:top-6">
+            <div className="overflow-hidden rounded-xl border bg-background xl:max-h-[calc(100vh-3rem)]">
+              <LessonLibrarySidebar
+                inlineFullWidth
+                onLessonClick={(lesson) => {
+                  setAssignLesson(lesson);
+                  setAssignPlayerId(null);
+                  setAssignTeamId(null);
+                }}
+              />
+            </div>
+          </div>
         </div>
-      )}
 
-      {/* Edit Team Dialog */}
-      {editingTeam && (
-        <EditTeamDialog
-          team={editingTeam}
-          categories={categories}
-          myClubs={myClubs}
-          allPlayers={allPlayers}
-          onClose={() => setEditingTeam(null)}
-          onUpdate={handleUpdate}
-          onAddMember={handleAddMember}
-          onRemoveMember={handleRemoveMember}
+        {/* Edit Team Dialog */}
+        {editingTeam && (
+          <EditTeamDialog
+            team={editingTeam}
+            categories={categories}
+            myClubs={myClubs}
+            allPlayers={allPlayers}
+            onClose={() => setEditingTeam(null)}
+            onUpdate={handleUpdate}
+            onAddMember={handleAddMember}
+            onRemoveMember={handleRemoveMember}
+          />
+        )}
+
+        {/* Member Detail Dialog */}
+        {selectedMemberPlayer && (
+          <PlayerDetailDialog
+            player={selectedMemberPlayer}
+            onClose={() => setSelectedMemberPlayer(null)}
+          />
+        )}
+
+        {/* Team Journey Dialog */}
+        {journeyTeam && (
+          <TeamJourneyDialog
+            team={journeyTeam}
+            onClose={() => { const id = journeyTeam.id; setJourneyTeam(null); refreshTeamBadgeCounts(id); }}
+          />
+        )}
+
+        {/* Team Training Windows Dialog */}
+        {trainingWindowsTeam && (
+          <TeamTrainingWindowsDialog
+            team={trainingWindowsTeam}
+            onClose={() => { const id = trainingWindowsTeam.id; setTrainingWindowsTeam(null); refreshTeamBadgeCounts(id); }}
+          />
+        )}
+
+        <AssignLessonModal
+          open={Boolean(assignLesson || assignPlayerId || assignTeamId)}
+          onClose={() => {
+            setAssignLesson(null);
+            setAssignPlayerId(null);
+            setAssignTeamId(null);
+          }}
+          preselectedLesson={assignLesson}
+          preselectedPlayerId={assignPlayerId}
+          preselectedTeamId={assignTeamId}
+          onAssigned={({ target, result }) => {
+            if (target.kind === "player") {
+              const player = myPlayers.find((entry) => entry.id === target.playerId);
+              handleAssignmentSuccess(
+                {
+                  kind: "player",
+                  playerId: target.playerId,
+                  playerName: player ? playerDisplayName(player) : "player",
+                },
+                result,
+              );
+            } else {
+              handleAssignmentSuccess(
+                {
+                  kind: "team",
+                  teamId: target.teamId,
+                  teamName:
+                    teams.find((team) => team.id === target.teamId)?.shortName ?? "team",
+                },
+                result,
+              );
+            }
+            setAssignLesson(null);
+            setAssignPlayerId(null);
+            setAssignTeamId(null);
+          }}
         />
-      )}
-
-      {/* Member Detail Dialog */}
-      {selectedMemberPlayer && (
-        <PlayerDetailDialog
-          player={selectedMemberPlayer}
-          onClose={() => setSelectedMemberPlayer(null)}
-        />
-      )}
-
-      {/* Team Journey Dialog */}
-      {journeyTeam && (
-        <TeamJourneyDialog
-          team={journeyTeam}
-          onClose={() => { const id = journeyTeam.id; setJourneyTeam(null); refreshTeamBadgeCounts(id); }}
-        />
-      )}
-
-      {/* Team Training Windows Dialog */}
-      {trainingWindowsTeam && (
-        <TeamTrainingWindowsDialog
-          team={trainingWindowsTeam}
-          onClose={() => { const id = trainingWindowsTeam.id; setTrainingWindowsTeam(null); refreshTeamBadgeCounts(id); }}
-        />
-      )}
-
-      {/* ── Players Section ── */}
-      <div className="mt-10">
-      <PlayersSection
-        players={myPlayers}
-        myClubs={myClubs}
-        playerQueueById={playerQueueById}
-        onPlayerInvited={(newPlayer) =>
-          setMyPlayers((prev) => {
-            const exists = prev.some((p) => p.id === newPlayer.id);
-            return exists ? prev : [...prev, newPlayer];
-          })
-        }
-        onPlayerRemoved={(playerId) =>
-          setMyPlayers((prev) => prev.filter((p) => p.id !== playerId))
-        }
-      />
       </div>
-
-      {/* Assign Lesson to Team modal */}
-      <AssignLessonModal
-        open={Boolean(assignTeamId)}
-        onClose={() => setAssignTeamId(null)}
-        preselectedTeamId={assignTeamId}
-        onAssigned={() => {
-          toast.success("Lesson assigned to team.");
-          refreshWorkspaceCounters();
-          setAssignTeamId(null);
-        }}
-      />
-    </div>
+    </DndLessonProvider>
   );
 }
 
@@ -1597,57 +1856,19 @@ function PlayersSection({
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {filtered.map((p) => {
-            const name = `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.email || "—";
-            const playerInitials = `${p.firstName?.[0] ?? ""}${p.lastName?.[0] ?? ""}`.toUpperCase() || "?";
-            const isInactive = !p.lastLogin;
             const queueCount = playerQueueById[p.id] ?? 0;
 
             return (
-              <div
+              <React.Fragment
                 key={p.id}
-                className="relative flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-all cursor-pointer select-none group"
-                onClick={() => setSelectedPlayer(p)}
-                title="Click to view details"
               >
-                <button
-                 onClick={(e) => { e.stopPropagation(); handleRemovePlayer(p.id, name); }}
-                  className="absolute top-1 right-1 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
-                  aria-label="Remove player"
-                  title="Remove player"
-                >
-                  <X size={10} />
-                </button>
-                <div className="relative">
-                  <Avatar className="h-16 w-16">
-                    {p.profileImage && (
-                      <AvatarImage src={p.profileImage} alt={name} />
-                    )}
-                    <AvatarFallback className="text-xl bg-gray-200 text-gray-600">
-                      {playerInitials}
-                    </AvatarFallback>
-                  </Avatar>
-                  {isInactive && (
-                    <span
-                      className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-amber-400 border-2 border-white"
-                      title="Inactive"
-                    />
-                  )}
-                  {queueCount > 0 && (
-                    <span
-                      className="absolute -bottom-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white"
-                      title={`Queued lessons: ${queueCount}`}
-                    >
-                      {queueCountLabel(queueCount)}
-                    </span>
-                  )}
-                </div>
-                <span className="text-sm font-medium text-center text-gray-800 leading-snug">
-                  {name}
-                </span>
-                {queueCount > 0 && (
-                  <span className="text-[11px] font-medium text-amber-700">Queued {queueCountLabel(queueCount)}</span>
-                )}
-              </div>
+                <DroppablePlayerCard
+                  player={p}
+                  queueCount={queueCount}
+                  onOpen={() => setSelectedPlayer(p)}
+                  onRemove={() => handleRemovePlayer(p.id, playerDisplayName(p))}
+                />
+              </React.Fragment>
             );
           })}
         </div>

@@ -277,9 +277,6 @@ export const api = {
   moveStandaloneAssignmentToQueue: (id: string) =>
     fetch(`/api/assignments/${id}/queue`, { method: "POST" }).then(handleResponse),
 
-  // Coach workspace assignment endpoints
-  getCoachWorkspace: () =>
-    fetch("/api/coach/workspace", { cache: "no-store" }).then(handleResponse),
   assignLessonToPlayer: (playerId: string, payload: Record<string, unknown>) =>
     fetch(`/api/coach/players/${playerId}/assignments`, {
       method: "POST",

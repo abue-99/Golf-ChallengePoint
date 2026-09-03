@@ -52,7 +52,12 @@ type Props = {
   preselectedPlayerId?: string | null;
   preselectedTeamId?: string | null;
   defaultAddToQueue?: boolean;
-  onAssigned?: (result?: unknown) => void;
+  onAssigned?: (payload: {
+    target:
+      | { kind: "player"; playerId: string }
+      | { kind: "team"; teamId: string };
+    result?: unknown;
+  }) => void;
 };
 
 export default function AssignLessonModal({
@@ -61,7 +66,6 @@ export default function AssignLessonModal({
   preselectedLesson,
   preselectedPlayerId,
   preselectedTeamId,
-  defaultAddToQueue,
   onAssigned,
 }: Props) {
   const [lessons, setLessons] = useState<TrainingLesson[]>([]);
@@ -74,7 +78,6 @@ export default function AssignLessonModal({
   const [targetType, setTargetType] = useState<"player" | "team">("player");
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>("");
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
-  const [addToQueue, setAddToQueue] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -115,8 +118,7 @@ export default function AssignLessonModal({
       setTargetType("team");
       setSelectedTeamId(preselectedTeamId);
     }
-    if (defaultAddToQueue) setAddToQueue(true);
-  }, [open, preselectedLesson, preselectedPlayerId, preselectedTeamId, defaultAddToQueue]);
+  }, [open, preselectedLesson, preselectedPlayerId, preselectedTeamId]);
 
   const filteredLessons = useMemo(() => {
     const lower = lessonSearch.toLowerCase();
@@ -135,7 +137,6 @@ export default function AssignLessonModal({
     setTargetType("player");
     setSelectedPlayerId("");
     setSelectedTeamId("");
-    setAddToQueue(false);
     onClose();
   }
 
@@ -148,7 +149,6 @@ export default function AssignLessonModal({
     try {
       const payload: Record<string, unknown> = {
         lessonId: selectedLessonId,
-        isInTrainingQueue: addToQueue,
       };
       const result =
         targetType === "player"
@@ -160,7 +160,17 @@ export default function AssignLessonModal({
         playerId: selectedPlayerId || undefined,
         teamId: selectedTeamId || undefined,
       });
-      onAssigned?.(result);
+      onAssigned?.(
+        targetType === "player"
+          ? {
+              target: { kind: "player", playerId: selectedPlayerId },
+              result,
+            }
+          : {
+              target: { kind: "team", teamId: selectedTeamId },
+              result,
+            },
+      );
       handleClose(false);
     } catch {
       toast.error("Failed to assign lesson.");
@@ -258,16 +268,6 @@ export default function AssignLessonModal({
           </Select>
         </div>
       )}
-
-      <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-        <input
-          type="checkbox"
-          checked={addToQueue}
-          onChange={(e) => setAddToQueue(e.target.checked)}
-          className="h-4 w-4 rounded border-border"
-        />
-        Also add to Training Queue
-      </label>
 
       <div className="flex justify-end gap-2 pt-1">
         <Button variant="outline" size="sm" onClick={() => handleClose()} disabled={submitting}>

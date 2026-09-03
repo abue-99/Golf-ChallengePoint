@@ -42,10 +42,10 @@ function DraggableLessonCard({
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform) }}
       className={cn(
-        "group flex items-center gap-2 rounded-md border bg-card px-2 py-1.5 text-sm cursor-grab active:cursor-grabbing select-none",
-        isDragging && "opacity-50 ring-2 ring-primary",
+        "group flex items-center gap-2 rounded-md border bg-card px-2 py-1.5 text-sm cursor-grab active:cursor-grabbing select-none transition-transform transition-shadow",
+        isDragging && "z-50 scale-[1.02] shadow-xl ring-2 ring-primary opacity-75",
       )}
-      title={`Drag to assign "${lesson.name}"`}
+      title={`Drag or tap to assign "${lesson.name}"`}
       onClick={() => onLessonClick?.(lesson)}
     >
       <div {...attributes} {...listeners} className="flex items-center flex-1 gap-2 min-w-0">
@@ -57,19 +57,6 @@ function DraggableLessonCard({
           {lesson.durationMinutes}m
         </span>
       ) : null}
-      {onLessonClick && (
-        <button
-          type="button"
-          className="shrink-0 rounded px-1 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/10"
-          onClick={(e) => {
-            e.stopPropagation();
-            onLessonClick(lesson);
-          }}
-          title="Quick-assign"
-        >
-          Assign
-        </button>
-      )}
     </div>
   );
 }
@@ -205,8 +192,7 @@ export default function LessonLibrarySidebar({
 
       {/* Drag hint */}
       <p className="px-3 py-1.5 text-[11px] text-muted-foreground border-b">
-        Drag a lesson onto a player, team, or queue to assign it. Tap to use
-        quick-assign on touch devices.
+        Drag a lesson onto a player or team. Short tap opens quick assign on touch devices.
       </p>
 
       {/* Lesson list */}

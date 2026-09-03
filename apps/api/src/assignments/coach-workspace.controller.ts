@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
@@ -8,14 +8,6 @@ import { AssignmentsService } from './assignments.service';
 @UseGuards(JwtAuthGuard)
 export class CoachWorkspaceController {
   constructor(private readonly assignmentsService: AssignmentsService) {}
-
-  @Get('workspace')
-  getWorkspace(@CurrentUser() user: AuthenticatedUser) {
-    return this.assignmentsService.getCoachWorkspace(
-      user.id,
-      user.role as string,
-    );
-  }
 
   @Post('players/:playerId/assignments')
   assignToPlayer(
