@@ -37,6 +37,7 @@ services:
       NODE_ENV: production
       API_URL: http://golf_api:4000
       ACCESS_SECRET: ${ACCESS_SECRET:-your-access-secret-key-min-32-chars}
+      AUTH_PROXY_DIAGNOSTICS: ${AUTH_PROXY_DIAGNOSTICS:-true}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://178.104.48.239/api}
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
       # Set to "true" only when the site is served over HTTPS

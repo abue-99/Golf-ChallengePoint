@@ -15,6 +15,7 @@ const secure = process.env.SECURE_COOKIES === "true";
 const authProxyDebug =
   process.env.AUTH_PROXY_DEBUG === "true" &&
   process.env.NODE_ENV !== "production";
+const authProxyDiagnostics = process.env.AUTH_PROXY_DIAGNOSTICS === "true";
 
 function logAuthProxy(...args: unknown[]) {
   if (authProxyDebug) {
@@ -23,7 +24,13 @@ function logAuthProxy(...args: unknown[]) {
 }
 
 function logAuthDiagnostic(label: string, value: string | number | boolean) {
-  console.log(`[AUTH] ${label}=${value}`);
+  if (authProxyDiagnostics) {
+    console.log(`[AUTH] ${label}=${value}`);
+  }
+}
+
+function sanitizeLoggedPath(path: string) {
+  return path.split("?")[0] || path;
 }
 
 function buildCookieHeader(cookiePairs: Array<{ name: string; value: string }>) {
@@ -75,7 +82,7 @@ function buildForwardedHeaders(headers: Headers, removeContentType = false) {
 
 async function refreshAccessToken(cookieHeader: string) {
   logAuthProxy("refresh started");
-  console.log("[AUTH] refresh_started=true");
+  logAuthDiagnostic("refresh_started", true);
   const response = await fetch(`${API_URL}/auth/refresh`, {
     method: "POST",
     headers: { Cookie: cookieHeader },
@@ -156,7 +163,7 @@ export async function proxyJsonWithAuthRetry({
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   const refreshToken = cookieStore.get("refresh_token")?.value;
-  logAuthDiagnostic("path", path);
+  logAuthDiagnostic("path", sanitizeLoggedPath(path));
   logAuthDiagnostic("token", Boolean(token));
   logAuthDiagnostic("refresh_token", Boolean(refreshToken));
   logAuthProxy("token present", Boolean(token));
