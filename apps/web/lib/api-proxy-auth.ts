@@ -15,6 +15,7 @@ const secure = process.env.SECURE_COOKIES === "true";
 const authProxyDebug =
   process.env.AUTH_PROXY_DEBUG === "true" &&
   process.env.NODE_ENV !== "production";
+// Temporary, explicit opt-in diagnostics for production auth refresh tracing.
 const authProxyDiagnostics = process.env.AUTH_PROXY_DIAGNOSTICS === "true";
 
 function logAuthProxy(...args: unknown[]) {
@@ -25,7 +26,7 @@ function logAuthProxy(...args: unknown[]) {
 
 function logAuthDiagnostic(label: string, value: string | number | boolean) {
   if (authProxyDiagnostics) {
-    console.log(`[AUTH] ${label}=${value}`);
+    console.log(`[AUTH][TEMP] ${label}=${value}`);
   }
 }
 
