@@ -15,7 +15,7 @@ const API_URL = process.env.API_URL || "http://golf_api:4000";
 const secure = process.env.SECURE_COOKIES === "true";
 
 function buildCookieHeader(refreshToken: string) {
-  return `refresh_token=${refreshToken}`;
+  return `refresh_token=${encodeURIComponent(refreshToken)}`;
 }
 
 function buildTokenCookieOptions() {
@@ -28,9 +28,25 @@ function buildTokenCookieOptions() {
   };
 }
 
+function buildRefreshTokenCookieOptions() {
+  return {
+    httpOnly: true,
+    secure,
+    sameSite: "strict" as const,
+    maxAge: 7 * 24 * 60 * 60,
+    path: "/",
+  };
+}
+
 function clearAuthCookies(response: NextResponse) {
-  response.cookies.set("token", "", { maxAge: 0, path: "/" });
-  response.cookies.set("refresh_token", "", { maxAge: 0, path: "/" });
+  response.cookies.set("token", "", {
+    ...buildTokenCookieOptions(),
+    maxAge: 0,
+  });
+  response.cookies.set("refresh_token", "", {
+    ...buildRefreshTokenCookieOptions(),
+    maxAge: 0,
+  });
 }
 
 async function refreshAccessToken(refreshToken: string) {
@@ -133,12 +149,12 @@ export async function proxyJsonWithAuthRetry({
     );
   }
 
-  const responseBody = await response
-    .json()
-    .catch(() => fallbackBody);
-  const browserResponse = NextResponse.json(responseBody, {
-    status: response.status,
-  });
+  const browserResponse =
+    response.status === 204
+      ? new NextResponse(null, { status: response.status })
+      : NextResponse.json(await response.json().catch(() => fallbackBody), {
+          status: response.status,
+        });
 
   if (refreshedAuth) {
     browserResponse.cookies.set(
