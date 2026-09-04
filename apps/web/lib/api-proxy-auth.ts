@@ -95,7 +95,7 @@ async function executeApiRequest(
   cache: RequestCache | undefined,
 ) {
   const headers: Record<string, string> = {
-    Authorization: `******
+    Authorization: ["Bearer", accessToken].join(" "),
   };
 
   const requestBody = buildRequestBody(body);
