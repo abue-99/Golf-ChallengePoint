@@ -86,7 +86,7 @@ async function refreshAccessToken(cookieHeader: string) {
 }
 
 function buildRequestBody(body: unknown) {
-  if (body === undefined) return undefined;
+  if (body === undefined) return { body: undefined, isJson: false };
   if (
     typeof body === "string" ||
     body instanceof FormData ||
@@ -96,9 +96,9 @@ function buildRequestBody(body: unknown) {
     ArrayBuffer.isView(body) ||
     body instanceof ReadableStream
   ) {
-    return body;
+    return { body, isJson: false };
   }
-  return JSON.stringify(body);
+  return { body: JSON.stringify(body), isJson: true };
 }
 
 async function executeApiRequest(
@@ -112,8 +112,8 @@ async function executeApiRequest(
     Authorization: ["Bearer", accessToken].join(" "),
   };
 
-  const requestBody = buildRequestBody(body);
-  if (requestBody !== undefined) {
+  const { body: requestBody, isJson } = buildRequestBody(body);
+  if (isJson) {
     headers["Content-Type"] = "application/json";
   }
 
@@ -139,7 +139,12 @@ export async function proxyJsonWithAuthRetry({
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   const refreshToken = cookieStore.get("refresh_token")?.value;
-  const cookieHeader = buildCookieHeader(cookieStore.getAll());
+  const cookieHeader = buildCookieHeader(
+    [
+      token ? { name: "token", value: token } : null,
+      refreshToken ? { name: "refresh_token", value: refreshToken } : null,
+    ].filter((cookie): cookie is { name: string; value: string } => Boolean(cookie)),
+  );
   const unauthorizedResponse = (
     body: unknown = { message: "Invalid or expired token" },
     clearCookies = false,
