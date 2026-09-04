@@ -12,7 +12,9 @@ type ProxyJsonRequestOptions = {
 
 const API_URL = process.env.API_URL || "http://golf_api:4000";
 const secure = process.env.SECURE_COOKIES === "true";
-const authProxyDebug = process.env.AUTH_PROXY_DEBUG === "true";
+const authProxyDebug =
+  process.env.AUTH_PROXY_DEBUG === "true" &&
+  process.env.NODE_ENV !== "production";
 
 function logAuthProxy(...args: unknown[]) {
   if (authProxyDebug) {
