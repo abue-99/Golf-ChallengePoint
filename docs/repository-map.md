@@ -53,6 +53,7 @@ Base URL in dev: `http://localhost:4000`
 | `users/`             | `UsersModule`            | User CRUD, coach–player linking, invitations                     |
 | `calendar/`          | `CalendarModule`         | Practice slots, calendar tasks                                   |
 | `lessons/`           | `LessonsModule`          | Training lesson CRUD                                             |
+| `journeys/`          | `JourneysModule`         | Journey template CRUD and journey assignment flows               |
 | `assignments/`       | `AssignmentsModule`      | Standalone lesson assignment + training queue flows              |
 | `development-plans/` | `DevelopmentPlansModule` | Development plans, training blocks, lesson assignments           |
 | `gamification/`      | `GamificationModule`     | XP, level, streak tracking                                       |
@@ -172,6 +173,20 @@ All require JWT + COACH or ADMIN.
 | PATCH  | `/development-plans/assignments/:assignmentId`   | Update assignment                   |
 | DELETE | `/development-plans/assignments/:assignmentId`   | Remove assignment                   |
 
+### Journey endpoints (`/journeys` and `/coach/journeys`)
+
+| Method | Path                                             | Notes                                          |
+| ------ | ------------------------------------------------ | ---------------------------------------------- |
+| GET    | `/journeys`                                      | List visible journey templates                 |
+| POST   | `/journeys`                                      | Create journey template                        |
+| GET    | `/journeys/:id`                                  | Get single journey template                    |
+| PATCH  | `/journeys/:id`                                  | Update journey template                        |
+| DELETE | `/journeys/:id`                                  | Delete journey template                        |
+| POST   | `/journeys/:id/duplicate`                        | Clone existing journey template                |
+| PATCH  | `/journeys/assignments/:assignmentId`            | Update queued journey assignment               |
+| POST   | `/coach/journeys/:journeyId/assign/player/:playerId` | Assign journey to one player               |
+| POST   | `/coach/journeys/:journeyId/assign/team/:teamId`     | Assign journey to every active member of team |
+
 ---
 
 ## `apps/web/` – Next.js Frontend
@@ -195,6 +210,9 @@ All require JWT + COACH or ADMIN.
 | `/coach/lessons`                     | `coach/lessons/page.tsx`            | Lesson library                                                                         |
 | `/coach/lessons/new`                 | `coach/lessons/new/page.tsx`        | Create lesson                                                                          |
 | `/coach/lessons/[id]`                | `coach/lessons/[id]/page.tsx`       | Edit lesson                                                                            |
+| `/coach/journeys`                    | `coach/journeys/page.tsx`           | Journey library and quick assignment                                                   |
+| `/coach/journeys/new`                | `coach/journeys/new/page.tsx`       | Create journey template                                                                |
+| `/coach/journeys/[id]`               | `coach/journeys/[id]/page.tsx`      | Edit journey template                                                                  |
 | `/coach/teams`                       | `coach/teams/page.tsx`              | Alias to the integrated teams + players coaching view                                  |
 | `/coach`                             | `coach/page.tsx`                    | Coach home                                                                             |
 | `/player`                            | `player/page.tsx`                   | Player home                                                                            |
@@ -223,11 +241,15 @@ app/api/
 ├── users/
 ├── calendar/
 ├── lessons/
+├── journeys/
 ├── development-plans/
 ├── gamification/
+├── coach/            (team/player/journey assignment proxies)
 ├── players/
 └── upload/
 ```
+
+Current status: journey CRUD routes and coach lesson/journey assignment proxy routes share `apps/web/lib/api-proxy-auth.ts`, which refreshes expired access tokens once and retries the backend call before returning 401.
 
 ### Key component files (`apps/web/components/`)
 
@@ -251,6 +273,8 @@ app/api/
 | `AssignLessonModal.tsx`          | Quick-assign dialog / mobile bottom sheet for lesson assignment |
 | `DndLessonProvider.tsx`          | Shared lesson drag/drop provider for player and team targets    |
 | `LessonLibrarySidebar.tsx`       | Reusable searchable lesson library sidebar                      |
+| `JourneyEditor.tsx`              | Journey template create/edit form                               |
+| `JourneyTemplateLibrarySidebar.tsx` | Searchable journey library for assignment                    |
 
 ### Key library files (`apps/web/lib/`)
 
@@ -261,6 +285,7 @@ app/api/
 | `player-capabilities.ts` | CAPABILITY_DEFINITIONS skill tree                |
 | `api.ts`                 | Fetch wrapper for client-side API calls          |
 | `auth-cookies.ts`        | Cookie read/write helpers                        |
+| `api-proxy-auth.ts`      | Shared server-side proxy retry/refresh helper    |
 | `calendar-activity.ts`   | Calendar activity helpers                        |
 | `email.ts`               | Resend email sending                             |
 | `jwt.ts`                 | JWT sign/verify helpers                          |

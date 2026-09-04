@@ -21,7 +21,7 @@ Administrators manage clubs and user accounts.
 | Backend API     | NestJS 11, TypeScript, port **4000**                             |
 | Frontend        | Next.js 16 (App Router), React 19, TypeScript, port **3000**     |
 | Database ORM    | Prisma 7 + PostgreSQL                                            |
-| Auth            | JWT access token (memory/localStorage) + httpOnly refresh cookie |
+| Auth            | httpOnly JWT access token cookie + httpOnly refresh cookie       |
 | UI              | shadcn/ui, Radix UI, Tailwind CSS v4                             |
 | Calendar widget | FullCalendar v6                                                  |
 | Data fetching   | TanStack React Query + SWR                                       |
@@ -68,11 +68,11 @@ Administrators manage clubs and user accounts.
 
 ## Auth Flow
 
-1. `POST /auth/login` → returns `{ accessToken, user }` + sets httpOnly `refresh_token` cookie.
-2. Frontend stores access token in `localStorage`; attaches as `Authorization: **\*\*** header.
+1. `POST /auth/login` in the NestJS API returns `{ accessToken, user }` and sets the httpOnly `refresh_token` cookie.
+2. The Next.js login proxy forwards that response and persists `accessToken` as the httpOnly `token` cookie used by web proxy routes and middleware.
 3. Next.js middleware (`apps/web/middleware.ts`) protects all `(app)` routes.
 4. All browser API calls go through Next.js proxy routes (`apps/web/app/api/…`) to avoid CORS.
-5. On 401, the proxy calls `POST /auth/refresh` (cookie-based) to rotate tokens automatically.
+5. On 401, client fetches retry through `apps/web/lib/api.ts`, while server-side proxy routes can refresh via `apps/web/lib/api-proxy-auth.ts` and retry with rotated cookies.
 
 ---
 
@@ -104,6 +104,7 @@ Administrators manage clubs and user accounts.
 | Player capabilities (skill tree) | `apps/web/lib/player-capabilities.ts`                                     |
 | Email sending                    | `apps/web/lib/email.ts`                                                   |
 | Auth cookies helper              | `apps/web/lib/auth-cookies.ts`                                            |
+| Proxy auth-refresh helper        | `apps/web/lib/api-proxy-auth.ts`                                          |
 | GitHub CI workflows              | `.github/workflows/`                                                      |
 
 ---
@@ -113,6 +114,7 @@ Administrators manage clubs and user accounts.
 - **Coach–player link required**: before a coach can view/assign anything for a player, a `CoachPlayerLink` record must exist. Links are created via invite, manual coach addition, or player adding coach.
 - **OwnerType**: `PracticeSlot` and `PlayerDevelopmentPlan` support both `PLAYER` and `TEAM` owners. Check `ownerType` to know which FK (`playerId` vs `teamId`) is set.
 - **Lesson assignment model**: coaches can create standalone `LessonAssignment` queue items directly from the integrated `/teams` view, or attach lessons to `TrainingBlock`s inside a `PlayerDevelopmentPlan`.
+- **Journey assignment model**: coaches can create reusable `JourneyTemplate`s and assign them directly to players or whole teams; server-side journey and coach assignment proxy routes now retry once after refreshing expired access tokens.
 - **Pending lesson counters**: coach-facing `/teams` and `/users/me/players` responses include computed `pendingLessons`; team counts aggregate open queue items across all active members.
 - **Calendar hierarchy**: `PracticeSlot` (recurring time block) → `CalendarTask` (specific task on a date within the slot).
 - **Gamification**: `PlayerProfile` tracks `xp`, `level`, `currentStreak`, `longestStreak`, `lastActivityAt`.
