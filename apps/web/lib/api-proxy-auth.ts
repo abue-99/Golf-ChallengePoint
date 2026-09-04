@@ -15,11 +15,23 @@ const secure = process.env.SECURE_COOKIES === "true";
 const authProxyDebug =
   process.env.AUTH_PROXY_DEBUG === "true" &&
   process.env.NODE_ENV !== "production";
+// Temporary, explicit opt-in diagnostics for production auth refresh tracing.
+const authProxyDiagnostics = process.env.AUTH_PROXY_DIAGNOSTICS === "true";
 
 function logAuthProxy(...args: unknown[]) {
   if (authProxyDebug) {
     console.log(...args);
   }
+}
+
+function logAuthDiagnostic(label: string, value: string | number | boolean) {
+  if (authProxyDiagnostics) {
+    console.log(`[AUTH][TEMP] ${label}=${value}`);
+  }
+}
+
+function sanitizeLoggedPath(path: string) {
+  return path.split("?")[0] || path;
 }
 
 function buildCookieHeader(cookiePairs: Array<{ name: string; value: string }>) {
@@ -71,6 +83,7 @@ function buildForwardedHeaders(headers: Headers, removeContentType = false) {
 
 async function refreshAccessToken(cookieHeader: string) {
   logAuthProxy("refresh started");
+  logAuthDiagnostic("refresh_started", true);
   const response = await fetch(`${API_URL}/auth/refresh`, {
     method: "POST",
     headers: { Cookie: cookieHeader },
@@ -78,6 +91,7 @@ async function refreshAccessToken(cookieHeader: string) {
     cache: "no-store",
   });
   logAuthProxy("refresh status", response.status);
+  logAuthDiagnostic("refresh_status", response.status);
 
   if (!response.ok) {
     return null;
@@ -150,6 +164,9 @@ export async function proxyJsonWithAuthRetry({
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   const refreshToken = cookieStore.get("refresh_token")?.value;
+  logAuthDiagnostic("path", sanitizeLoggedPath(path));
+  logAuthDiagnostic("token", Boolean(token));
+  logAuthDiagnostic("refresh_token", Boolean(refreshToken));
   logAuthProxy("token present", Boolean(token));
   logAuthProxy("refresh token present", Boolean(refreshToken));
   const cookieHeader = buildCookieHeader(
@@ -201,6 +218,7 @@ export async function proxyJsonWithAuthRetry({
   }
 
   let response = await executeApiRequest(path, method, accessToken, body, cache);
+  logAuthDiagnostic("first_status", response.status);
 
   if (response.status === 401 && refreshToken && !refreshAttempted) {
     refreshAttempted = true;
@@ -220,6 +238,7 @@ export async function proxyJsonWithAuthRetry({
       cache,
     );
     logAuthProxy("retry status", response.status);
+    logAuthDiagnostic("retry_status", response.status);
   }
 
   const contentType = response.headers.get("content-type") ?? "";
