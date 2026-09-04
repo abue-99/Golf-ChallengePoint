@@ -12,6 +12,13 @@ type ProxyJsonRequestOptions = {
 
 const API_URL = process.env.API_URL || "http://golf_api:4000";
 const secure = process.env.SECURE_COOKIES === "true";
+const authProxyDebug = process.env.AUTH_PROXY_DEBUG === "true";
+
+function logAuthProxy(...args: unknown[]) {
+  if (authProxyDebug) {
+    console.log(...args);
+  }
+}
 
 function buildCookieHeader(cookiePairs: Array<{ name: string; value: string }>) {
   return cookiePairs
@@ -61,14 +68,14 @@ function buildForwardedHeaders(headers: Headers, removeContentType = false) {
 }
 
 async function refreshAccessToken(cookieHeader: string) {
-  console.log("refresh started");
+  logAuthProxy("refresh started");
   const response = await fetch(`${API_URL}/auth/refresh`, {
     method: "POST",
     headers: { Cookie: cookieHeader },
     credentials: "include",
     cache: "no-store",
   });
-  console.log("refresh status", response.status);
+  logAuthProxy("refresh status", response.status);
 
   if (!response.ok) {
     return null;
@@ -141,8 +148,8 @@ export async function proxyJsonWithAuthRetry({
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   const refreshToken = cookieStore.get("refresh_token")?.value;
-  console.log("token present", Boolean(token));
-  console.log("refresh token present", Boolean(refreshToken));
+  logAuthProxy("token present", Boolean(token));
+  logAuthProxy("refresh token present", Boolean(refreshToken));
   const cookieHeader = buildCookieHeader(
     [
       token ? { name: "token", value: token } : null,
@@ -210,7 +217,7 @@ export async function proxyJsonWithAuthRetry({
       body,
       cache,
     );
-    console.log("retry status", response.status);
+    logAuthProxy("retry status", response.status);
   }
 
   const contentType = response.headers.get("content-type") ?? "";
