@@ -13,8 +13,10 @@ type ProxyJsonRequestOptions = {
 const API_URL = process.env.API_URL || "http://golf_api:4000";
 const secure = process.env.SECURE_COOKIES === "true";
 
-function buildCookieHeader(refreshToken: string) {
-  return `refresh_token=${encodeURIComponent(refreshToken)}`;
+function buildCookieHeader(cookiePairs: Array<{ name: string; value: string }>) {
+  return cookiePairs
+    .map(({ name, value }) => `${name}=${encodeURIComponent(value)}`)
+    .join("; ");
 }
 
 function buildTokenCookieOptions() {
@@ -58,10 +60,10 @@ function buildForwardedHeaders(headers: Headers, removeContentType = false) {
   return forwarded;
 }
 
-async function refreshAccessToken(refreshToken: string) {
+async function refreshAccessToken(cookieHeader: string) {
   const response = await fetch(`${API_URL}/auth/refresh`, {
     method: "POST",
-    headers: { Cookie: buildCookieHeader(refreshToken) },
+    headers: { Cookie: cookieHeader },
     credentials: "include",
     cache: "no-store",
   });
@@ -85,6 +87,17 @@ async function refreshAccessToken(refreshToken: string) {
 
 function buildRequestBody(body: unknown) {
   if (body === undefined) return undefined;
+  if (
+    typeof body === "string" ||
+    body instanceof FormData ||
+    body instanceof URLSearchParams ||
+    body instanceof Blob ||
+    body instanceof ArrayBuffer ||
+    ArrayBuffer.isView(body) ||
+    body instanceof ReadableStream
+  ) {
+    return body;
+  }
   return JSON.stringify(body);
 }
 
@@ -126,6 +139,7 @@ export async function proxyJsonWithAuthRetry({
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   const refreshToken = cookieStore.get("refresh_token")?.value;
+  const cookieHeader = buildCookieHeader(cookieStore.getAll());
   const unauthorizedResponse = (
     body: unknown = { message: "Invalid or expired token" },
     clearCookies = false,
@@ -157,7 +171,7 @@ export async function proxyJsonWithAuthRetry({
     }
 
     refreshAttempted = true;
-    refreshedAuth = await refreshAccessToken(refreshToken);
+    refreshedAuth = await refreshAccessToken(cookieHeader);
     if (!refreshedAuth) {
       return unauthorizedResponse(
         missingTokenBody ?? { message: "Invalid or expired token" },
@@ -172,7 +186,7 @@ export async function proxyJsonWithAuthRetry({
 
   if (response.status === 401 && refreshToken && !refreshAttempted) {
     refreshAttempted = true;
-    refreshedAuth = await refreshAccessToken(refreshToken);
+    refreshedAuth = await refreshAccessToken(cookieHeader);
     if (!refreshedAuth) {
       return unauthorizedResponse(
         missingTokenBody ?? { message: "Invalid or expired token" },
@@ -190,16 +204,23 @@ export async function proxyJsonWithAuthRetry({
   }
 
   const contentType = response.headers.get("content-type") ?? "";
-  const responseText =
-    response.status === 204 || response.status === 205 ? "" : await response.text();
-  const browserResponse =
-    responseText.length === 0
-      ? new NextResponse(null, {
-          status: response.status,
-          headers: buildForwardedHeaders(response.headers),
-        })
-      : contentType.includes("application/json")
-        ? (() => {
+  let browserResponse: NextResponse;
+
+  if (!contentType.includes("application/json")) {
+    browserResponse = new NextResponse(response.body, {
+      status: response.status,
+      headers: buildForwardedHeaders(response.headers),
+    });
+  } else {
+    const responseText =
+      response.status === 204 || response.status === 205 ? "" : await response.text();
+    browserResponse =
+      responseText.length === 0
+        ? new NextResponse(null, {
+            status: response.status,
+            headers: buildForwardedHeaders(response.headers),
+          })
+        : (() => {
             try {
               return NextResponse.json(JSON.parse(responseText), {
                 status: response.status,
@@ -211,11 +232,8 @@ export async function proxyJsonWithAuthRetry({
                 headers: buildForwardedHeaders(response.headers),
               });
             }
-          })()
-        : new NextResponse(responseText, {
-            status: response.status,
-            headers: buildForwardedHeaders(response.headers),
-          });
+          })();
+  }
 
   if (refreshedAuth) {
     browserResponse.cookies.set(
@@ -223,11 +241,17 @@ export async function proxyJsonWithAuthRetry({
       refreshedAuth.accessToken,
       buildTokenCookieOptions(),
     );
-    forwardRefreshTokenCookie(
+    const forwardedRefreshToken = forwardRefreshTokenCookie(
       refreshedAuth.response,
       browserResponse,
       secure,
     );
+    if (!forwardedRefreshToken) {
+      browserResponse.cookies.set("refresh_token", "", {
+        ...buildRefreshTokenCookieOptions(),
+        maxAge: 0,
+      });
+    }
   }
 
   return browserResponse;

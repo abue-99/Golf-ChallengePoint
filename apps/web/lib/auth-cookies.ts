@@ -14,15 +14,15 @@ export function forwardRefreshTokenCookie(
   apiRes: Response,
   browserRes: NextResponse,
   secure: boolean
-): void {
+): boolean {
   const setCookie = apiRes.headers.get("set-cookie");
-  if (!setCookie) return;
+  if (!setCookie) return false;
 
   const match = setCookie.match(/refresh_token=([^;]+)/);
-  if (!match) return;
+  if (!match) return false;
 
   const value = match[1];
-  if (!isJwtShaped(value)) return;
+  if (!isJwtShaped(value)) return false;
 
   browserRes.cookies.set("refresh_token", value, {
     httpOnly: true,
@@ -31,4 +31,5 @@ export function forwardRefreshTokenCookie(
     maxAge: 7 * 24 * 60 * 60,
     path: "/",
   });
+  return true;
 }
