@@ -52,6 +52,7 @@ function clearAuthCookies(response: NextResponse) {
 function buildForwardedHeaders(headers: Headers, removeContentType = false) {
   const forwarded = new Headers(headers);
   forwarded.delete("content-length");
+  forwarded.delete("set-cookie");
   if (removeContentType) {
     forwarded.delete("content-type");
   }
@@ -136,6 +137,7 @@ export async function proxyJsonWithAuthRetry({
     | { accessToken: string; response: Response }
     | null = null;
   let accessToken = token ?? null;
+  let refreshAttempted = false;
 
   if (!accessToken) {
     if (!refreshToken) {
@@ -144,9 +146,12 @@ export async function proxyJsonWithAuthRetry({
       );
     }
 
+    refreshAttempted = true;
     refreshedAuth = await refreshAccessToken(refreshToken);
     if (!refreshedAuth) {
-      return unauthorizedResponse();
+      return unauthorizedResponse(
+        missingTokenBody ?? { message: "Invalid or expired token" },
+      );
     }
 
     accessToken = refreshedAuth.accessToken;
@@ -161,6 +166,13 @@ export async function proxyJsonWithAuthRetry({
       );
     }
 
+    if (refreshAttempted) {
+      return unauthorizedResponse(
+        missingTokenBody ?? { message: "Invalid or expired token" },
+      );
+    }
+
+    refreshAttempted = true;
     refreshedAuth = await refreshAccessToken(refreshToken);
     if (!refreshedAuth) {
       return unauthorizedResponse();
