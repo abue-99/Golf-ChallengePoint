@@ -113,9 +113,19 @@ export async function proxyJsonWithAuthRetry({
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   const refreshToken = cookieStore.get("refresh_token")?.value;
+  const unauthorizedResponse = () => {
+    const response = NextResponse.json(
+      { message: "Invalid or expired token" },
+      { status: 401 },
+    );
+    clearAuthCookies(response);
+    return response;
+  };
 
   if (!token && !refreshToken) {
-    return NextResponse.json(missingTokenBody, { status: 401 });
+    return missingTokenBody === null
+      ? unauthorizedResponse()
+      : NextResponse.json(missingTokenBody, { status: 401 });
   }
 
   let refreshedAuth:
@@ -125,17 +135,14 @@ export async function proxyJsonWithAuthRetry({
 
   if (!accessToken) {
     if (!refreshToken) {
-      return NextResponse.json(missingTokenBody, { status: 401 });
+      return missingTokenBody === null
+        ? unauthorizedResponse()
+        : NextResponse.json(missingTokenBody, { status: 401 });
     }
 
     refreshedAuth = await refreshAccessToken(refreshToken);
     if (!refreshedAuth) {
-      const unauthorized = NextResponse.json(
-        { message: "Invalid or expired token" },
-        { status: 401 },
-      );
-      clearAuthCookies(unauthorized);
-      return unauthorized;
+      return unauthorizedResponse();
     }
 
     accessToken = refreshedAuth.accessToken;
@@ -145,17 +152,14 @@ export async function proxyJsonWithAuthRetry({
 
   if (response.status === 401) {
     if (!refreshToken) {
-      return NextResponse.json(missingTokenBody, { status: 401 });
+      return missingTokenBody === null
+        ? unauthorizedResponse()
+        : NextResponse.json(missingTokenBody, { status: 401 });
     }
 
     refreshedAuth = await refreshAccessToken(refreshToken);
     if (!refreshedAuth) {
-      const unauthorized = NextResponse.json(
-        { message: "Invalid or expired token" },
-        { status: 401 },
-      );
-      clearAuthCookies(unauthorized);
-      return unauthorized;
+      return unauthorizedResponse();
     }
 
     response = await executeApiRequest(
