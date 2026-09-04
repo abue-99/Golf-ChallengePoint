@@ -118,14 +118,32 @@ export async function proxyJsonWithAuthRetry({
     return NextResponse.json(missingTokenBody, { status: 401 });
   }
 
-  let response = token
-    ? await executeApiRequest(path, method, token, body, cache)
-    : null;
   let refreshedAuth:
     | { accessToken: string; response: Response }
     | null = null;
+  let accessToken = token ?? null;
 
-  if (!response || response.status === 401) {
+  if (!accessToken) {
+    if (!refreshToken) {
+      return NextResponse.json(missingTokenBody, { status: 401 });
+    }
+
+    refreshedAuth = await refreshAccessToken(refreshToken);
+    if (!refreshedAuth) {
+      const unauthorized = NextResponse.json(
+        { message: "Invalid or expired token" },
+        { status: 401 },
+      );
+      clearAuthCookies(unauthorized);
+      return unauthorized;
+    }
+
+    accessToken = refreshedAuth.accessToken;
+  }
+
+  let response = await executeApiRequest(path, method, accessToken, body, cache);
+
+  if (response.status === 401) {
     if (!refreshToken) {
       return NextResponse.json(missingTokenBody, { status: 401 });
     }
@@ -149,12 +167,18 @@ export async function proxyJsonWithAuthRetry({
     );
   }
 
+  const contentType = response.headers.get("content-type") ?? "";
   const browserResponse =
     response.status === 204
       ? new NextResponse(null, { status: response.status })
-      : NextResponse.json(await response.json().catch(() => fallbackBody), {
-          status: response.status,
-        });
+      : contentType.includes("application/json")
+        ? NextResponse.json(await response.json().catch(() => fallbackBody), {
+            status: response.status,
+          })
+        : new NextResponse(await response.text(), {
+            status: response.status,
+            headers: contentType ? { "content-type": contentType } : undefined,
+          });
 
   if (refreshedAuth) {
     browserResponse.cookies.set(
