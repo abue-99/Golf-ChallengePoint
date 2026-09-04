@@ -61,12 +61,14 @@ function buildForwardedHeaders(headers: Headers, removeContentType = false) {
 }
 
 async function refreshAccessToken(cookieHeader: string) {
+  console.log("refresh started");
   const response = await fetch(`${API_URL}/auth/refresh`, {
     method: "POST",
     headers: { Cookie: cookieHeader },
     credentials: "include",
     cache: "no-store",
   });
+  console.log("refresh status", response.status);
 
   if (!response.ok) {
     return null;
@@ -139,6 +141,8 @@ export async function proxyJsonWithAuthRetry({
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   const refreshToken = cookieStore.get("refresh_token")?.value;
+  console.log("token present", Boolean(token));
+  console.log("refresh token present", Boolean(refreshToken));
   const cookieHeader = buildCookieHeader(
     [
       token ? { name: "token", value: token } : null,
@@ -206,6 +210,7 @@ export async function proxyJsonWithAuthRetry({
       body,
       cache,
     );
+    console.log("retry status", response.status);
   }
 
   const contentType = response.headers.get("content-type") ?? "";
