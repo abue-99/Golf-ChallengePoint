@@ -170,19 +170,7 @@ export async function proxyJsonWithAuthRetry({
 
   let response = await executeApiRequest(path, method, accessToken, body, cache);
 
-  if (response.status === 401) {
-    if (!refreshToken) {
-      return unauthorizedResponse(
-        missingTokenBody ?? { message: "Invalid or expired token" },
-      );
-    }
-
-    if (refreshAttempted) {
-      return unauthorizedResponse(
-        missingTokenBody ?? { message: "Invalid or expired token" },
-      );
-    }
-
+  if (response.status === 401 && refreshToken && !refreshAttempted) {
     refreshAttempted = true;
     refreshedAuth = await refreshAccessToken(refreshToken);
     if (!refreshedAuth) {
