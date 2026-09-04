@@ -22,6 +22,10 @@ function logAuthProxy(...args: unknown[]) {
   }
 }
 
+function logAuthDiagnostic(label: string, value: string | number | boolean) {
+  console.log(`[AUTH] ${label}=${value}`);
+}
+
 function buildCookieHeader(cookiePairs: Array<{ name: string; value: string }>) {
   return cookiePairs
     .map(({ name, value }) => `${name}=${encodeURIComponent(value)}`)
@@ -71,6 +75,7 @@ function buildForwardedHeaders(headers: Headers, removeContentType = false) {
 
 async function refreshAccessToken(cookieHeader: string) {
   logAuthProxy("refresh started");
+  console.log("[AUTH] refresh_started=true");
   const response = await fetch(`${API_URL}/auth/refresh`, {
     method: "POST",
     headers: { Cookie: cookieHeader },
@@ -78,6 +83,7 @@ async function refreshAccessToken(cookieHeader: string) {
     cache: "no-store",
   });
   logAuthProxy("refresh status", response.status);
+  logAuthDiagnostic("refresh_status", response.status);
 
   if (!response.ok) {
     return null;
@@ -150,6 +156,9 @@ export async function proxyJsonWithAuthRetry({
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   const refreshToken = cookieStore.get("refresh_token")?.value;
+  logAuthDiagnostic("path", path);
+  logAuthDiagnostic("token", Boolean(token));
+  logAuthDiagnostic("refresh_token", Boolean(refreshToken));
   logAuthProxy("token present", Boolean(token));
   logAuthProxy("refresh token present", Boolean(refreshToken));
   const cookieHeader = buildCookieHeader(
@@ -201,6 +210,7 @@ export async function proxyJsonWithAuthRetry({
   }
 
   let response = await executeApiRequest(path, method, accessToken, body, cache);
+  logAuthDiagnostic("first_status", response.status);
 
   if (response.status === 401 && refreshToken && !refreshAttempted) {
     refreshAttempted = true;
@@ -220,6 +230,7 @@ export async function proxyJsonWithAuthRetry({
       cache,
     );
     logAuthProxy("retry status", response.status);
+    logAuthDiagnostic("retry_status", response.status);
   }
 
   const contentType = response.headers.get("content-type") ?? "";
