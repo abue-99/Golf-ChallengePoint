@@ -246,17 +246,7 @@ export async function proxyJsonWithAuthRetry({
       refreshedAuth.accessToken,
       buildTokenCookieOptions(),
     );
-    const forwardedRefreshToken = forwardRefreshTokenCookie(
-      refreshedAuth.response,
-      browserResponse,
-      secure,
-    );
-    if (!forwardedRefreshToken) {
-      browserResponse.cookies.set("refresh_token", "", {
-        ...buildRefreshTokenCookieOptions(),
-        maxAge: 0,
-      });
-    }
+    forwardRefreshTokenCookie(refreshedAuth.response, browserResponse, secure);
   }
 
   return browserResponse;
