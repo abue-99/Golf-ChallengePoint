@@ -1,54 +1,37 @@
-import { cookies } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
-
-const API_URL = process.env.API_URL || "http://golf_api:4000";
-
-async function getToken() {
-  const cookieStore = await cookies();
-  return cookieStore.get("token")?.value;
-}
+import { NextRequest } from "next/server";
+import { proxyJsonWithAuthRetry } from "@/lib/api-proxy-auth";
 
 export async function GET(req: NextRequest) {
-  const token = await getToken();
-  if (!token) return NextResponse.json(null, { status: 401 });
-
   try {
     const visibility = req.nextUrl.searchParams.get("visibility");
     const params = new URLSearchParams();
     if (visibility) params.set("visibility", visibility);
-    const url = params.toString()
-      ? `${API_URL}/journeys?${params}`
-      : `${API_URL}/journeys`;
-    const res = await fetch(url, {
-      headers: { Authorization: "Bearer " + token },
+    const path = params.toString() ? `/journeys?${params}` : "/journeys";
+
+    return await proxyJsonWithAuthRetry({
+      path,
       cache: "no-store",
+      fallbackBody: [],
+      missingTokenBody: null,
     });
-    const data = await res.json().catch(() => []);
-    return NextResponse.json(data, { status: res.status });
   } catch (err) {
     console.error("[/api/journeys GET]", err);
-    return NextResponse.json([], { status: 500 });
+    return Response.json([], { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
-  const token = await getToken();
-  if (!token) return NextResponse.json(null, { status: 401 });
-
   try {
     const body = await req.json();
-    const res = await fetch(`${API_URL}/journeys`, {
+    return await proxyJsonWithAuthRetry({
+      path: "/journeys",
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token,
-      },
-      body: JSON.stringify(body),
+      body,
+      fallbackBody: {},
+      missingTokenBody: null,
     });
-    const data = await res.json().catch(() => ({}));
-    return NextResponse.json(data, { status: res.status });
   } catch (err) {
     console.error("[/api/journeys POST]", err);
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+    return Response.json({ message: "Internal server error" }, { status: 500 });
   }
 }

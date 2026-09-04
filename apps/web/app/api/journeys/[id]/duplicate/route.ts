@@ -1,33 +1,20 @@
-import { cookies } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
-
-const API_URL = process.env.API_URL || "http://golf_api:4000";
-
-async function getToken() {
-  const cookieStore = await cookies();
-  return cookieStore.get("token")?.value;
-}
+import { NextRequest } from "next/server";
+import { proxyJsonWithAuthRetry } from "@/lib/api-proxy-auth";
 
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const token = await getToken();
-  if (!token) return NextResponse.json(null, { status: 401 });
-  const { id } = await params;
-
   try {
-    const res = await fetch(
-      `${API_URL}/journeys/${encodeURIComponent(id)}/duplicate`,
-      {
-        method: "POST",
-        headers: { Authorization: "Bearer " + token },
-      },
-    );
-    const data = await res.json().catch(() => ({}));
-    return NextResponse.json(data, { status: res.status });
+    const { id } = await params;
+    return await proxyJsonWithAuthRetry({
+      path: `/journeys/${encodeURIComponent(id)}/duplicate`,
+      method: "POST",
+      fallbackBody: {},
+      missingTokenBody: null,
+    });
   } catch (err) {
     console.error("[/api/journeys/[id]/duplicate POST]", err);
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+    return Response.json({ message: "Internal server error" }, { status: 500 });
   }
 }
