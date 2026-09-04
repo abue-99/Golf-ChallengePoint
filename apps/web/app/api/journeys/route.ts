@@ -11,7 +11,6 @@ export async function GET(req: NextRequest) {
     return await proxyJsonWithAuthRetry({
       path,
       cache: "no-store",
-      fallbackBody: [],
       missingTokenBody: null,
     });
   } catch (err) {
@@ -27,7 +26,6 @@ export async function POST(req: NextRequest) {
       path: "/journeys",
       method: "POST",
       body,
-      fallbackBody: {},
       missingTokenBody: null,
     });
   } catch (err) {

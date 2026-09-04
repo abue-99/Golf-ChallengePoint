@@ -12,7 +12,6 @@ export async function PATCH(
       path: `/journeys/assignments/${encodeURIComponent(assignmentId)}`,
       method: "PATCH",
       body,
-      fallbackBody: {},
       missingTokenBody: null,
     });
   } catch (err) {

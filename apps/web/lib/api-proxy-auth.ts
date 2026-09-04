@@ -7,7 +7,6 @@ type ProxyJsonRequestOptions = {
   method?: string;
   body?: unknown;
   cache?: RequestCache;
-  fallbackBody?: unknown;
   missingTokenBody?: unknown;
 };
 
@@ -64,6 +63,7 @@ async function refreshAccessToken(refreshToken: string) {
     method: "POST",
     headers: { Cookie: buildCookieHeader(refreshToken) },
     credentials: "include",
+    cache: "no-store",
   });
 
   if (!response.ok) {
@@ -112,25 +112,35 @@ async function executeApiRequest(
   });
 }
 
+/**
+ * Proxies a request to the API using the access token cookie, refreshes once if
+ * needed, and forwards any rotated auth cookies back to the browser.
+ */
 export async function proxyJsonWithAuthRetry({
   path,
   method = "GET",
   body,
   cache,
-  fallbackBody = {},
   missingTokenBody = null,
 }: ProxyJsonRequestOptions) {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   const refreshToken = cookieStore.get("refresh_token")?.value;
-  const unauthorizedResponse = (body: unknown = { message: "Invalid or expired token" }) => {
+  const unauthorizedResponse = (
+    body: unknown = { message: "Invalid or expired token" },
+    clearCookies = false,
+  ) => {
     const response = NextResponse.json(body, { status: 401 });
-    clearAuthCookies(response);
+    if (clearCookies) {
+      clearAuthCookies(response);
+    }
     return response;
   };
 
   if (!token && !refreshToken) {
-    return unauthorizedResponse(missingTokenBody ?? { message: "Invalid or expired token" });
+    return unauthorizedResponse(
+      missingTokenBody ?? { message: "Invalid or expired token" },
+    );
   }
 
   let refreshedAuth:
@@ -151,6 +161,7 @@ export async function proxyJsonWithAuthRetry({
     if (!refreshedAuth) {
       return unauthorizedResponse(
         missingTokenBody ?? { message: "Invalid or expired token" },
+        true,
       );
     }
 
@@ -175,7 +186,10 @@ export async function proxyJsonWithAuthRetry({
     refreshAttempted = true;
     refreshedAuth = await refreshAccessToken(refreshToken);
     if (!refreshedAuth) {
-      return unauthorizedResponse();
+      return unauthorizedResponse(
+        missingTokenBody ?? { message: "Invalid or expired token" },
+        true,
+      );
     }
 
     response = await executeApiRequest(
@@ -188,18 +202,29 @@ export async function proxyJsonWithAuthRetry({
   }
 
   const contentType = response.headers.get("content-type") ?? "";
+  const responseText =
+    response.status === 204 || response.status === 205 ? "" : await response.text();
   const browserResponse =
-    response.status === 204
+    responseText.length === 0
       ? new NextResponse(null, {
           status: response.status,
           headers: buildForwardedHeaders(response.headers),
         })
       : contentType.includes("application/json")
-        ? NextResponse.json(await response.json().catch(() => fallbackBody), {
-            status: response.status,
-            headers: buildForwardedHeaders(response.headers, true),
-          })
-        : new NextResponse(await response.text(), {
+        ? (() => {
+            try {
+              return NextResponse.json(JSON.parse(responseText), {
+                status: response.status,
+                headers: buildForwardedHeaders(response.headers, true),
+              });
+            } catch {
+              return new NextResponse(responseText, {
+                status: response.status,
+                headers: buildForwardedHeaders(response.headers),
+              });
+            }
+          })()
+        : new NextResponse(responseText, {
             status: response.status,
             headers: buildForwardedHeaders(response.headers),
           });

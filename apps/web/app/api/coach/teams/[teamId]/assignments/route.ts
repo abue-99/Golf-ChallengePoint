@@ -12,7 +12,6 @@ export async function POST(
       path: `/coach/teams/${encodeURIComponent(teamId)}/assignments`,
       method: "POST",
       body,
-      fallbackBody: {},
       missingTokenBody: null,
     });
   } catch (err) {

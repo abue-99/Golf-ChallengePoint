@@ -12,7 +12,6 @@ export async function POST(
       path: `/coach/journeys/${encodeURIComponent(journeyId)}/assign/player/${encodeURIComponent(playerId)}`,
       method: "POST",
       body,
-      fallbackBody: {},
       missingTokenBody: null,
     });
   } catch (err) {

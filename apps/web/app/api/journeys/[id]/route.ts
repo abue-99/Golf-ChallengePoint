@@ -10,7 +10,6 @@ export async function GET(
     return await proxyJsonWithAuthRetry({
       path: `/journeys/${encodeURIComponent(id)}`,
       cache: "no-store",
-      fallbackBody: {},
       missingTokenBody: null,
     });
   } catch (err) {
@@ -30,7 +29,6 @@ export async function PATCH(
       path: `/journeys/${encodeURIComponent(id)}`,
       method: "PATCH",
       body,
-      fallbackBody: {},
       missingTokenBody: null,
     });
   } catch (err) {
@@ -48,7 +46,6 @@ export async function DELETE(
     return await proxyJsonWithAuthRetry({
       path: `/journeys/${encodeURIComponent(id)}`,
       method: "DELETE",
-      fallbackBody: {},
       missingTokenBody: null,
     });
   } catch (err) {

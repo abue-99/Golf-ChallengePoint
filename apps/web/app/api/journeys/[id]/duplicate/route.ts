@@ -10,7 +10,6 @@ export async function POST(
     return await proxyJsonWithAuthRetry({
       path: `/journeys/${encodeURIComponent(id)}/duplicate`,
       method: "POST",
-      fallbackBody: {},
       missingTokenBody: null,
     });
   } catch (err) {
