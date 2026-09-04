@@ -21,6 +21,8 @@
 | `AssignmentStatus`           | `NEW` · `OPEN` · `IN_PROGRESS` · `COMPLETED` · `ARCHIVED`                            |
 | `AssignmentTargetType`       | `PLAYER` · `TEAM` · `GROUP`                                                          |
 | `AssignmentSourceType`       | `PLAYER` · `TEAM` · `GROUP`                                                          |
+| `JourneyDifficulty`          | `BEGINNER` · `INTERMEDIATE` · `ADVANCED`                                             |
+| `JourneyVisibility`          | `PUBLIC` · `PRIVATE`                                                                 |
 | `CalendarTaskStatus`         | `PLANNED` · `COMPLETED`                                                              |
 | `AvailabilityBlockType`      | `SCHOOL` · `WORK` · `HOLIDAY` · `TRAVEL` · `CUSTOM`                                  |
 | `TournamentPriority`         | `PRIORITY_1` · `PRIORITY_2` · `PRIORITY_3`                                           |
@@ -331,6 +333,69 @@ Reusable assignment/queue record. It can belong to a `TrainingBlock`, or exist s
 - Direct assignment to a single player creates one queue-backed `LessonAssignment`.
 - Direct assignment to a team resolves all active members and creates one separate `LessonAssignment` per member.
 - Team pending counters in the coach UI are aggregates of each member's open queue-backed assignments; they are not stored on the `Team` row itself.
+
+---
+
+### `JourneyTemplate` (table: `journey_templates`)
+
+Reusable multi-lesson coaching program authored by a coach.
+
+| Field           | Type                 | Notes                  |
+| --------------- | -------------------- | ---------------------- |
+| `id`            | String (cuid)        | PK                     |
+| `coachId`       | FK → User            | Author                 |
+| `name`          | String               |                        |
+| `description`   | String?              |                        |
+| `category`      | String?              |                        |
+| `difficulty`    | `JourneyDifficulty`? |                        |
+| `visibility`    | `JourneyVisibility`  | default `PRIVATE`      |
+| `coverImageUrl` | String?              | Optional cover image   |
+| `createdAt`     | DateTime             | auto                   |
+| `updatedAt`     | DateTime             | auto                   |
+
+**Relations**: `lessons` (JourneyTemplateLesson) · `assignments` (JourneyTemplateAssignment)
+
+---
+
+### `JourneyTemplateLesson` (table: `journey_template_lessons`)
+
+Ordered join table between a `JourneyTemplate` and its lessons.
+
+| Field               | Type                | Notes             |
+| ------------------- | ------------------- | ----------------- |
+| `id`                | String (cuid)       | PK                |
+| `journeyTemplateId` | FK → JourneyTemplate |                 |
+| `lessonId`          | FK → TrainingLesson |                  |
+| `sortOrder`         | Int                 | default `0`       |
+| `isRequired`        | Boolean             | default `false`   |
+| `createdAt`         | DateTime            | auto              |
+| `updatedAt`         | DateTime            | auto              |
+
+---
+
+### `JourneyTemplateAssignment` (table: `journey_template_assignments`)
+
+Queue-backed assignment created when a coach assigns a journey to a player or team.
+
+| Field               | Type                  | Notes                                                       |
+| ------------------- | --------------------- | ----------------------------------------------------------- |
+| `id`                | String (cuid)         | PK                                                          |
+| `journeyTemplateId` | FK → JourneyTemplate  |                                                            |
+| `playerId`          | FK → User             | Target player                                               |
+| `teamId`            | FK → Team?            | Source team when assigned at team level                     |
+| `coachId`           | FK → User             | Assigning coach                                             |
+| `playerPlanId`      | String                | Links the queued journey back to the generated player plan  |
+| `status`            | `AssignmentStatus`    | default `NEW`                                               |
+| `isInTrainingQueue` | Boolean               | default `true`                                              |
+| `source`            | String                | default `"assignedByCoach"`                                 |
+| `createdAt`         | DateTime              | auto                                                        |
+| `updatedAt`         | DateTime              | auto                                                        |
+
+**Operational notes**
+
+- Direct assignment to a single player creates one `JourneyTemplateAssignment` and a generated player plan.
+- Direct assignment to a team resolves all active members and creates one separate `JourneyTemplateAssignment` per member.
+- Coach-facing journey save and assignment flows rely on the web proxy layer to refresh expired access tokens before retrying the backend request.
 
 ---
 
