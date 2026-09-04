@@ -120,7 +120,7 @@ async function executeApiRequest(
   return fetch(`${API_URL}${path}`, {
     method,
     headers,
-    body: requestBody,
+    body: requestBody as BodyInit | undefined,
     cache,
   });
 }
