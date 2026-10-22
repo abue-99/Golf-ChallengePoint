@@ -25,6 +25,17 @@ const DONE_STATUSES: AssignmentStatus[] = [
   AssignmentStatus.ARCHIVED,
 ];
 
+/** Completed player lessons from this coach that the coach has not seen yet. */
+export function feedbackWhere(coachId: string) {
+  return {
+    coachId,
+    targetType: AssignmentTargetType.PLAYER,
+    status: AssignmentStatus.COMPLETED,
+    completedAt: { not: null },
+    coachReviewedAt: null,
+  };
+}
+
 function addToSetMap(
   map: Map<string, Set<string>>,
   key: string,
@@ -271,6 +282,40 @@ export class RosterService {
         : [],
     ]);
 
+    const [feedbackCounts, noteCounts, teamEvents] = await Promise.all([
+      playerIds.length
+        ? this.prisma.lessonAssignment.groupBy({
+            by: ['playerId'],
+            where: { ...feedbackWhere(coachId), playerId: { in: playerIds } },
+            _count: { _all: true },
+          })
+        : [],
+      playerIds.length
+        ? this.prisma.coachPlayerNote.groupBy({
+            by: ['playerId'],
+            where: { coachId, playerId: { in: playerIds } },
+            _count: { _all: true },
+          })
+        : [],
+      this.prisma.teamEvent.findMany({
+        where: { coachId, startTime: { gte: rangeStart, lte: rangeEnd } },
+        select: {
+          id: true,
+          title: true,
+          location: true,
+          startTime: true,
+          endTime: true,
+          teamId: true,
+        },
+      }),
+    ]);
+    const feedbackByPlayer = new Map(
+      feedbackCounts.map((entry) => [entry.playerId, entry._count._all]),
+    );
+    const notesByPlayer = new Map(
+      noteCounts.map((entry) => [entry.playerId, entry._count._all]),
+    );
+
     // ── Journey progress (lessons of the journey's plan) ──────────────────
     const currentJourneyByPlayer = new Map<string, (typeof journeys)[number]>();
     for (const journey of journeys) {
@@ -420,6 +465,8 @@ export class RosterService {
           windowDays: windowDays.get(player.id) ?? new Set(),
         }),
         currentJourney,
+        feedbackCount: feedbackByPlayer.get(player.id) ?? 0,
+        noteCount: notesByPlayer.get(player.id) ?? 0,
         nextTournament: tournament
           ? {
               title: tournament.title,
@@ -472,9 +519,70 @@ export class RosterService {
       };
     });
 
+    // ── Today: training windows and team events of today, tournaments this week
+    const isToday = (date: Date) => dayKey(date, timeZone) === today;
+    const coachTeamIds = new Set(teamIds);
+    const agenda: {
+      kind: 'window' | 'event';
+      title: string;
+      start: Date;
+      end: Date;
+      location?: string | null;
+      teamId?: string | null;
+      playerId?: string | null;
+    }[] = [];
+    for (const slot of slots) {
+      const ownTeamSlot = slot.teamId && coachTeamIds.has(slot.teamId);
+      const linkedPlayerSlot =
+        slot.playerId && playersById.get(slot.playerId)?.linked;
+      if (!ownTeamSlot && !linkedPlayerSlot) continue;
+      for (const occurrence of expandOccurrences(slot, rangeStart, rangeEnd)) {
+        if (!isToday(occurrence.start)) continue;
+        agenda.push({
+          kind: 'window',
+          title: slot.title,
+          start: occurrence.start,
+          end: occurrence.end,
+          teamId: ownTeamSlot ? slot.teamId : null,
+          playerId: ownTeamSlot ? null : slot.playerId,
+        });
+      }
+    }
+    for (const event of teamEvents) {
+      if (!isToday(event.startTime)) continue;
+      agenda.push({
+        kind: 'event',
+        title: event.title,
+        start: event.startTime,
+        end: event.endTime,
+        location: event.location,
+        teamId: event.teamId,
+      });
+    }
+    agenda.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+    const weekLimit = shiftDayKey(today, 7);
+    const tournamentsThisWeek = tournaments
+      .filter(
+        (tournament) => dayKey(tournament.startTime, timeZone) <= weekLimit,
+      )
+      .map((tournament) => ({
+        playerId: tournament.playerId,
+        title: tournament.title,
+        location: tournament.location,
+        startTime: tournament.startTime,
+        endTime: tournament.endTime,
+      }));
+
     return {
       timeZone,
       today,
+      agenda,
+      tournamentsThisWeek,
+      feedbackTotal: feedbackCounts.reduce(
+        (sum, entry) => sum + entry._count._all,
+        0,
+      ),
       firstDay: dayKeys[0],
       lastDay: shiftDayKey(today, FUTURE_DAYS),
       teams: rosterTeams,

@@ -37,6 +37,51 @@ export type RosterPlayer = {
     endTime: string;
     priority?: string | null;
   } | null;
+  /** Completed lessons from this coach that the coach has not seen yet. */
+  feedbackCount: number;
+  /** Private notes this coach keeps about the player. */
+  noteCount: number;
+};
+
+export type AgendaItem = {
+  kind: "window" | "event";
+  title: string;
+  start: string;
+  end: string;
+  location?: string | null;
+  teamId?: string | null;
+  playerId?: string | null;
+};
+
+export type WeekTournament = {
+  playerId: string;
+  title: string;
+  location?: string | null;
+  startTime: string;
+  endTime: string;
+};
+
+export type FeedbackItem = {
+  id: string;
+  completedAt: string | null;
+  selfAssessment: number | null;
+  playerNotes: string | null;
+  player: {
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string;
+    profileImage?: string | null;
+  } | null;
+  lesson: { id: string; name: string; focusArea?: string | null };
+  plan: { id: string; name: string } | null;
+};
+
+export type CoachNote = {
+  id: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type RosterTeam = {
@@ -61,6 +106,9 @@ export type RosterTeam = {
 export type RosterResponse = {
   timeZone: string;
   today: string;
+  agenda: AgendaItem[];
+  tournamentsThisWeek: WeekTournament[];
+  feedbackTotal: number;
   firstDay: string;
   lastDay: string;
   teams: RosterTeam[];
@@ -127,7 +175,12 @@ export function missedCount(player: RosterPlayer) {
 }
 
 export function needsAttention(player: RosterPlayer) {
-  return pendingCount(player) > 0 || isInactive(player) || missedCount(player) > 0;
+  return (
+    player.feedbackCount > 0 ||
+    pendingCount(player) > 0 ||
+    isInactive(player) ||
+    missedCount(player) > 0
+  );
 }
 
 /** Short text describing what the player is currently working on. */
@@ -157,4 +210,15 @@ export function relativeDays(value: string) {
   if (days <= 0) return "today";
   if (days === 1) return "tomorrow";
   return `in ${days} days`;
+}
+
+/** Colour for a team: the circle colour if the icon is one, else the brand colour. */
+export function teamColor(icon?: string | null) {
+  return icon?.startsWith("circle:") ? icon.slice(7) : "var(--golf-primary)";
+}
+
+export function greetingFor(hour: number) {
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
 }

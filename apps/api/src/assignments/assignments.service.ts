@@ -968,8 +968,14 @@ export class AssignmentsService {
             ? nextStatus === AssignmentStatus.COMPLETED
               ? { completedAt: assignment.completedAt ?? new Date() }
               : assignment.status === AssignmentStatus.COMPLETED
-                ? { completedAt: null }
+                ? { completedAt: null, coachReviewedAt: null }
                 : {}
+            : {}),
+          // New player input on a lesson puts it back into the coach's
+          // feedback inbox.
+          ...(!isCoachOrAdmin &&
+          (data.playerNotes !== undefined || data.selfAssessment !== undefined)
+            ? { coachReviewedAt: null }
             : {}),
           ...(data.playerNotes !== undefined
             ? { playerNotes: data.playerNotes }
@@ -1036,7 +1042,7 @@ export class AssignmentsService {
               ? AssignmentStatus.OPEN
               : undefined,
           ...(assignment.status === AssignmentStatus.COMPLETED
-            ? { completedAt: null }
+            ? { completedAt: null, coachReviewedAt: null }
             : {}),
         },
         include: this.assignmentInclude(),

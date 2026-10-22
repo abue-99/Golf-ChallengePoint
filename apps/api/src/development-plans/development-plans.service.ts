@@ -541,12 +541,20 @@ export class DevelopmentPlansService {
         updateData.completedAt = assignment.completedAt ?? new Date();
       } else if (assignment.status === AssignmentStatus.COMPLETED) {
         updateData.completedAt = null;
+        updateData.coachReviewedAt = null;
       }
     }
     if (data.playerNotes !== undefined)
       updateData.playerNotes = data.playerNotes;
     if (data.selfAssessment !== undefined)
       updateData.selfAssessment = data.selfAssessment;
+    // New player input puts the lesson back into the coach's feedback inbox.
+    if (
+      !isCoachOrAdmin &&
+      (data.playerNotes !== undefined || data.selfAssessment !== undefined)
+    ) {
+      updateData.coachReviewedAt = null;
+    }
     if (isCoachOrAdmin) {
       if (data.dueDate !== undefined)
         updateData.dueDate = data.dueDate ? new Date(data.dueDate) : null;

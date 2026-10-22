@@ -26,6 +26,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.coachPlayerLink;
   }
 
+  get coachPlayerNote() {
+    return this.client.coachPlayerNote;
+  }
+
   get taskTemplate() {
     return this.client.taskTemplate;
   }

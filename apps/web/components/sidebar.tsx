@@ -8,6 +8,8 @@ export type NavItem = {
   href: string;
   icon: ElementType;
   label: string;
+  /** Mobile bottom bar: "more" items are tucked into the "More" menu. */
+  mobile?: "primary" | "more";
 };
 
 export const defaultNavItems: NavItem[] = [

@@ -154,6 +154,8 @@ model User {
   availabilityBlocks   AvailabilityBlock[]
   tournaments          Tournament[]
   teamEvents           TeamEvent[]             @relation("CoachTeamEvents")
+  coachPlayerNotes     CoachPlayerNote[]       @relation("CoachNotes")
+  notesAboutPlayer     CoachPlayerNote[]       @relation("NotesAboutPlayer")
 
   @@map("users")
 }
@@ -435,6 +437,8 @@ model LessonAssignment {
   priority       LessonPriority   @default(MEDIUM)
   status         AssignmentStatus @default(NEW)
   completedAt    DateTime?
+  /// Set when the coach marked the completed lesson as seen; null = awaiting feedback.
+  coachReviewedAt DateTime?
   sortOrder      Int              @default(0)
   playerNotes    String?
   selfAssessment Int?
@@ -444,6 +448,7 @@ model LessonAssignment {
   @@index([targetType, playerId])
   @@index([targetType, teamId])
   @@index([isInTrainingQueue])
+  @@index([coachId, coachReviewedAt])
 
   @@map("lesson_assignments")
 }
@@ -572,4 +577,19 @@ model DevelopmentPlanMilestone {
   updatedAt    DateTime                   @updatedAt
 
   @@map("development_plan_milestones")
+}
+
+// Private notes a coach keeps about a player (visible only to that coach).
+model CoachPlayerNote {
+  id        String   @id @default(cuid())
+  coachId   String
+  coach     User     @relation("CoachNotes", fields: [coachId], references: [id], onDelete: Cascade)
+  playerId  String
+  player    User     @relation("NotesAboutPlayer", fields: [playerId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([coachId, playerId, createdAt])
+  @@map("coach_player_notes")
 }

@@ -22,6 +22,8 @@ import { LearningProgressSection } from "@/components/LearningProgress";
 import { PlayerCapabilitiesRadarCard } from "@/components/player-capabilities-widget";
 import ActivityStrip, { ActivityLegend } from "@/components/ActivityStrip";
 import TeamIcon from "@/components/TeamIcon";
+import CoachNotes from "@/components/CoachNotes";
+import { FeedbackList } from "@/components/FeedbackList";
 import {
   formatDateTime,
   initialsOf,
@@ -53,12 +55,15 @@ export default function PlayerSidePanel({
   today,
   timeZone,
   onClose,
+  onChanged,
 }: {
   player: RosterPlayer;
   teams: RosterTeam[];
   today: string;
   timeZone: string;
   onClose: () => void;
+  /** Called after feedback or notes changed, so the roster can refresh. */
+  onChanged?: () => void;
 }) {
   const name = nameOf(player);
   const pending = pendingCount(player);
@@ -75,7 +80,7 @@ export default function PlayerSidePanel({
     <Sheet open onOpenChange={(open) => !open && onClose()}>
       <SheetContent
         side="right"
-        className="w-full gap-0 overflow-y-auto p-0 sm:max-w-md"
+        className="w-full gap-0 overflow-y-auto p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-md"
       >
         <SheetHeader className="border-b border-slate-100 p-5 pr-12">
           <div className="flex items-center gap-3">
@@ -140,6 +145,17 @@ export default function PlayerSidePanel({
             </Link>
           </div>
 
+          {player.feedbackCount > 0 ? (
+            <Section title={`Awaiting your feedback (${player.feedbackCount})`}>
+              <FeedbackList
+                playerId={player.id}
+                timeZone={timeZone}
+                showPlayer={false}
+                onChanged={onChanged}
+              />
+            </Section>
+          ) : null}
+
           {player.days.length > 0 ? (
             <Section title="Past week · next week">
               <ActivityStrip days={player.days} today={today} size="lg" />
@@ -193,6 +209,10 @@ export default function PlayerSidePanel({
               </div>
             </Section>
           ) : null}
+
+          <Section title="Private notes">
+            <CoachNotes playerId={player.id} timeZone={timeZone} onChanged={onChanged} />
+          </Section>
 
           <LearningProgressSection progress={player.learningProgress} />
 

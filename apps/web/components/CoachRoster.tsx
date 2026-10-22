@@ -11,6 +11,15 @@ import {
   Route as RouteIcon,
   Trophy,
   MoreHorizontal,
+  MessageSquare,
+  Inbox,
+  CalendarX,
+  Moon,
+  UserX,
+  StickyNote,
+  PanelRight,
+  Rows3,
+  Rows4,
   Plus,
   Search,
   Settings2,
@@ -28,6 +37,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import PlayerSidePanel from "@/components/PlayerSidePanel";
+import FeedbackSheet from "@/components/FeedbackList";
+import CoachToday, { GettingStarted } from "@/components/CoachToday";
 import TeamIcon from "@/components/TeamIcon";
 import ActivityStrip, { ActivityLegend } from "@/components/ActivityStrip";
 import { subscribeLearningProgressChanges } from "@/lib/learning-progress-events";
@@ -43,7 +54,9 @@ import {
   nameOf,
   needsAttention,
   pendingCount,
+  greetingFor,
   relativeDays,
+  teamColor,
   workSummary,
   type RosterPlayer,
   type RosterResponse,
@@ -56,6 +69,24 @@ type FilterMode = "all" | "attention" | "inactive";
 type SortMode = "name" | "activity";
 
 const GROUP_STORAGE_KEY = "coachRoster.groupMode";
+const DENSITY_STORAGE_KEY = "coachRoster.density";
+const GETTING_STARTED_KEY = "coachRoster.gettingStartedHidden";
+
+function readStorage(key: string) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Storage unavailable – the setting just isn't remembered.
+  }
+}
 
 function readStoredGroupMode(): GroupMode | null {
   try {
@@ -84,10 +115,13 @@ function browserTimeZone() {
 
 function TeamChip({
   team,
+  prefix,
   onRemove,
   onSelect,
 }: {
   team: Team;
+  /** e.g. "Also in" – shown as a tooltip and to screen readers. */
+  prefix?: string;
   onRemove?: () => void;
   onSelect?: () => void;
 }) {
@@ -97,7 +131,14 @@ function TeamChip({
         type="button"
         onClick={onSelect}
         className="inline-flex min-w-0 items-center gap-1 hover:text-[var(--golf-primary)]"
-        title={onSelect ? `Show only ${team.shortName}` : team.shortName}
+        title={
+          prefix
+            ? `${prefix} ${team.shortName} – click to show only this team`
+            : onSelect
+              ? `Show only ${team.shortName}`
+              : team.shortName
+        }
+        aria-label={prefix ? `${prefix} ${team.shortName}` : undefined}
       >
         {team.icon ? <TeamIcon icon={team.icon} size={12} /> : null}
         <span className="truncate">{team.shortName}</span>
@@ -117,11 +158,47 @@ function TeamChip({
   );
 }
 
+type Density = "comfortable" | "compact";
+
+function Indicator({
+  icon: Icon,
+  label,
+  tone,
+  children,
+}: {
+  icon: typeof Trophy;
+  label: string;
+  tone: "rose" | "amber" | "blue" | "slate";
+  children?: React.ReactNode;
+}) {
+  const tones = {
+    rose: "bg-rose-50 text-rose-700",
+    amber: "bg-amber-50 text-amber-700",
+    blue: "bg-sky-50 text-sky-700",
+    slate: "bg-slate-100 text-slate-600",
+  } as const;
+  return (
+    <span
+      className={cn(
+        "inline-flex h-6 items-center gap-1 rounded-full px-1.5 text-xs font-medium tabular-nums",
+        tones[tone],
+      )}
+      title={label}
+      aria-label={label}
+      role="img"
+    >
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+      {children}
+    </span>
+  );
+}
+
 function PlayerRow({
   player,
   teams,
   today,
   timeZone,
+  density,
   chipTeamIds,
   chipPrefix,
   onOpen,
@@ -133,6 +210,7 @@ function PlayerRow({
   teams: Team[];
   today: string;
   timeZone: string;
+  density: Density;
   chipTeamIds: string[];
   chipPrefix?: string;
   onOpen: () => void;
@@ -144,7 +222,9 @@ function PlayerRow({
   const pending = pendingCount(player);
   const missed = missedCount(player);
   const inactive = isInactive(player);
+  const attention = needsAttention(player);
   const summary = workSummary(player);
+  const compact = density === "compact";
   const teamsById = new Map(teams.map((team) => [team.id, team]));
   const addableTeams = teams.filter((team) => !player.teamIds.includes(team.id));
   const tournamentSoon =
@@ -152,79 +232,104 @@ function PlayerRow({
     (daysUntil(player.nextTournament.startTime) ?? Infinity) <= 14
       ? player.nextTournament
       : null;
+  const tournamentDays = tournamentSoon ? Math.max(0, daysUntil(tournamentSoon.startTime) ?? 0) : 0;
 
   return (
-    <li className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 px-3 py-3 sm:px-4 lg:grid-cols-[minmax(0,1fr)_auto_26rem]">
-      <button
-        type="button"
-        onClick={onOpen}
-        className="flex min-w-0 items-center gap-3 text-left"
-      >
-        <Avatar className="h-10 w-10 shrink-0">
-          {player.profileImage ? (
-            <AvatarImage src={player.profileImage} alt={name} />
+    <li
+      className={cn(
+        "grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 px-3 sm:px-4 lg:grid-cols-[minmax(15rem,1fr)_auto_minmax(18rem,1.3fr)]",
+        compact ? "py-1.5" : "py-3",
+      )}
+    >
+      <button type="button" onClick={onOpen} className="flex min-w-0 items-center gap-3 text-left">
+        <span className="relative shrink-0">
+          <Avatar className={compact ? "h-8 w-8" : "h-10 w-10"}>
+            {player.profileImage ? <AvatarImage src={player.profileImage} alt={name} /> : null}
+            <AvatarFallback className={cn("bg-gray-200 text-gray-600", compact ? "text-xs" : "text-sm")}>
+              {initialsOf(player)}
+            </AvatarFallback>
+          </Avatar>
+          {attention ? (
+            <span
+              className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-rose-500"
+              aria-label="Needs attention"
+              role="img"
+            />
           ) : null}
-          <AvatarFallback className="bg-gray-200 text-sm text-gray-600">
-            {initialsOf(player)}
-          </AvatarFallback>
-        </Avatar>
+        </span>
         <span className="min-w-0">
-          <span className="block truncate font-medium text-[var(--golf-heading)]">
-            {name}
-          </span>
-          <span className="flex min-w-0 items-center gap-1 truncate text-xs text-[var(--golf-muted-text)]">
-            {player.currentJourney ? (
-              <RouteIcon className="h-3 w-3 shrink-0 text-[var(--golf-primary)]" />
-            ) : null}
-            <span className="truncate">
-              {player.linked
-                ? [summary, lastActiveLabel(player)].filter(Boolean).join(" · ")
-                : [summary, "Team member · not in My Players"].filter(Boolean).join(" · ")}
+          <span className="block truncate font-medium text-[var(--golf-heading)]">{name}</span>
+          {!compact ? (
+            <span className="flex min-w-0 items-center gap-1 truncate text-xs text-[var(--golf-muted-text)]">
+              {player.currentJourney ? (
+                <RouteIcon className="h-3 w-3 shrink-0 text-[var(--golf-primary)]" />
+              ) : null}
+              <span className="truncate">
+                {player.linked
+                  ? [summary, lastActiveLabel(player)].filter(Boolean).join(" · ")
+                  : [summary, "Team member · not in My Players"].filter(Boolean).join(" · ")}
+              </span>
             </span>
-          </span>
+          ) : null}
         </span>
       </button>
 
-      <ActivityStrip
-        days={player.days}
-        today={today}
-        className="justify-self-end lg:col-start-2"
-      />
+      <ActivityStrip days={player.days} today={today} className="justify-self-end lg:col-start-2" />
 
-      <div className="col-span-2 flex flex-wrap items-center gap-1.5 pl-[3.25rem] lg:col-span-1 lg:col-start-3 lg:pl-0">
+      <div
+        className={cn(
+          "col-span-2 flex flex-wrap items-center gap-1.5 lg:col-span-1 lg:col-start-3 lg:pl-0",
+          compact ? "pl-11" : "pl-[3.25rem]",
+        )}
+      >
+        {player.feedbackCount > 0 ? (
+          <Indicator
+            icon={MessageSquare}
+            tone="blue"
+            label={`${player.feedbackCount} completed lesson${player.feedbackCount === 1 ? "" : "s"} awaiting your feedback`}
+          >
+            {player.feedbackCount}
+          </Indicator>
+        ) : null}
+        {pending > 0 ? (
+          <Indicator icon={Inbox} tone="rose" label={`${pending} awaiting acceptance`}>
+            {pending}
+          </Indicator>
+        ) : null}
+        {missed > 0 ? (
+          <Indicator icon={CalendarX} tone="rose" label={`${missed} missed day${missed === 1 ? "" : "s"} this week`}>
+            {missed}
+          </Indicator>
+        ) : null}
+        {inactive ? (
+          player.lastLogin ? (
+            <Indicator icon={Moon} tone="amber" label={`Inactive for ${INACTIVE_AFTER_DAYS}+ days`} />
+          ) : (
+            <Indicator icon={UserX} tone="amber" label="Account not activated yet" />
+          )
+        ) : null}
         {tournamentSoon ? (
-          <span
-            className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800"
-            title={`${tournamentSoon.title} · ${formatDateTime(tournamentSoon.startTime, {
+          <Indicator
+            icon={Trophy}
+            tone="amber"
+            label={`${tournamentSoon.title} · ${formatDateTime(tournamentSoon.startTime, {
               timeZone,
               weekday: "short",
               day: "numeric",
               month: "short",
-            })}`}
+            })} (${relativeDays(tournamentSoon.startTime)})`}
           >
-            <Trophy className="h-3 w-3" />
-            {relativeDays(tournamentSoon.startTime)}
-          </span>
+            {tournamentDays === 0 ? "today" : `${tournamentDays}d`}
+          </Indicator>
         ) : null}
-        {pending > 0 ? (
-          <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">
-            {pending} awaiting acceptance
-          </span>
-        ) : null}
-        {missed > 0 ? (
-          <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">
-            {missed} missed
-          </span>
-        ) : null}
-        {inactive ? (
-          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
-            {player.lastLogin ? `Inactive ${INACTIVE_AFTER_DAYS}+ days` : "Not activated"}
-          </span>
+        {player.noteCount > 0 ? (
+          <Indicator
+            icon={StickyNote}
+            tone="slate"
+            label={`${player.noteCount} private note${player.noteCount === 1 ? "" : "s"}`}
+          />
         ) : null}
 
-        {chipPrefix && chipTeamIds.length > 0 ? (
-          <span className="text-xs text-slate-400">{chipPrefix}</span>
-        ) : null}
         {chipTeamIds.map((teamId) => {
           const team = teamsById.get(teamId);
           if (!team) return null;
@@ -232,64 +337,70 @@ function PlayerRow({
             <TeamChip
               key={teamId}
               team={team}
+              prefix={chipPrefix}
               onSelect={() => onSelectTeam(teamId)}
               onRemove={() => onRemoveFromTeam(teamId)}
             />
           );
         })}
 
-        {addableTeams.length > 0 ? (
+        <span className="ml-auto flex items-center gap-1">
+          {addableTeams.length > 0 ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-0.5 rounded-full border border-dashed border-slate-300 px-2 py-0.5 text-xs text-slate-500 hover:border-slate-400 hover:text-slate-700"
+                  aria-label={`Add ${name} to a team`}
+                >
+                  <Plus className="h-3 w-3" />
+                  Team
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Add to team</DropdownMenuLabel>
+                {addableTeams.map((team) => (
+                  <DropdownMenuItem key={team.id} onSelect={() => onAddToTeam(team.id)}>
+                    {team.icon ? <TeamIcon icon={team.icon} size={14} /> : null}
+                    {team.shortName}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="inline-flex items-center gap-0.5 rounded-full border border-dashed border-slate-300 px-2 py-0.5 text-xs text-slate-500 hover:border-slate-400 hover:text-slate-700"
-                aria-label={`Add ${name} to a team`}
+                className="rounded-md p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                aria-label={`Actions for ${name}`}
               >
-                <Plus className="h-3 w-3" />
-                Team
+                <MoreHorizontal className="h-4 w-4" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Add to team</DropdownMenuLabel>
-              {addableTeams.map((team) => (
-                <DropdownMenuItem key={team.id} onSelect={() => onAddToTeam(team.id)}>
-                  {team.icon ? <TeamIcon icon={team.icon} size={14} /> : null}
-                  {team.shortName}
-                </DropdownMenuItem>
-              ))}
+              <DropdownMenuItem onSelect={onOpen}>
+                <PanelRight className="h-4 w-4" /> Details & notes
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/coach/players/${player.id}`}>
+                  <ExternalLink className="h-4 w-4" /> Open player
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/coach/players/${player.id}/planning`}>
+                  <LayoutList className="h-4 w-4" /> Planning
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/coach/players/${player.id}/calendar`}>
+                  <CalendarDays className="h-4 w-4" /> Calendar
+                </Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : null}
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="rounded-md p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-              aria-label={`Actions for ${name}`}
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <Link href={`/coach/players/${player.id}`}>
-                <ExternalLink className="h-4 w-4" /> Open player
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href={`/coach/players/${player.id}/planning`}>
-                <LayoutList className="h-4 w-4" /> Planning
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href={`/coach/players/${player.id}/calendar`}>
-                <CalendarDays className="h-4 w-4" /> Calendar
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        </span>
       </div>
     </li>
   );
@@ -334,8 +445,12 @@ function TeamHeaderInfo({ team, timeZone }: { team: Team; timeZone: string }) {
   );
 }
 
-export default function CoachRoster() {
+export default function CoachRoster({ firstName }: { firstName?: string }) {
   const [loading, setLoading] = useState(true);
+  const [density, setDensity] = useState<Density>("comfortable");
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [gettingStartedHidden, setGettingStartedHidden] = useState(true);
+  const [greeting, setGreeting] = useState<{ text: string; date: string } | null>(null);
   const [failed, setFailed] = useState(false);
   const [data, setData] = useState<RosterResponse | null>(null);
   const [query, setQuery] = useState("");
@@ -348,7 +463,28 @@ export default function CoachRoster() {
 
   useEffect(() => {
     setStoredGroup(readStoredGroupMode());
+    setDensity(readStorage(DENSITY_STORAGE_KEY) === "compact" ? "compact" : "comfortable");
+    setGettingStartedHidden(readStorage(GETTING_STARTED_KEY) === "true");
+    const now = new Date();
+    setGreeting({
+      text: greetingFor(now.getHours()),
+      date: new Intl.DateTimeFormat(undefined, {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      }).format(now),
+    });
   }, []);
+
+  function changeDensity(value: Density) {
+    setDensity(value);
+    writeStorage(DENSITY_STORAGE_KEY, value);
+  }
+
+  function hideGettingStarted() {
+    setGettingStartedHidden(true);
+    writeStorage(GETTING_STARTED_KEY, "true");
+  }
 
   const load = useCallback(async () => {
     try {
@@ -471,6 +607,7 @@ export default function CoachRoster() {
         teams={teams}
         today={today}
         timeZone={timeZone}
+        density={density}
         chipTeamIds={chipTeamIds}
         chipPrefix={context.teamId ? "Also in" : undefined}
         onOpen={() => setSelectedPlayerId(player.id)}
@@ -514,7 +651,11 @@ export default function CoachRoster() {
           if (isFiltered && players.length === 0) return null;
           const isCollapsed = collapsed.has(key);
           return (
-            <section key={key} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <section
+              key={key}
+              className="overflow-hidden rounded-xl border border-l-4 border-slate-200 bg-white"
+              style={{ borderLeftColor: teamColor(team.icon) }}
+            >
               <header className="border-b border-slate-100 bg-slate-50/70">
                 <div className="flex items-center gap-3 px-3 py-2 sm:px-4">
                   <button
@@ -573,7 +714,7 @@ export default function CoachRoster() {
         })}
 
         {!teamFilter && withoutTeam.length > 0 ? (
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <section className="overflow-hidden rounded-xl border border-l-4 border-slate-200 border-l-slate-300 bg-white">
             <header className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/70 px-3 py-2 sm:px-4">
               <button
                 type="button"
@@ -604,7 +745,32 @@ export default function CoachRoster() {
   const activeTeam = teamFilter ? teams.find((team) => team.id === teamFilter) : null;
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-5">
+      <header className="flex flex-col gap-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-[var(--golf-heading)]">
+          {greeting ? `${greeting.text}${firstName ? `, ${firstName}` : ""}` : "Home"}
+        </h1>
+        {greeting ? (
+          <p className="text-sm text-[var(--golf-muted-text)]">{greeting.date}</p>
+        ) : null}
+      </header>
+
+      {data && !gettingStartedHidden ? (
+        <GettingStarted data={data} onDismiss={hideGettingStarted} />
+      ) : null}
+
+      {data && data.players.length > 0 ? (
+        <CoachToday
+          data={data}
+          onOpenFeedback={() => setFeedbackOpen(true)}
+          onOpenPlayer={(playerId) => setSelectedPlayerId(playerId)}
+        />
+      ) : null}
+
+      <div className="flex items-baseline justify-between pt-1">
+        <h2 className="text-lg font-semibold text-[var(--golf-heading)]">My Players</h2>
+      </div>
+
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="relative w-full lg:max-w-xs">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -669,6 +835,30 @@ export default function CoachRoster() {
               ))}
             </div>
           ) : null}
+
+          <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5" role="group" aria-label="Row density">
+            {(
+              [
+                { value: "comfortable", label: "Comfortable rows", icon: Rows3 },
+                { value: "compact", label: "Compact rows", icon: Rows4 },
+              ] as const
+            ).map(({ value, label, icon: Icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => changeDensity(value)}
+                aria-pressed={density === value}
+                aria-label={label}
+                title={label}
+                className={cn(
+                  "rounded-md p-1.5 transition-colors",
+                  density === value ? "bg-slate-800 text-white" : "text-slate-500 hover:bg-slate-100",
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+              </button>
+            ))}
+          </div>
 
           <select
             value={sort}
@@ -738,6 +928,15 @@ export default function CoachRoster() {
           today={today}
           timeZone={timeZone}
           onClose={() => setSelectedPlayerId(null)}
+          onChanged={() => void load()}
+        />
+      ) : null}
+
+      {feedbackOpen ? (
+        <FeedbackSheet
+          timeZone={timeZone}
+          onClose={() => setFeedbackOpen(false)}
+          onChanged={() => void load()}
         />
       ) : null}
     </section>
