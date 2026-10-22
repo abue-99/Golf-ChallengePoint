@@ -11,6 +11,7 @@ import { DevelopmentPlansModule } from './development-plans/development-plans.mo
 import { GamificationModule } from './gamification/gamification.module';
 import { AssignmentsModule } from './assignments/assignments.module';
 import { JourneysModule } from './journeys/journeys.module';
+import { RosterModule } from './roster/roster.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { JourneysModule } from './journeys/journeys.module';
     GamificationModule,
     AssignmentsModule,
     JourneysModule,
+    RosterModule,
   ],
   controllers: [AppController],
 })

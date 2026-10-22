@@ -8,6 +8,8 @@ import {
   ChevronRight,
   ExternalLink,
   LayoutList,
+  Route as RouteIcon,
+  Trophy,
   MoreHorizontal,
   Plus,
   Search,
@@ -25,65 +27,35 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import PlayerOverviewDialog from "@/components/PlayerOverviewDialog";
+import PlayerSidePanel from "@/components/PlayerSidePanel";
 import TeamIcon from "@/components/TeamIcon";
-import type { LearningProgressSummary } from "@/components/LearningProgress";
+import ActivityStrip, { ActivityLegend } from "@/components/ActivityStrip";
 import { subscribeLearningProgressChanges } from "@/lib/learning-progress-events";
 import { cn } from "@/lib/utils";
+import {
+  daysUntil,
+  formatDateTime,
+  initialsOf,
+  INACTIVE_AFTER_DAYS,
+  isInactive,
+  lastActiveLabel,
+  missedCount,
+  nameOf,
+  needsAttention,
+  pendingCount,
+  relativeDays,
+  workSummary,
+  type RosterPlayer,
+  type RosterResponse,
+  type RosterTeam,
+} from "@/lib/coach-roster";
 
-type LinkedPlayer = {
-  id: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  email?: string;
-  profileImage?: string | null;
-  phoneNumber?: string | null;
-  timezone?: string | null;
-  lastLogin?: string | null;
-  userClubs?: { clubId: string; club: { id: string; name: string } | null }[];
-  coaches?: {
-    id: string;
-    firstName?: string | null;
-    lastName?: string | null;
-    email?: string;
-  }[];
-  learningProgress?: LearningProgressSummary | null;
-};
-
-type TeamMember = {
-  id: string;
-  userId: string;
-  user: {
-    id: string;
-    firstName?: string | null;
-    lastName?: string | null;
-    profileImage?: string | null;
-    role?: string | null;
-  } | null;
-};
-
-type Team = {
-  id: string;
-  icon?: string | null;
-  shortName: string;
-  description?: string | null;
-  members?: TeamMember[];
-  pendingLessons?: number;
-};
-
-type RosterPlayer = LinkedPlayer & {
-  /** True when the player is linked to the coach ("My Players"). */
-  linked: boolean;
-  teamIds: string[];
-};
-
+type Team = RosterTeam;
 type GroupMode = "none" | "team";
 type FilterMode = "all" | "attention" | "inactive";
 type SortMode = "name" | "activity";
 
 const GROUP_STORAGE_KEY = "coachRoster.groupMode";
-const INACTIVE_AFTER_DAYS = 14;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 function readStoredGroupMode(): GroupMode | null {
   try {
@@ -102,68 +74,12 @@ function storeGroupMode(value: GroupMode) {
   }
 }
 
-function nameOf(player: Pick<LinkedPlayer, "firstName" | "lastName" | "email">) {
-  return (
-    [player.firstName, player.lastName].filter(Boolean).join(" ") ||
-    player.email ||
-    "—"
-  );
-}
-
-function initialsOf(player: Pick<LinkedPlayer, "firstName" | "lastName" | "email">) {
-  const parts = nameOf(player).split(" ").filter(Boolean);
-  return `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`.toUpperCase() || "?";
-}
-
-function daysSince(value?: string | null) {
-  if (!value) return null;
-  const time = new Date(value).getTime();
-  if (Number.isNaN(time)) return null;
-  return Math.max(0, Math.floor((Date.now() - time) / DAY_MS));
-}
-
-function lastSeenLabel(value?: string | null) {
-  const days = daysSince(value);
-  if (days === null) return "Never logged in";
-  if (days === 0) return "Seen today";
-  if (days === 1) return "Seen yesterday";
-  if (days < 60) return `Seen ${days} days ago`;
-  return `Seen ${Math.floor(days / 30)} months ago`;
-}
-
-function isInactive(player: RosterPlayer) {
-  if (!player.linked) return false;
-  const days = daysSince(player.lastLogin);
-  return days === null || days >= INACTIVE_AFTER_DAYS;
-}
-
-function pendingCount(player: RosterPlayer) {
-  return (
-    (player.learningProgress?.lessons?.PENDING ?? 0) +
-    (player.learningProgress?.journeys?.PENDING ?? 0)
-  );
-}
-
-function needsAttention(player: RosterPlayer) {
-  return pendingCount(player) > 0 || isInactive(player);
-}
-
-/** Short text describing what the player is currently working on. */
-function workSummary(player: RosterPlayer) {
-  const progress = player.learningProgress;
-  if (!progress) return null;
-  const journeysOpen =
-    (progress.journeys?.ACCEPTED ?? 0) + (progress.journeys?.ACTIVE ?? 0);
-  const lessonsOpen =
-    (progress.lessons?.ACCEPTED ?? 0) + (progress.lessons?.ACTIVE ?? 0);
-  const parts: string[] = [];
-  if (journeysOpen > 0) {
-    parts.push(`${journeysOpen} journey${journeysOpen === 1 ? "" : "s"}`);
+function browserTimeZone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return undefined;
   }
-  if (lessonsOpen > 0) {
-    parts.push(`${lessonsOpen} lesson${lessonsOpen === 1 ? "" : "s"}`);
-  }
-  return parts.length > 0 ? `Working on ${parts.join(" · ")}` : null;
 }
 
 function TeamChip({
@@ -204,6 +120,8 @@ function TeamChip({
 function PlayerRow({
   player,
   teams,
+  today,
+  timeZone,
   chipTeamIds,
   chipPrefix,
   onOpen,
@@ -213,6 +131,8 @@ function PlayerRow({
 }: {
   player: RosterPlayer;
   teams: Team[];
+  today: string;
+  timeZone: string;
   chipTeamIds: string[];
   chipPrefix?: string;
   onOpen: () => void;
@@ -222,17 +142,23 @@ function PlayerRow({
 }) {
   const name = nameOf(player);
   const pending = pendingCount(player);
+  const missed = missedCount(player);
   const inactive = isInactive(player);
   const summary = workSummary(player);
   const teamsById = new Map(teams.map((team) => [team.id, team]));
   const addableTeams = teams.filter((team) => !player.teamIds.includes(team.id));
+  const tournamentSoon =
+    player.nextTournament &&
+    (daysUntil(player.nextTournament.startTime) ?? Infinity) <= 14
+      ? player.nextTournament
+      : null;
 
   return (
-    <li className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4">
+    <li className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 px-3 py-3 sm:px-4 lg:grid-cols-[minmax(0,1fr)_auto_26rem]">
       <button
         type="button"
         onClick={onOpen}
-        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        className="flex min-w-0 items-center gap-3 text-left"
       >
         <Avatar className="h-10 w-10 shrink-0">
           {player.profileImage ? (
@@ -246,23 +172,53 @@ function PlayerRow({
           <span className="block truncate font-medium text-[var(--golf-heading)]">
             {name}
           </span>
-          <span className="block truncate text-xs text-[var(--golf-muted-text)]">
-            {player.linked
-              ? [summary, lastSeenLabel(player.lastLogin)].filter(Boolean).join(" · ")
-              : "Team member · not in My Players"}
+          <span className="flex min-w-0 items-center gap-1 truncate text-xs text-[var(--golf-muted-text)]">
+            {player.currentJourney ? (
+              <RouteIcon className="h-3 w-3 shrink-0 text-[var(--golf-primary)]" />
+            ) : null}
+            <span className="truncate">
+              {player.linked
+                ? [summary, lastActiveLabel(player)].filter(Boolean).join(" · ")
+                : [summary, "Team member · not in My Players"].filter(Boolean).join(" · ")}
+            </span>
           </span>
         </span>
       </button>
 
-      <div className="flex flex-wrap items-center gap-1.5 pl-[3.25rem] sm:pl-0">
+      <ActivityStrip
+        days={player.days}
+        today={today}
+        className="justify-self-end lg:col-start-2"
+      />
+
+      <div className="col-span-2 flex flex-wrap items-center gap-1.5 pl-[3.25rem] lg:col-span-1 lg:col-start-3 lg:pl-0">
+        {tournamentSoon ? (
+          <span
+            className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800"
+            title={`${tournamentSoon.title} · ${formatDateTime(tournamentSoon.startTime, {
+              timeZone,
+              weekday: "short",
+              day: "numeric",
+              month: "short",
+            })}`}
+          >
+            <Trophy className="h-3 w-3" />
+            {relativeDays(tournamentSoon.startTime)}
+          </span>
+        ) : null}
         {pending > 0 ? (
           <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">
             {pending} awaiting acceptance
           </span>
         ) : null}
+        {missed > 0 ? (
+          <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">
+            {missed} missed
+          </span>
+        ) : null}
         {inactive ? (
           <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
-            {player.lastLogin ? `No login ${INACTIVE_AFTER_DAYS}+ days` : "Not activated"}
+            {player.lastLogin ? `Inactive ${INACTIVE_AFTER_DAYS}+ days` : "Not activated"}
           </span>
         ) : null}
 
@@ -339,10 +295,49 @@ function PlayerRow({
   );
 }
 
+function TeamHeaderInfo({ team, timeZone }: { team: Team; timeZone: string }) {
+  const plan = team.plans[0];
+  const next = team.nextTrainingWindow;
+  if (!plan && !next) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 pb-2 pl-9 text-xs text-slate-500 sm:px-4 sm:pl-10">
+      {plan ? (
+        <span className="inline-flex min-w-0 items-center gap-1">
+          <RouteIcon className="h-3 w-3 shrink-0" />
+          <span className="truncate">
+            Plan: <span className="text-slate-700">{plan.name}</span>
+            {team.plans.length > 1 ? ` +${team.plans.length - 1}` : ""}
+          </span>
+        </span>
+      ) : null}
+      {next ? (
+        <span className="inline-flex items-center gap-1">
+          <CalendarDays className="h-3 w-3 shrink-0" />
+          Next window:{" "}
+          <span className="text-slate-700">
+            {formatDateTime(next.start, {
+              timeZone,
+              weekday: "short",
+              day: "numeric",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            })}
+          </span>
+          {team.trainingWindowCount > 1 ? (
+            <span>· {team.trainingWindowCount} windows</span>
+          ) : null}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 export default function CoachRoster() {
   const [loading, setLoading] = useState(true);
-  const [linkedPlayers, setLinkedPlayers] = useState<LinkedPlayer[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [failed, setFailed] = useState(false);
+  const [data, setData] = useState<RosterResponse | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FilterMode>("all");
   const [sort, setSort] = useState<SortMode>("name");
@@ -357,14 +352,17 @@ export default function CoachRoster() {
 
   const load = useCallback(async () => {
     try {
-      const [playersRes, teamsRes] = await Promise.all([
-        fetch("/api/players/my", { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])),
-        fetch("/api/teams", { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])),
-      ]);
-      setLinkedPlayers(Array.isArray(playersRes) ? playersRes.filter(Boolean) : []);
-      setTeams(Array.isArray(teamsRes) ? teamsRes : []);
+      const tz = browserTimeZone();
+      const res = await fetch(
+        `/api/coach/roster${tz ? `?tz=${encodeURIComponent(tz)}` : ""}`,
+        { cache: "no-store" },
+      );
+      if (!res.ok) throw new Error(String(res.status));
+      const next: RosterResponse = await res.json();
+      setData(next);
+      setFailed(false);
     } catch {
-      // Keep the previous state; the list simply stays as it was.
+      setFailed(true);
     } finally {
       setLoading(false);
     }
@@ -377,6 +375,11 @@ export default function CoachRoster() {
     });
   }, [load]);
 
+  const teams = useMemo(() => data?.teams ?? [], [data]);
+  const roster = useMemo(() => data?.players ?? [], [data]);
+  const today = data?.today ?? "";
+  const timeZone = data?.timeZone ?? "UTC";
+
   const hasTeams = teams.length > 0;
   // Coaches without teams never see the toggle; with teams, default to team view.
   const groupMode: GroupMode = hasTeams ? storedGroup ?? "team" : "none";
@@ -385,32 +388,6 @@ export default function CoachRoster() {
     setStoredGroup(value);
     storeGroupMode(value);
   }
-
-  const roster = useMemo(() => {
-    const byId = new Map<string, RosterPlayer>();
-    for (const player of linkedPlayers) {
-      byId.set(player.id, { ...player, linked: true, teamIds: [] });
-    }
-    for (const team of teams) {
-      for (const member of team.members ?? []) {
-        let entry = byId.get(member.userId);
-        if (!entry) {
-          if (member.user?.role && member.user.role !== "PLAYER") continue;
-          entry = {
-            id: member.userId,
-            firstName: member.user?.firstName ?? null,
-            lastName: member.user?.lastName ?? null,
-            profileImage: member.user?.profileImage ?? null,
-            linked: false,
-            teamIds: [],
-          };
-          byId.set(member.userId, entry);
-        }
-        if (!entry.teamIds.includes(team.id)) entry.teamIds.push(team.id);
-      }
-    }
-    return [...byId.values()];
-  }, [linkedPlayers, teams]);
 
   const visiblePlayers = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -426,8 +403,8 @@ export default function CoachRoster() {
     });
     return list.sort((a, b) => {
       if (sort === "activity") {
-        const aTime = a.lastLogin ? new Date(a.lastLogin).getTime() : 0;
-        const bTime = b.lastLogin ? new Date(b.lastLogin).getTime() : 0;
+        const aTime = a.lastActivityAt ? new Date(a.lastActivityAt).getTime() : 0;
+        const bTime = b.lastActivityAt ? new Date(b.lastActivityAt).getTime() : 0;
         if (aTime !== bTime) return bTime - aTime;
       }
       return nameOf(a).localeCompare(nameOf(b));
@@ -451,10 +428,7 @@ export default function CoachRoster() {
       toast.error("Could not add the player to the team.");
       return;
     }
-    const updated: Team = await res.json();
-    setTeams((prev) =>
-      prev.map((team) => (team.id === teamId ? { ...team, ...updated } : team)),
-    );
+    await load();
   }
 
   async function removeFromTeam(playerId: string, teamId: string) {
@@ -473,10 +447,7 @@ export default function CoachRoster() {
       toast.error("Could not remove the player from the team.");
       return;
     }
-    const updated: Team = await res.json();
-    setTeams((prev) =>
-      prev.map((entry) => (entry.id === teamId ? { ...entry, ...updated } : entry)),
-    );
+    await load();
   }
 
   function toggleCollapsed(key: string) {
@@ -498,6 +469,8 @@ export default function CoachRoster() {
         key={`${context.teamId ?? "all"}-${player.id}`}
         player={player}
         teams={teams}
+        today={today}
+        timeZone={timeZone}
         chipTeamIds={chipTeamIds}
         chipPrefix={context.teamId ? "Also in" : undefined}
         onOpen={() => setSelectedPlayerId(player.id)}
@@ -525,18 +498,15 @@ export default function CoachRoster() {
       );
     }
 
-    const visibleIds = new Set(visiblePlayers.map((player) => player.id));
     const groups = teams
       .filter((team) => !teamFilter || team.id === teamFilter)
       .map((team) => ({
         key: team.id,
         team,
         players: visiblePlayers.filter((player) => player.teamIds.includes(team.id)),
-        total: (team.members ?? []).length,
+        total: team.memberIds.length,
       }));
-    const withoutTeam = visiblePlayers.filter(
-      (player) => player.teamIds.length === 0 && visibleIds.has(player.id),
-    );
+    const withoutTeam = visiblePlayers.filter((player) => player.teamIds.length === 0);
 
     return (
       <div className="space-y-4">
@@ -545,44 +515,47 @@ export default function CoachRoster() {
           const isCollapsed = collapsed.has(key);
           return (
             <section key={key} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-              <header className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/70 px-3 py-2 sm:px-4">
-                <button
-                  type="button"
-                  onClick={() => toggleCollapsed(key)}
-                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                  aria-expanded={!isCollapsed}
-                >
-                  {isCollapsed ? (
-                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
-                  )}
-                  {team.icon ? <TeamIcon icon={team.icon} size={16} /> : null}
-                  <span className="truncate font-semibold text-[var(--golf-heading)]">
-                    {team.shortName}
-                  </span>
-                  <span className="shrink-0 text-sm text-slate-500">
-                    {isFiltered ? `${players.length} of ${total}` : total}
-                  </span>
-                  {team.description ? (
-                    <span className="hidden truncate text-sm text-slate-400 md:inline">
-                      · {team.description}
+              <header className="border-b border-slate-100 bg-slate-50/70">
+                <div className="flex items-center gap-3 px-3 py-2 sm:px-4">
+                  <button
+                    type="button"
+                    onClick={() => toggleCollapsed(key)}
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                    aria-expanded={!isCollapsed}
+                  >
+                    {isCollapsed ? (
+                      <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+                    )}
+                    {team.icon ? <TeamIcon icon={team.icon} size={16} /> : null}
+                    <span className="truncate font-semibold text-[var(--golf-heading)]">
+                      {team.shortName}
+                    </span>
+                    <span className="shrink-0 text-sm text-slate-500">
+                      {isFiltered ? `${players.length} of ${total}` : total}
+                    </span>
+                    {team.description ? (
+                      <span className="hidden truncate text-sm text-slate-400 md:inline">
+                        · {team.description}
+                      </span>
+                    ) : null}
+                  </button>
+                  {team.pendingLessons ? (
+                    <span className="shrink-0 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">
+                      {team.pendingLessons} pending
                     </span>
                   ) : null}
-                </button>
-                {team.pendingLessons ? (
-                  <span className="shrink-0 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">
-                    {team.pendingLessons} pending
-                  </span>
-                ) : null}
-                <Link
-                  href="/teams"
-                  className="shrink-0 rounded-md p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-                  title="Manage team, plans and training windows"
-                  aria-label={`Manage ${team.shortName}`}
-                >
-                  <Settings2 className="h-4 w-4" />
-                </Link>
+                  <Link
+                    href="/teams"
+                    className="shrink-0 rounded-md p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                    title="Manage team, plans and training windows"
+                    aria-label={`Manage ${team.shortName}`}
+                  >
+                    <Settings2 className="h-4 w-4" />
+                  </Link>
+                </div>
+                <TeamHeaderInfo team={team} timeZone={timeZone} />
               </header>
               {!isCollapsed ? (
                 players.length > 0 ? (
@@ -704,7 +677,7 @@ export default function CoachRoster() {
             aria-label="Sort players"
           >
             <option value="name">Sort: Name</option>
-            <option value="activity">Sort: Last seen</option>
+            <option value="activity">Sort: Last active</option>
           </select>
         </div>
 
@@ -716,15 +689,32 @@ export default function CoachRoster() {
         </Link>
       </div>
 
-      {activeTeam ? (
-        <div className="flex items-center gap-2 text-sm text-slate-600">
-          <span>Showing team</span>
-          <TeamChip team={activeTeam} onRemove={() => setTeamFilter(null)} />
-        </div>
-      ) : null}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {activeTeam ? (
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <span>Showing team</span>
+            <TeamChip team={activeTeam} onRemove={() => setTeamFilter(null)} />
+          </div>
+        ) : (
+          <span />
+        )}
+        {roster.length > 0 ? (
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <span className="hidden sm:inline">Past week · next week:</span>
+            <ActivityLegend />
+          </div>
+        ) : null}
+      </div>
 
       {loading ? (
         <p className="text-sm text-[var(--golf-muted-text)]">Loading players…</p>
+      ) : failed && !data ? (
+        <div className="rounded-xl border border-dashed border-rose-200 bg-white p-6 text-sm text-rose-700">
+          Players could not be loaded.{" "}
+          <button type="button" onClick={() => void load()} className="font-medium underline">
+            Try again
+          </button>
+        </div>
       ) : roster.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--golf-muted)] bg-white p-6 text-sm text-[var(--golf-muted-text)]">
           You don&apos;t have any players yet.{" "}
@@ -742,8 +732,11 @@ export default function CoachRoster() {
       )}
 
       {selectedPlayer ? (
-        <PlayerOverviewDialog
+        <PlayerSidePanel
           player={selectedPlayer}
+          teams={teams}
+          today={today}
+          timeZone={timeZone}
           onClose={() => setSelectedPlayerId(null)}
         />
       ) : null}

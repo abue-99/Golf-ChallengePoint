@@ -202,7 +202,17 @@ export async function syncJourneyAssignmentLifecycleForPlanIds(
 export async function loadPlayerLearningSummaries(
   prisma: PrismaService,
   playerIds: string[],
+  options: {
+    /**
+     * Only count plans, lessons and journeys created by this coach. A scoped
+     * load is read-only: it skips the clean-up and status sync below, which
+     * must only run on the complete (unscoped) data set.
+     */
+    coachId?: string;
+  } = {},
 ): Promise<Record<string, PlayerLearningSummary>> {
+  const coachId = options.coachId;
+  const coachFilter = coachId ? { coachId } : {};
   const recentCompletionThreshold = new Date(
     Date.now() - 90 * 24 * 60 * 60 * 1000,
   );
@@ -245,6 +255,7 @@ export async function loadPlayerLearningSummaries(
   const [plans, lessonAssignments, rawJourneyAssignments] = await Promise.all([
     prisma.playerDevelopmentPlan.findMany({
       where: {
+        ...coachFilter,
         OR: [
           { ownerType: OwnerType.PLAYER, playerId: { in: uniquePlayerIds } },
           ...(allTeamIds.length > 0
@@ -261,6 +272,7 @@ export async function loadPlayerLearningSummaries(
     }),
     prisma.lessonAssignment.findMany({
       where: {
+        ...coachFilter,
         OR: [
           { playerId: { in: uniquePlayerIds } },
           ...(allTeamIds.length > 0
@@ -287,7 +299,7 @@ export async function loadPlayerLearningSummaries(
       },
     }),
     prisma.journeyTemplateAssignment.findMany({
-      where: { playerId: { in: uniquePlayerIds } },
+      where: { ...coachFilter, playerId: { in: uniquePlayerIds } },
       select: {
         id: true,
         playerId: true,
@@ -308,7 +320,7 @@ export async function loadPlayerLearningSummaries(
     .filter((assignment) => !validPlanIdSet.has(assignment.playerPlanId))
     .map((assignment) => assignment.id);
 
-  if (invalidJourneyIds.length > 0) {
+  if (!coachId && invalidJourneyIds.length > 0) {
     await prisma.journeyTemplateAssignment.deleteMany({
       where: { id: { in: invalidJourneyIds } },
     });
@@ -409,7 +421,7 @@ export async function loadPlayerLearningSummaries(
         }
       }
 
-      if (linkedJourneyAssignment) {
+      if (!coachId && linkedJourneyAssignment) {
         const completedAtUpdate = getCompletedAtUpdate(
           linkedJourneyAssignment.status,
           nextStatus,
@@ -477,7 +489,7 @@ export async function loadPlayerLearningSummaries(
     }
   }
 
-  if (journeyPlanIds.length > 0) {
+  if (!coachId && journeyPlanIds.length > 0) {
     await syncJourneyAssignmentLifecycleForPlanIds(prisma, journeyPlanIds);
   }
 
