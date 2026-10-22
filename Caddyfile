@@ -58,6 +58,11 @@ golf-challengepoint.com, www.golf-challengepoint.com {
                 reverse_proxy web:3000
         }
 
+        # Coach home (roster, feedback inbox, private notes).
+        handle /api/coach/roster* {
+                reverse_proxy web:3000
+        }
+
         # Remaining API routes go directly to the NestJS backend.
         handle /api/* {
                 uri strip_prefix /api
