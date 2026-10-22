@@ -314,9 +314,6 @@ importers:
       bcrypt:
         specifier: ^6.0.0
         version: 6.0.0
-      pg:
-        specifier: ^8.20.0
-        version: 8.20.0
     devDependencies:
       '@types/bcrypt':
         specifier: ^5.0.2
@@ -325,6 +322,9 @@ importers:
         specifier: ^20.10.6
         version: 20.19.37
       '@types/pg':
+        specifier: ^8.20.0
+        version: 8.20.0
+      pg:
         specifier: ^8.20.0
         version: 8.20.0
       prisma:
