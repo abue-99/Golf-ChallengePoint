@@ -147,7 +147,7 @@ export default function CoachNotes({
                         setEditingId(note.id);
                         setEditText(note.body);
                       }}
-                      className="rounded p-1 text-slate-400 hover:bg-white hover:text-slate-700"
+                      className="rounded p-1 text-slate-400 hover:bg-white hover:text-slate-700 pointer-coarse:p-2"
                       aria-label="Edit note"
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -155,7 +155,7 @@ export default function CoachNotes({
                     <button
                       type="button"
                       onClick={() => void removeNote(note.id)}
-                      className="rounded p-1 text-slate-400 hover:bg-white hover:text-rose-600"
+                      className="rounded p-1 text-slate-400 hover:bg-white hover:text-rose-600 pointer-coarse:p-2"
                       aria-label="Delete note"
                     >
                       <Trash2 className="h-3.5 w-3.5" />

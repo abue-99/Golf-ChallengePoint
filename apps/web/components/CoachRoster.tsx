@@ -20,6 +20,8 @@ import {
   PanelRight,
   Rows3,
   Rows4,
+  ClipboardPlus,
+  CircleHelp,
   Plus,
   Search,
   Settings2,
@@ -39,6 +41,7 @@ import {
 import PlayerSidePanel from "@/components/PlayerSidePanel";
 import FeedbackSheet from "@/components/FeedbackList";
 import CoachToday, { GettingStarted } from "@/components/CoachToday";
+import { QuickAssignSheet, type AssignTarget } from "@/components/QuickAssign";
 import TeamIcon from "@/components/TeamIcon";
 import ActivityStrip, { ActivityLegend } from "@/components/ActivityStrip";
 import { subscribeLearningProgressChanges } from "@/lib/learning-progress-events";
@@ -147,7 +150,7 @@ function TeamChip({
         <button
           type="button"
           onClick={onRemove}
-          className="rounded-full p-0.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700"
+          className="rounded-full p-0.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 pointer-coarse:p-1.5"
           aria-label={`Remove from ${team.shortName}`}
           title={`Remove from ${team.shortName}`}
         >
@@ -202,6 +205,7 @@ function PlayerRow({
   chipTeamIds,
   chipPrefix,
   onOpen,
+  onAssign,
   onAddToTeam,
   onRemoveFromTeam,
   onSelectTeam,
@@ -214,6 +218,7 @@ function PlayerRow({
   chipTeamIds: string[];
   chipPrefix?: string;
   onOpen: () => void;
+  onAssign: () => void;
   onAddToTeam: (teamId: string) => void;
   onRemoveFromTeam: (teamId: string) => void;
   onSelectTeam: (teamId: string) => void;
@@ -282,6 +287,12 @@ function PlayerRow({
           compact ? "pl-11" : "pl-[3.25rem]",
         )}
       >
+        <button
+          type="button"
+          onClick={onOpen}
+          className="flex flex-wrap items-center gap-1.5 rounded-full empty:hidden"
+          aria-label={`Show details for ${name}`}
+        >
         {player.feedbackCount > 0 ? (
           <Indicator
             icon={MessageSquare}
@@ -329,6 +340,7 @@ function PlayerRow({
             label={`${player.noteCount} private note${player.noteCount === 1 ? "" : "s"}`}
           />
         ) : null}
+        </button>
 
         {chipTeamIds.map((teamId) => {
           const team = teamsById.get(teamId);
@@ -345,12 +357,23 @@ function PlayerRow({
         })}
 
         <span className="ml-auto flex items-center gap-1">
+          {player.linked ? (
+            <button
+              type="button"
+              onClick={onAssign}
+              className="rounded-md p-1 text-[var(--golf-primary)] hover:bg-green-50 pointer-coarse:p-2.5"
+              aria-label={`Assign a lesson or journey to ${name}`}
+              title="Assign a lesson or journey"
+            >
+              <ClipboardPlus className="h-4 w-4" />
+            </button>
+          ) : null}
           {addableTeams.length > 0 ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-0.5 rounded-full border border-dashed border-slate-300 px-2 py-0.5 text-xs text-slate-500 hover:border-slate-400 hover:text-slate-700"
+                  className="inline-flex items-center gap-0.5 rounded-full border border-dashed border-slate-300 px-2 py-0.5 text-xs text-slate-500 hover:border-slate-400 hover:text-slate-700 pointer-coarse:px-3 pointer-coarse:py-1.5"
                   aria-label={`Add ${name} to a team`}
                 >
                   <Plus className="h-3 w-3" />
@@ -373,13 +396,18 @@ function PlayerRow({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="rounded-md p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                className="rounded-md p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 pointer-coarse:p-2.5"
                 aria-label={`Actions for ${name}`}
               >
                 <MoreHorizontal className="h-4 w-4" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {player.linked ? (
+                <DropdownMenuItem onSelect={onAssign}>
+                  <ClipboardPlus className="h-4 w-4" /> Assign lesson or journey
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem onSelect={onOpen}>
                 <PanelRight className="h-4 w-4" /> Details & notes
               </DropdownMenuItem>
@@ -449,6 +477,8 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
   const [loading, setLoading] = useState(true);
   const [density, setDensity] = useState<Density>("comfortable");
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [panelAssign, setPanelAssign] = useState(false);
+  const [teamAssign, setTeamAssign] = useState<AssignTarget | null>(null);
   const [gettingStartedHidden, setGettingStartedHidden] = useState(true);
   const [greeting, setGreeting] = useState<{ text: string; date: string } | null>(null);
   const [failed, setFailed] = useState(false);
@@ -475,6 +505,11 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
       }).format(now),
     });
   }, []);
+
+  function openPlayer(playerId: string, assign = false) {
+    setPanelAssign(assign);
+    setSelectedPlayerId(playerId);
+  }
 
   function changeDensity(value: Density) {
     setDensity(value);
@@ -610,7 +645,8 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
         density={density}
         chipTeamIds={chipTeamIds}
         chipPrefix={context.teamId ? "Also in" : undefined}
-        onOpen={() => setSelectedPlayerId(player.id)}
+        onOpen={() => openPlayer(player.id)}
+        onAssign={() => openPlayer(player.id, true)}
         onAddToTeam={(teamId) => void addToTeam(player.id, teamId)}
         onRemoveFromTeam={(teamId) => void removeFromTeam(player.id, teamId)}
         onSelectTeam={(teamId) => setTeamFilter(teamId)}
@@ -687,9 +723,18 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
                       {team.pendingLessons} pending
                     </span>
                   ) : null}
+                  <button
+                    type="button"
+                    onClick={() => setTeamAssign({ kind: "team", id: team.id, name: team.shortName })}
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-[var(--golf-primary)] hover:bg-green-50 pointer-coarse:px-3 pointer-coarse:py-2"
+                    aria-label={`Assign a lesson or journey to ${team.shortName}`}
+                  >
+                    <ClipboardPlus className="h-4 w-4" />
+                    <span className="hidden sm:inline">Assign to team</span>
+                  </button>
                   <Link
                     href="/teams"
-                    className="shrink-0 rounded-md p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                    className="shrink-0 rounded-md p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 pointer-coarse:p-2.5"
                     title="Manage team, plans and training windows"
                     aria-label={`Manage ${team.shortName}`}
                   >
@@ -763,16 +808,22 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
         <CoachToday
           data={data}
           onOpenFeedback={() => setFeedbackOpen(true)}
-          onOpenPlayer={(playerId) => setSelectedPlayerId(playerId)}
+          onOpenPlayer={(playerId) => openPlayer(playerId)}
         />
       ) : null}
 
       <div className="flex items-baseline justify-between pt-1">
         <h2 className="text-lg font-semibold text-[var(--golf-heading)]">My Players</h2>
+        <Link
+          href="/teams"
+          className="text-sm font-medium text-[var(--golf-primary)] hover:underline pointer-coarse:py-2"
+        >
+          {hasTeams ? "Manage teams & invite players" : "+ Create a team or invite players"}
+        </Link>
       </div>
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="relative w-full lg:max-w-xs">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative w-full md:w-64 lg:w-72">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             value={query}
@@ -792,7 +843,7 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
                 onClick={() => setFilter(value)}
                 aria-pressed={filter === value}
                 className={cn(
-                  "rounded-md px-2.5 py-1 text-sm transition-colors",
+                  "rounded-md px-2.5 py-1 text-sm transition-colors pointer-coarse:py-2",
                   filter === value
                     ? "bg-[var(--golf-primary)] text-white"
                     : "text-slate-600 hover:bg-slate-100",
@@ -823,7 +874,7 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
                   onClick={() => changeGroupMode(value)}
                   aria-pressed={groupMode === value}
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-sm transition-colors",
+                    "inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-sm transition-colors pointer-coarse:py-2",
                     groupMode === value
                       ? "bg-slate-800 text-white"
                       : "text-slate-600 hover:bg-slate-100",
@@ -871,12 +922,6 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
           </select>
         </div>
 
-        <Link
-          href="/teams"
-          className="text-sm font-medium text-[var(--golf-primary)] hover:underline lg:ml-auto"
-        >
-          {hasTeams ? "Manage teams & invite players" : "+ Create a team or invite players"}
-        </Link>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -892,6 +937,34 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <span className="hidden sm:inline">Past week · next week:</span>
             <ActivityLegend />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 pointer-coarse:px-2.5 pointer-coarse:py-2"
+                >
+                  <CircleHelp className="h-3.5 w-3.5" /> Icons
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72">
+                <DropdownMenuLabel>What the icons mean</DropdownMenuLabel>
+                {[
+                  { icon: MessageSquare, text: "Completed lessons awaiting your feedback", cls: "text-sky-700" },
+                  { icon: Inbox, text: "Assigned, not accepted yet", cls: "text-rose-700" },
+                  { icon: CalendarX, text: "Missed days in the past week", cls: "text-rose-700" },
+                  { icon: Moon, text: `No activity for ${INACTIVE_AFTER_DAYS}+ days`, cls: "text-amber-700" },
+                  { icon: UserX, text: "Account not activated yet", cls: "text-amber-700" },
+                  { icon: Trophy, text: "Tournament within 14 days", cls: "text-amber-700" },
+                  { icon: StickyNote, text: "You have private notes", cls: "text-slate-600" },
+                  { icon: ClipboardPlus, text: "Assign a lesson or journey", cls: "text-[var(--golf-primary)]" },
+                ].map(({ icon: Icon, text, cls }) => (
+                  <div key={text} className="flex items-center gap-2 px-2 py-1.5 text-sm text-slate-700">
+                    <Icon className={cn("h-4 w-4 shrink-0", cls)} />
+                    {text}
+                  </div>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         ) : null}
       </div>
@@ -923,12 +996,22 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
 
       {selectedPlayer ? (
         <PlayerSidePanel
+          key={`${selectedPlayer.id}-${panelAssign ? "assign" : "view"}`}
+          initialAssign={panelAssign}
           player={selectedPlayer}
           teams={teams}
           today={today}
           timeZone={timeZone}
           onClose={() => setSelectedPlayerId(null)}
           onChanged={() => void load()}
+        />
+      ) : null}
+
+      {teamAssign ? (
+        <QuickAssignSheet
+          target={teamAssign}
+          onClose={() => setTeamAssign(null)}
+          onAssigned={() => void load()}
         />
       ) : null}
 

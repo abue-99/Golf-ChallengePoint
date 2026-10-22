@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   CalendarDays,
+  Plus,
   ExternalLink,
   LayoutList,
   Mail,
@@ -24,6 +26,7 @@ import ActivityStrip, { ActivityLegend } from "@/components/ActivityStrip";
 import TeamIcon from "@/components/TeamIcon";
 import CoachNotes from "@/components/CoachNotes";
 import { FeedbackList } from "@/components/FeedbackList";
+import QuickAssign from "@/components/QuickAssign";
 import {
   formatDateTime,
   initialsOf,
@@ -56,6 +59,7 @@ export default function PlayerSidePanel({
   timeZone,
   onClose,
   onChanged,
+  initialAssign = false,
 }: {
   player: RosterPlayer;
   teams: RosterTeam[];
@@ -64,7 +68,10 @@ export default function PlayerSidePanel({
   onClose: () => void;
   /** Called after feedback or notes changed, so the roster can refresh. */
   onChanged?: () => void;
+  /** Open with the assign form expanded (from the row menu). */
+  initialAssign?: boolean;
 }) {
+  const [assignOpen, setAssignOpen] = useState(initialAssign && player.linked);
   const name = nameOf(player);
   const pending = pendingCount(player);
   const missed = missedCount(player);
@@ -124,26 +131,53 @@ export default function PlayerSidePanel({
         </SheetHeader>
 
         <div className="space-y-6 p-5">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
+            <button
+              type="button"
+              onClick={() => setAssignOpen((open) => !open)}
+              disabled={!player.linked}
+              aria-expanded={assignOpen}
+              title={player.linked ? "Assign a lesson or journey" : "Add the player to My Players to assign lessons"}
+              className={
+                assignOpen
+                  ? "flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg border border-[var(--golf-primary)] bg-[var(--golf-primary)] px-2 py-2 text-xs font-medium text-white"
+                  : "flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg border border-[var(--golf-primary)] px-2 py-2 text-xs font-medium text-[var(--golf-primary)] hover:bg-green-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+              }
+            >
+              <Plus className="h-4 w-4" /> Assign
+            </button>
             <Link
               href={`/coach/players/${player.id}`}
-              className="flex flex-col items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-xs font-medium text-slate-700 hover:border-[var(--golf-primary)] hover:text-[var(--golf-primary)]"
+              className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-xs font-medium text-slate-700 hover:border-[var(--golf-primary)] hover:text-[var(--golf-primary)]"
             >
               <ExternalLink className="h-4 w-4" /> Player
             </Link>
             <Link
               href={`/coach/players/${player.id}/planning`}
-              className="flex flex-col items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-xs font-medium text-slate-700 hover:border-[var(--golf-primary)] hover:text-[var(--golf-primary)]"
+              className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-xs font-medium text-slate-700 hover:border-[var(--golf-primary)] hover:text-[var(--golf-primary)]"
             >
               <LayoutList className="h-4 w-4" /> Planning
             </Link>
             <Link
               href={`/coach/players/${player.id}/calendar`}
-              className="flex flex-col items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-xs font-medium text-slate-700 hover:border-[var(--golf-primary)] hover:text-[var(--golf-primary)]"
+              className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-xs font-medium text-slate-700 hover:border-[var(--golf-primary)] hover:text-[var(--golf-primary)]"
             >
               <CalendarDays className="h-4 w-4" /> Calendar
             </Link>
           </div>
+
+          {assignOpen ? (
+            <Section title={`Assign to ${player.firstName || name}`}>
+              <QuickAssign
+                target={{ kind: "player", id: player.id, name }}
+                onAssigned={() => {
+                  setAssignOpen(false);
+                  onChanged?.();
+                }}
+                onCancel={() => setAssignOpen(false)}
+              />
+            </Section>
+          ) : null}
 
           {player.feedbackCount > 0 ? (
             <Section title={`Awaiting your feedback (${player.feedbackCount})`}>

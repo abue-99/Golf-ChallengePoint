@@ -88,6 +88,15 @@ export function resolveCalendarTimeZone(timeZone?: string | null): string {
   }
 }
 
+/**
+ * Time zone for Intl APIs: "local" (no or invalid zone) must become undefined,
+ * otherwise Intl throws "Invalid time zone specified: local".
+ */
+function intlTimeZone(timeZone?: string | null) {
+  const resolved = resolveCalendarTimeZone(timeZone);
+  return resolved === "local" ? undefined : resolved;
+}
+
 export function toTimeZoneDateInputValue(
   isoString: string,
   timeZone?: string | null,
@@ -167,6 +176,6 @@ export function formatDateInTimeZone(
   const date = new Date(value);
   return new Intl.DateTimeFormat(undefined, {
     ...options,
-    timeZone: resolveCalendarTimeZone(timeZone),
+    timeZone: intlTimeZone(timeZone),
   }).format(date);
 }
