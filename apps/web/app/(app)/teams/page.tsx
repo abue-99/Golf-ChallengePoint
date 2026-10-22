@@ -46,6 +46,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import CompactCoachPlayerCard from "@/components/CompactCoachPlayerCard";
 import PlayerOverviewDialog from "@/components/PlayerOverviewDialog";
+import TeamIcon from "@/components/TeamIcon";
 import { subscribeLearningProgressChanges } from "@/lib/learning-progress-events";
 import {
   DropdownMenu,
@@ -96,35 +97,6 @@ const TEAM_COLOR_CIRCLES: { value: string; label: string }[] = [
   { value: "circle:#f43f5e", label: "Rose" },
   { value: "circle:#64748b", label: "Slate" },
 ];
-
-/** Renders a team icon – either a coloured circle SVG or an emoji string. */
-function TeamIcon({
-  icon,
-  size = 22,
-  className = "",
-}: {
-  icon: string;
-  size?: number;
-  className?: string;
-}) {
-  if (icon.startsWith("circle:")) {
-    const color = icon.slice(7);
-    return (
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 22 22"
-        className={className}
-        aria-hidden="true"
-      >
-        <circle cx="11" cy="11" r="10" fill={color} />
-      </svg>
-    );
-  }
-  return (
-    <span className={`text-[${size}px] leading-none ${className}`}>{icon}</span>
-  );
-}
 
 type ClubOption = { id: string; shortId?: string | null; name: string };
 

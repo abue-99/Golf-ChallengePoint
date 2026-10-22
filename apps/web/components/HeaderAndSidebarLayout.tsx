@@ -5,7 +5,7 @@ import Header from './header';
 import Sidebar from './sidebar';
 import BottomNav from './BottomNav';
 import { Home, Settings, BookOpen, User, CalendarDays, ClipboardList } from 'lucide-react';
-import { Users, Route as RouteIcon } from 'lucide-react';
+import { Users, UserRound, Route as RouteIcon } from 'lucide-react';
 import type { ReactNode } from "react";
 import { defaultNavItems } from './sidebar';
 
@@ -29,7 +29,7 @@ export default function HeaderAndSidebarLayout({
 
  const navItems = (role === 'COACH' || role === 'ADMIN')
    ? [
-       { href: '/', icon: Home, label: 'Dashboard' },
+       { href: '/dashboard', icon: UserRound, label: 'Players' },
        { href: '/teams', icon: Users, label: 'Teams' },
        { href: '/calendar', icon: CalendarDays, label: 'Calendar' },
        { href: '/coach/lessons', icon: BookOpen, label: 'Lessons' },

@@ -46,10 +46,10 @@ export default async function CalendarPage() {
           Admins can review their personal schedule here, while player-specific
           assignment workflows remain available from the coach dashboard.
           <Link
-            href="/coach"
+            href="/dashboard"
             className="ml-2 font-semibold underline underline-offset-2"
           >
-            Open coach dashboard
+            Open my players
           </Link>
         </div>
       ) : null}
