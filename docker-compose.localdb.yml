@@ -1,0 +1,46 @@
+# Local development with a local Postgres instead of the managed (Neon) DB.
+#
+# NOT used in production. Started via scripts/local-up.ps1, which merges:
+#   docker-compose.yml + docker-compose.override.yml + docker-compose.localdb.yml
+#
+# Why: faster (no round trip to us-east-1), works behind company firewalls
+# that block Postgres traffic, and local tests/migrations never touch
+# production data. Fill it with a copy of production via
+# scripts/sync-prod-db.ps1.
+
+x-local-database-url: &local-database-url postgresql://postgres:postgres@db:5432/challengepoint
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: golf_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: challengepoint
+    # Only reachable from this computer (e.g. for DBeaver/pgAdmin):
+    # host localhost, port 5433, user postgres, password postgres
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - golf_localdb:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d challengepoint"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    environment:
+      DATABASE_URL: *local-database-url
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    environment:
+      DATABASE_URL: *local-database-url
+
+volumes:
+  golf_localdb:

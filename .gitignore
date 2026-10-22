@@ -11,3 +11,7 @@ coverage
 # Prisma generated clients
 packages/db/generated/
 apps/web/prisma/generated/
+
+# Local database copies (contain production personal data – never commit)
+.localdb/
+*.dump
