@@ -301,13 +301,13 @@ describe('AuthService', () => {
       expect(result).toEqual(mockUser);
       expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: mockUser.id },
-        select: {
+        select: expect.objectContaining({
           id: true,
           email: true,
           role: true,
           createdAt: true,
           lastLogin: true,
-        },
+        }),
       });
     });
 

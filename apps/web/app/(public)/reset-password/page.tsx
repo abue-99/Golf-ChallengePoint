@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,15 +11,44 @@ function ResetForm() {
   const params = useSearchParams();
   const token = params.get("token");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   async function submit() {
-    await fetch("/api/auth/reset", {
-      method: "POST",
-      body: JSON.stringify({ token, password }),
-      headers: { "Content-Type": "application/json" },
-    });
-    setSuccess(true);
+    setError(null);
+    if (!token) {
+      setError("This reset link is invalid. Please request a new one.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+    if (password !== confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/auth/reset", {
+        method: "POST",
+        body: JSON.stringify({ token, password }),
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data?.error || "Invalid or expired reset link. Please request a new one.");
+        return;
+      }
+      setSuccess(true);
+    } catch {
+      setError("Could not reach the server. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -29,7 +59,12 @@ function ResetForm() {
 
       <CardContent className="space-y-4">
         {success ? (
-          <p className="text-green-600">Password has been reset!</p>
+          <div className="space-y-3">
+            <p className="text-green-600">Password has been reset!</p>
+            <Link href="/login" className="text-sm underline">
+              Go to login
+            </Link>
+          </div>
         ) : (
           <>
             <Input
@@ -37,13 +72,28 @@ function ResetForm() {
               placeholder="New password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
             />
+            <Input
+              type="password"
+              placeholder="Confirm new password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              autoComplete="new-password"
+            />
+
+            {error && (
+              <p role="alert" className="text-sm text-red-600">
+                {error}
+              </p>
+            )}
 
             <Button
               onClick={submit}
+              disabled={submitting}
               className="w-full bg-[var(--golf-primary)] hover:bg-[var(--golf-primary-light)] text-white"
             >
-              Reset Password
+              {submitting ? "Resetting…" : "Reset Password"}
             </Button>
           </>
         )}

@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { Role } from '@challengepoint/db';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -35,11 +36,14 @@ export class UsersController {
 
   @Patch(':id/role')
   @Roles(Role.ADMIN)
-  updateRole(
+  async updateRole(
     @Param('id') id: string,
     @Body() body: { role: 'PLAYER' | 'COACH' | 'ADMIN' | 'SYSADMIN' },
     @CurrentUser() caller: AuthenticatedUser,
   ) {
+    if (!body || !Object.values(Role).includes(body.role as Role)) {
+      throw new BadRequestException('Invalid role.');
+    }
     // SYSADMINs can assign any role.
     // ADMINs may only assign COACH or ADMIN.
     if (caller.role !== 'SYSADMIN' && !['COACH', 'ADMIN'].includes(body.role)) {
@@ -47,15 +51,18 @@ export class UsersController {
         `ADMINs can only assign the Coach or Admin role, not ${body.role}.`,
       );
     }
+    await this.usersService.assertCanManageUser(caller, id, 'role');
     return this.usersService.updateRole(id, body.role);
   }
 
   @Patch(':id/profile')
   @Roles(Role.ADMIN)
-  updateProfile(
+  async updateProfile(
     @Param('id') id: string,
     @Body() body: { firstName?: string | null; lastName?: string | null },
+    @CurrentUser() caller: AuthenticatedUser,
   ) {
+    await this.usersService.assertCanManageUser(caller, id, 'profile');
     return this.usersService.updateProfile(id, body);
   }
 
@@ -104,7 +111,11 @@ export class UsersController {
   @Delete(':id')
   @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
-  deleteUser(@Param('id') id: string) {
+  async deleteUser(
+    @Param('id') id: string,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    await this.usersService.assertCanManageUser(caller, id, 'delete');
     return this.usersService.deleteUser(id);
   }
 
@@ -112,7 +123,7 @@ export class UsersController {
   @Post('invite')
   @Roles(Role.COACH)
   @HttpCode(HttpStatus.CREATED)
-  invitePlayer(
+  async invitePlayer(
     @CurrentUser() caller: AuthenticatedUser,
     @Body()
     body: {
@@ -122,6 +133,10 @@ export class UsersController {
       clubId: string;
     },
   ) {
+    if (!body?.email || !body?.clubId) {
+      throw new BadRequestException('email and clubId are required.');
+    }
+    await this.usersService.assertClubMember(caller, body.clubId);
     return this.usersService.invitePlayer({
       ...body,
       coachId: caller.id,
@@ -149,10 +164,11 @@ export class UsersController {
   /** Link a coach to the current user. */
   @Post('me/coaches/:coachId')
   @HttpCode(HttpStatus.OK)
-  addMyCoach(
+  async addMyCoach(
     @CurrentUser() caller: AuthenticatedUser,
     @Param('coachId') coachId: string,
   ) {
+    await this.usersService.assertSharedClub(caller, coachId);
     return this.usersService.addPlayerCoach(caller.id, coachId);
   }
 
@@ -170,7 +186,11 @@ export class UsersController {
   @Post(':id/resend-invite')
   @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
-  resendInvite(@Param('id') id: string) {
+  async resendInvite(
+    @Param('id') id: string,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    await this.usersService.assertCanManageUser(caller, id, 'invite');
     return this.usersService.resendInvite(id);
   }
 
@@ -178,10 +198,11 @@ export class UsersController {
   @Post('me/players/:playerId')
   @Roles(Role.COACH)
   @HttpCode(HttpStatus.OK)
-  addMyPlayer(
+  async addMyPlayer(
     @CurrentUser() caller: AuthenticatedUser,
     @Param('playerId') playerId: string,
   ) {
+    await this.usersService.assertSharedClub(caller, playerId);
     return this.usersService.addPlayerToCoach(caller.id, playerId);
   }
 

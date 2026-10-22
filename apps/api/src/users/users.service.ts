@@ -1,14 +1,32 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { Resend } from 'resend';
 import { PrismaService } from '../prisma/prisma.service';
 import { loadPlayerLearningSummaries } from '../assignments/assignment-lifecycle';
+import { escapeHtml } from '../common/html';
+
+export type UserManagementAction = 'role' | 'profile' | 'delete' | 'invite';
+
+interface Caller {
+  id: string;
+  role: string;
+}
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
-  private readonly resend = new Resend(process.env.RESEND_API_KEY);
+  // Resend throws when constructed without a key, which would crash the API
+  // on startup if RESEND_API_KEY is (intentionally) left empty.
+  private readonly resend = process.env.RESEND_API_KEY
+    ? new Resend(process.env.RESEND_API_KEY)
+    : null;
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -28,6 +46,93 @@ export class UsersService {
       },
     },
   } as const;
+
+  private async getClubIds(userId: string): Promise<string[]> {
+    const memberships = await this.prisma.userClub.findMany({
+      where: { userId },
+      select: { clubId: true },
+    });
+    return memberships.map((m) => m.clubId);
+  }
+
+  /** True when both users are members of at least one common club. */
+  async shareClub(userA: string, userB: string): Promise<boolean> {
+    const clubIds = await this.getClubIds(userA);
+    if (clubIds.length === 0) return false;
+    const match = await this.prisma.userClub.findFirst({
+      where: { userId: userB, clubId: { in: clubIds } },
+      select: { userId: true },
+    });
+    return !!match;
+  }
+
+  /**
+   * Authorization for user-management actions.
+   * - SYSADMIN may manage everyone (but not delete/demote themselves).
+   * - ADMIN may only manage users of their own clubs and never a SYSADMIN.
+   *   Other ADMINs can be edited (role/profile) but not deleted.
+   */
+  async assertCanManageUser(
+    caller: Caller,
+    targetId: string,
+    action: UserManagementAction,
+  ) {
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetId },
+      select: { id: true, role: true, lastLogin: true },
+    });
+    if (!target) throw new NotFoundException('User not found.');
+
+    if (target.id === caller.id && (action === 'role' || action === 'delete')) {
+      throw new ForbiddenException(
+        'You cannot change your own role or delete your own account.',
+      );
+    }
+
+    if (caller.role === 'SYSADMIN') return target;
+
+    if (caller.role !== 'ADMIN') {
+      throw new ForbiddenException('Insufficient permissions.');
+    }
+    if (target.role === 'SYSADMIN') {
+      throw new ForbiddenException('ADMINs cannot manage SYSADMIN accounts.');
+    }
+    if (action === 'delete' && target.role === 'ADMIN') {
+      throw new ForbiddenException('ADMINs cannot delete other ADMINs.');
+    }
+    if (
+      target.id !== caller.id &&
+      !(await this.shareClub(caller.id, target.id))
+    ) {
+      throw new ForbiddenException('User is not a member of your club(s).');
+    }
+    return target;
+  }
+
+  /** Throws unless the caller is a member of the club (SYSADMIN bypasses). */
+  async assertClubMember(caller: Caller, clubId: string) {
+    if (caller.role === 'SYSADMIN') return;
+    const membership = await this.prisma.userClub.findUnique({
+      where: { userId_clubId: { userId: caller.id, clubId } },
+      select: { userId: true },
+    });
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this club.');
+    }
+  }
+
+  /** Throws unless both users share a club (SYSADMIN bypasses). */
+  async assertSharedClub(caller: Caller, otherUserId: string) {
+    if (caller.role === 'SYSADMIN') return;
+    const other = await this.prisma.user.findUnique({
+      where: { id: otherUserId },
+      select: { id: true },
+    });
+    if (!other) throw new NotFoundException('User not found.');
+    if (!(await this.shareClub(caller.id, otherUserId))) {
+      throw new ForbiddenException('User is not a member of your club(s).');
+    }
+  }
 
   listAll() {
     return this.prisma.user.findMany({
@@ -125,7 +230,7 @@ export class UsersService {
     loginUrl: string;
     firstName: string;
   }): Promise<void> {
-    if (!process.env.RESEND_API_KEY) {
+    if (!this.resend) {
       this.logger.warn(
         `[INVITE] RESEND_API_KEY not set – skipping invite email to ${to}`,
       );
@@ -138,7 +243,7 @@ export class UsersService {
         to,
         subject: 'Your Golf Challenge Point Invitation',
         html: `
-          <p>Hello${firstName ? ` ${firstName}` : ''},</p>
+          <p>Hello${firstName ? ` ${escapeHtml(firstName)}` : ''},</p>
           <p>You have been invited to <strong>Golf Challenge Point</strong>.</p>
           <p>Use the temporary password below to log in for the first time:</p>
           <p><strong>${tempPassword}</strong></p>
@@ -408,6 +513,12 @@ export class UsersService {
   async resendInvite(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found.');
+    if (user.lastLogin) {
+      // Prevents resetting the password of an active account via "invite".
+      throw new BadRequestException(
+        'User has already logged in. Use the password reset instead.',
+      );
+    }
 
     const chars =
       'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';

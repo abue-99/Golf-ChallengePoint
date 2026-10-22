@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   ForbiddenException,
@@ -6,9 +7,47 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { loadPlayerLearningSummaries } from '../assignments/assignment-lifecycle';
 
+type TeamInput = {
+  icon?: string | null;
+  shortName?: string;
+  description?: string | null;
+  category?: string;
+  clubId?: string | null;
+};
+
 @Injectable()
 export class TeamsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /** Throws unless the user is a member of the given club. */
+  private async assertClubMember(userId: string, clubId: string) {
+    const membership = await this.prisma.userClub.findUnique({
+      where: { userId_clubId: { userId, clubId } },
+      select: { userId: true },
+    });
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this club.');
+    }
+  }
+
+  /**
+   * Copies only the fields a coach may change. Prevents mass assignment of
+   * e.g. coachId or id via the request body.
+   */
+  private pickTeamFields(data: TeamInput) {
+    const result: TeamInput = {};
+    if (data.icon !== undefined) result.icon = data.icon;
+    if (data.shortName !== undefined) {
+      if (typeof data.shortName !== 'string' || !data.shortName.trim()) {
+        throw new BadRequestException('shortName must not be empty.');
+      }
+      result.shortName = data.shortName.trim();
+    }
+    if (data.description !== undefined) result.description = data.description;
+    if (data.category !== undefined) result.category = data.category ?? '';
+    if (data.clubId !== undefined) result.clubId = data.clubId || null;
+    return result;
+  }
 
   async getCoachTeams(coachId: string) {
     const teams = await this.prisma.team.findMany({
@@ -83,6 +122,8 @@ export class TeamsService {
     // Determine which clubs to search
     let targetClubIds: string[];
     if (clubId) {
+      // Only clubs the coach belongs to may be browsed.
+      await this.assertClubMember(coachId, clubId);
       targetClubIds = [clubId];
     } else {
       // No club specified: use all clubs the coach belongs to
@@ -162,8 +203,18 @@ export class TeamsService {
       clubId?: string;
     },
   ) {
+    const fields = this.pickTeamFields(data);
+    if (!fields.shortName) {
+      throw new BadRequestException('shortName is required.');
+    }
+    if (fields.clubId) await this.assertClubMember(coachId, fields.clubId);
     return this.prisma.team.create({
-      data: { ...data, category: data.category ?? '', coachId },
+      data: {
+        ...fields,
+        shortName: fields.shortName,
+        category: fields.category ?? '',
+        coachId,
+      },
       include: {
         members: {
           include: {
@@ -196,9 +247,11 @@ export class TeamsService {
     const team = await this.prisma.team.findUnique({ where: { id: teamId } });
     if (!team) throw new NotFoundException('Team not found');
     if (team.coachId !== coachId) throw new ForbiddenException();
+    const fields = this.pickTeamFields(data);
+    if (fields.clubId) await this.assertClubMember(coachId, fields.clubId);
     return this.prisma.team.update({
       where: { id: teamId },
-      data,
+      data: fields,
       include: {
         members: {
           include: {

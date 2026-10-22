@@ -8,14 +8,15 @@ services:
     container_name: golf_api
     expose:
       - "4000"
+    # Only reachable from the host itself; public traffic must go through Caddy.
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
     environment:
       NODE_ENV: production
       PORT: 4000
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
-      ACCESS_SECRET: ${ACCESS_SECRET:-your-access-secret-key-min-32-chars}
-      REFRESH_SECRET: ${REFRESH_SECRET:-your-refresh-secret-key-min-32-chars}
+      ACCESS_SECRET: ${ACCESS_SECRET:?ACCESS_SECRET must be set (min. 32 random characters)}
+      REFRESH_SECRET: ${REFRESH_SECRET:?REFRESH_SECRET must be set (min. 32 random characters)}
       ACCESS_TOKEN_EXPIRY: 15m
       REFRESH_TOKEN_EXPIRY: 7d
       FRONTEND_URL: ${FRONTEND_URL:-http://178.104.48.239}
@@ -36,7 +37,7 @@ services:
     environment:
       NODE_ENV: production
       API_URL: http://golf_api:4000
-      ACCESS_SECRET: ${ACCESS_SECRET:-your-access-secret-key-min-32-chars}
+      ACCESS_SECRET: ${ACCESS_SECRET:?ACCESS_SECRET must be set (min. 32 random characters)}
       AUTH_PROXY_DIAGNOSTICS: ${AUTH_PROXY_DIAGNOSTICS:-false}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://178.104.48.239/api}
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}

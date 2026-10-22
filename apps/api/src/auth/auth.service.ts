@@ -13,6 +13,7 @@ import {
   InvalidCredentialsException,
   InvalidTokenException,
 } from '../common/exceptions/auth.exception';
+import { getAccessSecret, getRefreshSecret } from './secrets';
 
 export interface TokenPair {
   accessToken: string;
@@ -103,7 +104,7 @@ export class AuthService {
   generateAccessToken(userId: string, email: string, role: string): string {
     const payload = { sub: userId, email, role };
     return this.jwtService.sign(payload, {
-      secret: process.env.ACCESS_SECRET ?? 'fallback-access-secret',
+      secret: getAccessSecret(),
       expiresIn: (process.env.ACCESS_TOKEN_EXPIRY ??
         '15m') as unknown as number,
     });
@@ -113,7 +114,7 @@ export class AuthService {
     return this.jwtService.sign(
       { sub: userId },
       {
-        secret: process.env.REFRESH_SECRET ?? 'fallback-refresh-secret',
+        secret: getRefreshSecret(),
         expiresIn: (process.env.REFRESH_TOKEN_EXPIRY ??
           '7d') as unknown as number,
       },
@@ -123,7 +124,7 @@ export class AuthService {
   async validateRefreshToken(token: string): Promise<AuthenticatedUser> {
     try {
       const payload = this.jwtService.verify<{ sub: string }>(token, {
-        secret: process.env.REFRESH_SECRET ?? 'fallback-refresh-secret',
+        secret: getRefreshSecret(),
       });
 
       const user = await this.prisma.user.findUnique({

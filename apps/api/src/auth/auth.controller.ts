@@ -12,8 +12,6 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
@@ -21,13 +19,14 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import { AuthenticatedUser } from './jwt.strategy';
 import { InvalidTokenException } from '../common/exceptions/auth.exception';
-import { PrismaService } from '../prisma/prisma.service';
+import { PasswordResetService } from './password-reset.service';
+import { ForgotPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly prisma: PrismaService,
+    private readonly passwordResetService: PasswordResetService,
   ) {}
 
   @Post('signup')
@@ -118,46 +117,16 @@ export class AuthController {
   }
 
   @Post('forgot')
-  async forgot(@Body() { email }: { email: string }) {
-    const token = crypto.randomBytes(32).toString('hex');
-
-    await this.prisma.passwordResetToken.create({
-      data: {
-        email,
-        token,
-        expiresAt: new Date(Date.now() + 1000 * 60 * 60),
-      },
-    });
-
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
-    console.log('Reset URL:', resetUrl);
-
+  @HttpCode(HttpStatus.OK)
+  async forgot(@Body() dto: ForgotPasswordDto) {
+    await this.passwordResetService.requestReset(dto.email);
     return { ok: true };
   }
 
   @Post('reset')
-  async reset(
-    @Body() { token, password }: { token: string; password: string },
-  ) {
-    const record = await this.prisma.passwordResetToken.findUnique({
-      where: { token },
-    });
-
-    if (!record || record.expiresAt < new Date()) {
-      throw new BadRequestException('Invalid or expired token');
-    }
-
-    const hash = await bcrypt.hash(password, 10);
-
-    await this.prisma.user.update({
-      where: { email: record.email },
-      data: { passwordHash: hash },
-    });
-
-    await this.prisma.passwordResetToken.delete({
-      where: { token },
-    });
-
+  @HttpCode(HttpStatus.OK)
+  async reset(@Body() dto: ResetPasswordDto) {
+    await this.passwordResetService.resetPassword(dto.token, dto.password);
     return { ok: true };
   }
 

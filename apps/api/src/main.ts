@@ -3,8 +3,12 @@ import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
+import { assertAuthSecretsConfigured } from './auth/secrets';
 
 async function bootstrap() {
+  // Fail fast instead of silently signing tokens with a guessable secret.
+  assertAuthSecretsConfigured();
+
   const app = await NestFactory.create(AppModule, {
     bodyParser: false,
     cors: {

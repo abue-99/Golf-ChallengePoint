@@ -2,66 +2,12 @@ golf-challengepoint.com, www.golf-challengepoint.com {
 
         encode gzip
 
-        # Auth routes: handled by Next.js, which proxies to the NestJS backend
-        # internally and sets the session cookie.
-        handle /api/auth/* {
-                reverse_proxy web:3000
-        }
-
-        # Auth-sensitive routes must pass through the Next.js proxy so the
-        # httpOnly "token" cookie can be converted into a bearer Authorization header.
-        handle /api/users* {
-                reverse_proxy web:3000
-        }
-
-        handle /api/clubs* {
-                reverse_proxy web:3000
-        }
-
-        handle /api/teams* {
-                reverse_proxy web:3000
-        }
-
-        handle /api/players* {
-                reverse_proxy web:3000
-        }
-
-        handle /api/lessons* {
-                reverse_proxy web:3000
-        }
-
-        handle /api/development-plans* {
-                reverse_proxy web:3000
-        }
-
-        handle /api/calendar* {
-                reverse_proxy web:3000
-        }
-
-        handle /api/journeys* {
-                reverse_proxy web:3000
-        }
-
-        handle /api/assignments* {
-                reverse_proxy web:3000
-        }
-
-        handle /api/coach/players* {
-                reverse_proxy web:3000
-        }
-
-        handle /api/coach/teams* {
-                reverse_proxy web:3000
-        }
-
-        handle /api/coach/journeys* {
-                reverse_proxy web:3000
-        }
-
-        # Remaining API routes go directly to the NestJS backend.
+        # All API traffic goes through the Next.js BFF routes under /api/*.
+        # They convert the httpOnly "token" cookie into a bearer Authorization
+        # header and call the NestJS backend internally (API_URL).
+        # The NestJS backend itself is intentionally NOT exposed publicly.
         handle /api/* {
-                uri strip_prefix /api
-                reverse_proxy api:4000
+                reverse_proxy web:3000
         }
 
         # Web: all other requests go to the Next.js frontend
