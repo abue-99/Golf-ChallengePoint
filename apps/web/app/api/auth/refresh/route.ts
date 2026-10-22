@@ -40,6 +40,9 @@ export async function POST() {
       secure,
       sameSite: "strict",
       maxAge: 15 * 60,
+      // Explicit path: without it the cookie would be scoped to /api/auth
+      // and the browser would not send it to pages or other API routes.
+      path: "/",
     });
 
     // Rotate the refresh token if the API returned a new one.

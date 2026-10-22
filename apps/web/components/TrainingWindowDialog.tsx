@@ -7,6 +7,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Clock, RefreshCw, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  todayDateInputValue,
+  toTimeZoneDateInputValue,
+  toTimeZoneTimeInputValue,
+} from "@/lib/timezone";
+
+// Start/end times arrive from the API as UTC ISO strings ("…Z"). They must be
+// converted to the browser's local time before being shown in or written back
+// from the form; slicing the ISO string would show UTC and shift every saved
+// edit by the UTC offset.
+function isoToLocalDate(iso?: string | null) {
+  return iso ? toTimeZoneDateInputValue(iso) : null;
+}
+
+function isoToLocalTime(iso?: string | null) {
+  return iso ? toTimeZoneTimeInputValue(iso) : null;
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -122,16 +139,16 @@ function EditForm({
     (defaultValues?.recurrence as RecurrenceValue) ?? "NONE"
   );
   const [selectedDate, setSelectedDate] = useState(
-    defaultValues?.startTime ? defaultValues.startTime.slice(0, 10) : new Date().toISOString().slice(0, 10)
+    () => isoToLocalDate(defaultValues?.startTime) ?? todayDateInputValue()
   );
   const [startTimeLocal, setStartTimeLocal] = useState(
-    defaultValues?.startTime ? defaultValues.startTime.slice(11, 16) : "09:00"
+    () => isoToLocalTime(defaultValues?.startTime) ?? "09:00"
   );
   const [endTimeLocal, setEndTimeLocal] = useState(
-    defaultValues?.endTime ? defaultValues.endTime.slice(11, 16) : "11:00"
+    () => isoToLocalTime(defaultValues?.endTime) ?? "11:00"
   );
   const [recurrenceEndDate, setRecurrenceEndDate] = useState(
-    defaultValues?.recurrenceEndDate?.slice(0, 10) ?? ""
+    () => isoToLocalDate(defaultValues?.recurrenceEndDate) ?? ""
   );
   const [title, setTitle] = useState(defaultValues?.title ?? "");
   const [icon, setIcon] = useState(defaultValues?.icon ?? "☀️");
@@ -357,9 +374,9 @@ function ViewContent({
   onEdit?: () => void;
   onClose: () => void;
 }) {
-  const startLocal = defaultValues?.startTime?.slice(11, 16) ?? "—";
-  const endLocal = defaultValues?.endTime?.slice(11, 16) ?? "—";
-  const dateStr = defaultValues?.startTime?.slice(0, 10) ?? "—";
+  const startLocal = isoToLocalTime(defaultValues?.startTime) ?? "—";
+  const endLocal = isoToLocalTime(defaultValues?.endTime) ?? "—";
+  const dateStr = isoToLocalDate(defaultValues?.startTime) ?? "—";
   const duration = formatDurationFromTimes(startLocal, endLocal);
   const rec = defaultValues?.recurrence ?? "NONE";
   const focusAreas = defaultValues?.focusAreas ?? [];
@@ -404,7 +421,7 @@ function ViewContent({
 
         {defaultValues?.recurrenceEndDate && (
           <div className="text-xs text-gray-400">
-            Until {defaultValues.recurrenceEndDate.slice(0, 10)}
+            Until {isoToLocalDate(defaultValues.recurrenceEndDate)}
           </div>
         )}
 
@@ -463,16 +480,16 @@ export default function TrainingWindowDialog({
     (defaultValues?.recurrence as RecurrenceValue) ?? "NONE"
   );
   const [selectedDate, setSelectedDate] = useState(
-    defaultValues?.startTime ? defaultValues.startTime.slice(0, 10) : new Date().toISOString().slice(0, 10)
+    () => isoToLocalDate(defaultValues?.startTime) ?? todayDateInputValue()
   );
   const [startTimeLocal, setStartTimeLocal] = useState(
-    defaultValues?.startTime ? defaultValues.startTime.slice(11, 16) : "09:00"
+    () => isoToLocalTime(defaultValues?.startTime) ?? "09:00"
   );
   const [endTimeLocal, setEndTimeLocal] = useState(
-    defaultValues?.endTime ? defaultValues.endTime.slice(11, 16) : "11:00"
+    () => isoToLocalTime(defaultValues?.endTime) ?? "11:00"
   );
   const [recurrenceEndDate, setRecurrenceEndDate] = useState(
-    defaultValues?.recurrenceEndDate?.slice(0, 10) ?? ""
+    () => isoToLocalDate(defaultValues?.recurrenceEndDate) ?? ""
   );
   const [title, setTitle] = useState(defaultValues?.title ?? "");
   const [icon, setIcon] = useState(defaultValues?.icon ?? "☀️");
@@ -490,7 +507,7 @@ export default function TrainingWindowDialog({
   function resetForm() {
     setStep(0);
     setRecurrence("NONE");
-    setSelectedDate(new Date().toISOString().slice(0, 10));
+    setSelectedDate(todayDateInputValue());
     setStartTimeLocal("09:00");
     setEndTimeLocal("11:00");
     setRecurrenceEndDate("");

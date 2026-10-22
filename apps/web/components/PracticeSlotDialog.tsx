@@ -11,6 +11,7 @@ import {
   fromTimeZoneDateTimeToIso,
   fromTimeZoneDateToIso,
   toTimeZoneDateInputValue,
+  todayDateInputValue,
   toTimeZoneTimeInputValue,
 } from "@/lib/timezone";
 
@@ -71,7 +72,7 @@ export default function PracticeSlotDialog({
   } = useForm<FormValues>({
     defaultValues: {
       title: "",
-      date: selectedDate ?? new Date().toISOString().slice(0, 10),
+      date: selectedDate ?? todayDateInputValue(timeZone),
       startTime: "09:00",
       endTime: "10:00",
       recurrence: "NONE",
@@ -95,7 +96,7 @@ export default function PracticeSlotDialog({
     } else if (open && !defaultValues) {
       reset({
         title: "",
-        date: selectedDate ?? new Date().toISOString().slice(0, 10),
+        date: selectedDate ?? todayDateInputValue(timeZone),
         startTime: "09:00",
         endTime: "10:00",
         recurrence: "NONE",

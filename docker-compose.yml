@@ -13,6 +13,10 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4000
+      # Recurring training windows are expanded in the server's local time
+      # zone. Must match the clubs' time zone, otherwise weekly windows shift
+      # by one hour after each daylight-saving change.
+      TZ: ${TZ:-Europe/Berlin}
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
       ACCESS_SECRET: ${ACCESS_SECRET:-your-access-secret-key-min-32-chars}
       REFRESH_SECRET: ${REFRESH_SECRET:-your-refresh-secret-key-min-32-chars}
@@ -35,6 +39,7 @@ services:
       - "3000"
     environment:
       NODE_ENV: production
+      TZ: ${TZ:-Europe/Berlin}
       API_URL: http://golf_api:4000
       ACCESS_SECRET: ${ACCESS_SECRET:-your-access-secret-key-min-32-chars}
       AUTH_PROXY_DIAGNOSTICS: ${AUTH_PROXY_DIAGNOSTICS:-false}

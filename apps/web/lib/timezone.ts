@@ -170,3 +170,8 @@ export function formatDateInTimeZone(
     timeZone: resolveCalendarTimeZone(timeZone),
   }).format(date);
 }
+
+/** Today's date as YYYY-MM-DD in the given (or the browser's local) time zone. */
+export function todayDateInputValue(timeZone?: string | null) {
+  return toTimeZoneDateInputValue(new Date().toISOString(), timeZone);
+}
