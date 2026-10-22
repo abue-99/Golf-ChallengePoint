@@ -52,25 +52,54 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export default function PlayerSidePanel({
-  player,
-  teams,
-  today,
-  timeZone,
-  onClose,
-  onChanged,
-  initialAssign = false,
-}: {
+type PlayerDetailsProps = {
   player: RosterPlayer;
   teams: RosterTeam[];
   today: string;
   timeZone: string;
-  onClose: () => void;
   /** Called after feedback or notes changed, so the roster can refresh. */
   onChanged?: () => void;
   /** Open with the assign form expanded (from the row menu). */
   initialAssign?: boolean;
-}) {
+  /** Shows a "Remove from My Players" action at the end. */
+  onRemove?: (playerId: string) => void | Promise<void>;
+};
+
+/** Player details in a right-hand sheet (coach home). */
+export default function PlayerSidePanel({
+  onClose,
+  ...props
+}: PlayerDetailsProps & { onClose: () => void }) {
+  return (
+    <Sheet open onOpenChange={(open) => !open && onClose()}>
+      <SheetContent
+        side="right"
+        className="w-full gap-0 overflow-y-auto p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-md"
+      >
+        <PlayerDetails {...props} />
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+/**
+ * The player details themselves. `inline` renders them without sheet
+ * semantics, e.g. in the workspace column of the teams page.
+ */
+export function PlayerDetails({
+  player,
+  teams,
+  today,
+  timeZone,
+  onChanged,
+  initialAssign = false,
+  onRemove,
+  inline = false,
+}: PlayerDetailsProps & { inline?: boolean }) {
+  const Title = inline ? InlineTitle : SheetTitle;
+  const Description = inline ? InlineDescription : SheetDescription;
+  const Header = inline ? InlineHeader : SheetHeader;
+  const [removing, setRemoving] = useState(false);
   const [assignOpen, setAssignOpen] = useState(initialAssign && player.linked);
   const name = nameOf(player);
   const pending = pendingCount(player);
@@ -84,12 +113,8 @@ export default function PlayerSidePanel({
       : 0;
 
   return (
-    <Sheet open onOpenChange={(open) => !open && onClose()}>
-      <SheetContent
-        side="right"
-        className="w-full gap-0 overflow-y-auto p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-md"
-      >
-        <SheetHeader className="border-b border-slate-100 p-5 pr-12">
+    <>
+        <Header className={inline ? "border-b border-slate-100 p-4" : "border-b border-slate-100 p-5 pr-12"}>
           <div className="flex items-center gap-3">
             <Avatar className="h-14 w-14">
               {player.profileImage ? (
@@ -100,8 +125,8 @@ export default function PlayerSidePanel({
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <SheetTitle className="truncate text-lg">{name}</SheetTitle>
-              <SheetDescription>{lastActiveLabel(player)}</SheetDescription>
+              <Title className="truncate text-lg">{name}</Title>
+              <Description>{lastActiveLabel(player)}</Description>
             </div>
           </div>
           {pending > 0 || inactive || missed > 0 || !player.linked ? (
@@ -128,9 +153,9 @@ export default function PlayerSidePanel({
               ) : null}
             </div>
           ) : null}
-        </SheetHeader>
+        </Header>
 
-        <div className="space-y-6 p-5">
+        <div className={inline ? "space-y-6 p-4" : "space-y-6 p-5"}>
           <div className="grid grid-cols-4 gap-2">
             <button
               type="button"
@@ -313,8 +338,37 @@ export default function PlayerSidePanel({
               journeyHref={`/coach/players/${player.id}`}
             />
           ) : null}
+          {onRemove ? (
+            <button
+              type="button"
+              disabled={removing}
+              onClick={async () => {
+                if (!window.confirm(`Remove "${name}" from your players list?`)) return;
+                setRemoving(true);
+                try {
+                  await onRemove(player.id);
+                } finally {
+                  setRemoving(false);
+                }
+              }}
+              className="w-full rounded-lg border border-rose-200 px-3 py-2.5 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+            >
+              {removing ? "Removing…" : "Remove from My Players"}
+            </button>
+          ) : null}
         </div>
-      </SheetContent>
-    </Sheet>
+    </>
   );
+}
+
+function InlineHeader({ className, children }: { className?: string; children: React.ReactNode }) {
+  return <div className={className}>{children}</div>;
+}
+
+function InlineTitle({ className, children }: { className?: string; children: React.ReactNode }) {
+  return <h2 className={`font-semibold text-slate-900 ${className ?? ""}`}>{children}</h2>;
+}
+
+function InlineDescription({ children }: { children: React.ReactNode }) {
+  return <p className="text-sm text-slate-500">{children}</p>;
 }

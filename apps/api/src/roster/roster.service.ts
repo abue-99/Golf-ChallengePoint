@@ -259,6 +259,7 @@ export class RosterService {
               playerId: true,
               playerPlanId: true,
               status: true,
+              journeyTemplateId: true,
               journeyTemplate: { select: { name: true } },
             },
           })
@@ -317,6 +318,14 @@ export class RosterService {
     );
 
     // ── Journey progress (lessons of the journey's plan) ──────────────────
+    const openJourneyIdsByPlayer = new Map<string, Set<string>>();
+    for (const journey of journeys) {
+      addToSetMap(
+        openJourneyIdsByPlayer,
+        journey.playerId,
+        journey.journeyTemplateId,
+      );
+    }
     const currentJourneyByPlayer = new Map<string, (typeof journeys)[number]>();
     for (const journey of journeys) {
       if (!currentJourneyByPlayer.has(journey.playerId)) {
@@ -466,6 +475,10 @@ export class RosterService {
         }),
         currentJourney,
         feedbackCount: feedbackByPlayer.get(player.id) ?? 0,
+        /** Journey templates from this coach the player has not finished yet. */
+        openJourneyTemplateIds: [
+          ...(openJourneyIdsByPlayer.get(player.id) ?? new Set<string>()),
+        ],
         noteCount: notesByPlayer.get(player.id) ?? 0,
         nextTournament: tournament
           ? {

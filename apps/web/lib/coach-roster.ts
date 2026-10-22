@@ -41,6 +41,8 @@ export type RosterPlayer = {
   feedbackCount: number;
   /** Private notes this coach keeps about the player. */
   noteCount: number;
+  /** Journey templates from this coach the player has not finished yet. */
+  openJourneyTemplateIds: string[];
 };
 
 export type AgendaItem = {

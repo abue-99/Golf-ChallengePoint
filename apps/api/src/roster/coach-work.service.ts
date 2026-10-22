@@ -4,10 +4,26 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { AssignmentStatus } from '@challengepoint/db';
 import { PrismaService } from '../prisma/prisma.service';
 import { feedbackWhere } from './roster.service';
 
 const MAX_NOTE_LENGTH = 5000;
+/** Assignments can only be undone shortly after they were created. */
+export const UNDO_WINDOW_MS = 15 * 60 * 1000;
+const MAX_UNDO_IDS = 500;
+
+function idList(value: unknown) {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value) || value.some((id) => typeof id !== 'string')) {
+    throw new BadRequestException('Expected a list of ids');
+  }
+  const ids = [...new Set(value as string[])];
+  if (ids.length > MAX_UNDO_IDS) {
+    throw new BadRequestException('Too many ids');
+  }
+  return ids;
+}
 
 function cleanBody(body: unknown) {
   if (typeof body !== 'string') {
@@ -98,6 +114,69 @@ export class CoachWorkService {
       data: { coachReviewedAt: new Date() },
     });
     return { updated: result.count };
+  }
+
+  // ── Undo ─────────────────────────────────────────────────────────────
+
+  /**
+   * Removes assignments the coach just created (bulk assign → "Undo").
+   * Only touches the coach's own rows that are younger than the undo window
+   * and that the player has not started yet.
+   */
+  async undoAssignments(
+    coachId: string,
+    body: { lessonAssignmentIds?: unknown; planIds?: unknown },
+  ) {
+    const lessonAssignmentIds = idList(body?.lessonAssignmentIds);
+    const planIds = idList(body?.planIds);
+    const since = new Date(Date.now() - UNDO_WINDOW_MS);
+
+    return this.prisma.$transaction(async (tx) => {
+      const lessons = lessonAssignmentIds.length
+        ? await tx.lessonAssignment.deleteMany({
+            where: {
+              id: { in: lessonAssignmentIds },
+              coachId,
+              createdAt: { gte: since },
+              status: AssignmentStatus.NEW,
+            },
+          })
+        : { count: 0 };
+
+      let journeys = 0;
+      if (planIds.length) {
+        const plans = await tx.playerDevelopmentPlan.findMany({
+          where: { id: { in: planIds }, coachId, createdAt: { gte: since } },
+          select: { id: true },
+        });
+        const ownPlanIds = plans.map((plan) => plan.id);
+        const startedPlans = ownPlanIds.length
+          ? await tx.lessonAssignment.findMany({
+              where: {
+                block: { planId: { in: ownPlanIds } },
+                status: { not: AssignmentStatus.NEW },
+              },
+              select: { block: { select: { planId: true } } },
+            })
+          : [];
+        const started = new Set(
+          startedPlans.map((entry) => entry.block?.planId).filter(Boolean),
+        );
+        const removable = ownPlanIds.filter((id) => !started.has(id));
+        if (removable.length) {
+          await tx.journeyTemplateAssignment.deleteMany({
+            where: { playerPlanId: { in: removable }, coachId },
+          });
+          // Blocks and their lesson assignments cascade with the plan.
+          const deleted = await tx.playerDevelopmentPlan.deleteMany({
+            where: { id: { in: removable } },
+          });
+          journeys = deleted.count;
+        }
+      }
+
+      return { lessonsRemoved: lessons.count, journeysRemoved: journeys };
+    });
   }
 
   // ── Notes ────────────────────────────────────────────────────────────

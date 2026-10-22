@@ -72,6 +72,16 @@ export class RosterController {
     return this.coachWork.markFeedbackSeen(user.id, assignmentId);
   }
 
+  /** Undo a bulk assignment made from the teams page. */
+  @Post('undo')
+  undo(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: { lessonAssignmentIds?: unknown; planIds?: unknown },
+  ) {
+    requireCoach(user);
+    return this.coachWork.undoAssignments(user.id, body ?? {});
+  }
+
   @Get('players/:playerId/notes')
   listNotes(
     @CurrentUser() user: AuthenticatedUser,
