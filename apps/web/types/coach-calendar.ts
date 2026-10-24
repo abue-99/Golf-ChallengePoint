@@ -58,6 +58,7 @@ export type CoachCalendarTeam = {
 };
 
 export type CoachCalendarPayload = {
+  viewerId?: string;
   range: { from: string; to: string };
   teams: CoachCalendarTeam[];
   activities: CoachCalendarActivity[];

@@ -118,3 +118,130 @@ export function timeAgo(value: string, now: number) {
   const days = Math.round(hours / 24);
   return days === 1 ? "yesterday" : `${days} days ago`;
 }
+
+// ── Planning in the calendar (drag & drop) ───────────────────────────────
+
+export type CreatedSlot = { id: string };
+export type CreatedTask = {
+  id: string;
+  scheduledDate: string;
+  durationMinutes: number;
+};
+
+/** One-time team training (the container for a lesson on a free time). */
+export function createOneTimeTraining(input: {
+  teamId: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  force?: boolean;
+}) {
+  const { teamId, ...body } = input;
+  return call<CreatedSlot>(
+    `/api/calendar/team-slots/${encodeURIComponent(teamId)}`,
+    {
+      method: "POST",
+      body: JSON.stringify({ ...body, recurrence: "NONE" }),
+    },
+  );
+}
+
+/** Puts a lesson into a training window (a calendar task). */
+export async function planLessonInTraining(input: {
+  slotId: string;
+  lesson: { id: string; name: string; description?: string | null };
+  start: Date;
+  durationMinutes: number;
+}) {
+  const created = await call<CreatedTask[] | CreatedTask>(
+    `/api/calendar/slots/${encodeURIComponent(input.slotId)}/tasks`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        title: input.lesson.name,
+        description: input.lesson.description ?? "",
+        durationMinutes: input.durationMinutes,
+        scheduledDate: input.start.toISOString(),
+        lessonId: input.lesson.id,
+      }),
+    },
+  );
+  return Array.isArray(created) ? created : [created];
+}
+
+export function deleteCalendarTask(id: string) {
+  return call<{ ok: boolean }>(
+    `/api/calendar/tasks/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
+export function deleteTraining(id: string) {
+  return call<{ ok: boolean }>(
+    `/api/calendar/slots/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
+export function moveCalendarTask(
+  id: string,
+  start: Date,
+  durationMinutes: number,
+) {
+  return call<CreatedTask>(`/api/calendar/tasks/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      scheduledDate: start.toISOString(),
+      durationMinutes,
+    }),
+  });
+}
+
+export function moveTraining(
+  id: string,
+  start: Date,
+  end: Date,
+  force = false,
+) {
+  return call<{ id: string; answersReset?: number }>(
+    `/api/calendar/slots/${encodeURIComponent(id)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+        force,
+      }),
+    },
+  );
+}
+
+/**
+ * Where a lesson goes inside a training occurrence: at the wanted time if it
+ * fits, otherwise moved (and if needed shortened) to stay inside.
+ */
+export function placeInOccurrence(
+  occurrence: { start: Date; end: Date },
+  wanted: Date | null,
+  durationMinutes: number,
+) {
+  const windowMinutes = Math.round(
+    (occurrence.end.getTime() - occurrence.start.getTime()) / 60_000,
+  );
+  const duration = Math.max(5, Math.min(durationMinutes || 30, windowMinutes));
+  let start =
+    wanted && wanted >= occurrence.start && wanted < occurrence.end
+      ? wanted
+      : occurrence.start;
+  const latestStart = new Date(occurrence.end.getTime() - duration * 60_000);
+  if (start > latestStart) start = latestStart;
+  return {
+    start,
+    durationMinutes: duration,
+    shortened: duration < (durationMinutes || 30),
+  };
+}

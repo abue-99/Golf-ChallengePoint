@@ -12,6 +12,7 @@ import {
   coachTeamsWhere,
 } from '../teams/team-access';
 import { eventOccurrenceKey, slotOccurrenceKey } from './attendance.service';
+import { fitsAnOccurrence } from './slot-window';
 import {
   AvailabilityBlockType,
   CalendarTaskStatus,
@@ -427,6 +428,8 @@ export class CalendarService {
       endTime: string;
       recurrence?: string;
       recurrenceEndDate?: string;
+      /** Save even if players are unavailable then. */
+      force?: boolean;
     },
   ) {
     this.requireCoachOrAdmin(role);
@@ -452,8 +455,15 @@ export class CalendarService {
       },
       conflictLimit,
     );
-    const playerIds = await this.getActivePlayerIdsForTeam(teamId);
-    await this.ensureNoAvailabilityConflicts(playerIds, intervals);
+    if (!data.force) {
+      const playerIds = await this.getActivePlayerIdsForTeam(teamId);
+      await this.ensureNoAvailabilityConflicts(
+        playerIds,
+        intervals,
+        undefined,
+        true,
+      );
+    }
 
     const slot = await this.prisma.practiceSlot.create({
       data: {
@@ -488,6 +498,8 @@ export class CalendarService {
       endTime?: string;
       recurrence?: string;
       recurrenceEndDate?: string | null;
+      /** Save even if players are unavailable then (team windows). */
+      force?: boolean;
     },
   ) {
     const slot = await this.prisma.practiceSlot.findUnique({
@@ -534,9 +546,21 @@ export class CalendarService {
         : slot.playerId
           ? [slot.playerId]
           : [];
-    await this.ensureNoAvailabilityConflicts(affectedPlayerIds, intervals);
+    const timeChanged =
+      startTime.getTime() !== slot.startTime.getTime() ||
+      endTime.getTime() !== slot.endTime.getTime() ||
+      recurrence !== slot.recurrence;
+    if (timeChanged && !data.force) {
+      await this.ensureNoAvailabilityConflicts(
+        affectedPlayerIds,
+        intervals,
+        undefined,
+        // Team windows: 409 with the list so the coach can save anyway.
+        slot.ownerType === OwnerType.TEAM,
+      );
+    }
 
-    return this.prisma.practiceSlot.update({
+    const updated = await this.prisma.practiceSlot.update({
       where: { id: slotId },
       data: {
         ...(data.title !== undefined ? { title: data.title } : {}),
@@ -547,6 +571,34 @@ export class CalendarService {
       },
       include: { team: { select: TEAM_SELECT } },
     });
+
+    // A one-time session that moved takes its planned lessons along, and
+    // the players are asked again (the old answers were for the old time).
+    let answersReset = 0;
+    if (
+      slot.recurrence === Recurrence.NONE &&
+      recurrence === Recurrence.NONE &&
+      startTime.getTime() !== slot.startTime.getTime()
+    ) {
+      const delta = startTime.getTime() - slot.startTime.getTime();
+      const tasks = await this.prisma.calendarTask.findMany({
+        where: { practiceSlotId: slotId },
+        select: { id: true, scheduledDate: true },
+      });
+      for (const task of tasks) {
+        await this.prisma.calendarTask.update({
+          where: { id: task.id },
+          data: {
+            scheduledDate: new Date(task.scheduledDate.getTime() + delta),
+          },
+        });
+      }
+      const reset = await this.prisma.attendance.deleteMany({
+        where: { practiceSlotId: slotId },
+      });
+      answersReset = reset.count;
+    }
+    return { ...updated, answersReset };
   }
 
   async deleteSlot(userId: string, role: string, slotId: string) {
@@ -1016,7 +1068,10 @@ export class CalendarService {
       scheduledDate.getUTCHours() * 60 + scheduledDate.getUTCMinutes();
     const taskEndMins = taskStartMins + data.durationMinutes;
 
-    if (taskStartMins < slotStartMins || taskEndMins > slotEndMins) {
+    if (
+      (taskStartMins < slotStartMins || taskEndMins > slotEndMins) &&
+      !fitsAnOccurrence(slot, scheduledDate, scheduledEnd)
+    ) {
       throw new BadRequestException(
         'Task time must be within the practice slot window',
       );
@@ -1123,6 +1178,8 @@ export class CalendarService {
             teamId: true,
             startTime: true,
             endTime: true,
+            recurrence: true,
+            recurrenceEndDate: true,
           },
         },
       },
@@ -1173,7 +1230,10 @@ export class CalendarService {
     const taskStartMins =
       scheduledDate.getUTCHours() * 60 + scheduledDate.getUTCMinutes();
     const taskEndMins = taskStartMins + durationMinutes;
-    if (taskStartMins < slotStartMins || taskEndMins > slotEndMins) {
+    if (
+      (taskStartMins < slotStartMins || taskEndMins > slotEndMins) &&
+      !fitsAnOccurrence(task.practiceSlot, scheduledDate, scheduledEnd)
+    ) {
       throw new BadRequestException(
         'Task time must be within the practice slot window',
       );

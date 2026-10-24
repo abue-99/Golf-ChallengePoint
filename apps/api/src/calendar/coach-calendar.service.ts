@@ -389,6 +389,7 @@ export class CoachCalendarService {
     activities.sort((a, b) => a.start.localeCompare(b.start));
 
     return {
+      viewerId: coachId,
       range: { from: from.toISOString(), to: to.toISOString() },
       teams: allTeams.map((team) => ({
         id: team.id,

@@ -81,6 +81,7 @@ export class CalendarController {
       endTime: string;
       recurrence?: string;
       recurrenceEndDate?: string;
+      force?: boolean;
     },
   ) {
     return this.calendarService.createTeamSlot(
@@ -103,6 +104,7 @@ export class CalendarController {
       endTime?: string;
       recurrence?: string;
       recurrenceEndDate?: string | null;
+      force?: boolean;
     },
   ) {
     return this.calendarService.updateSlot(
