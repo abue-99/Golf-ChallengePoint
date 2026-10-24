@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { MapPin, Users } from "lucide-react";
+import { MapPin, Users, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -42,9 +42,21 @@ export default function SessionDialog({
       <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto">
         {activity ? (
           <>
-            <DialogHeader>
-              <DialogTitle>{activity.title}</DialogTitle>
-            </DialogHeader>
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <DialogHeader>
+                  <DialogTitle>{activity.title}</DialogTitle>
+                </DialogHeader>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close"
+                className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 pointer-coarse:h-11 pointer-coarse:w-11"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
             <div className="space-y-4 text-sm text-slate-600">
               <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 uppercase tracking-wide text-slate-600">

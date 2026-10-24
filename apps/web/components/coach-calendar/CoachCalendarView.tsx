@@ -4,14 +4,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import interactionPlugin from "@fullcalendar/interaction";
+import interactionPlugin, {
+  type DateClickArg,
+} from "@fullcalendar/interaction";
 import type {
   DatesSetArg,
   EventClickArg,
   EventContentArg,
   EventInput,
 } from "@fullcalendar/core";
-import { CalendarClock, Users, X } from "lucide-react";
+import { Bell, BellRing, CalendarClock, Plus, Users, X } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TeamIcon from "@/components/TeamIcon";
 import { cn } from "@/lib/utils";
@@ -32,6 +36,12 @@ import type {
 } from "@/types/coach-calendar";
 import { AttendanceCounts } from "./AttendancePanel";
 import SessionDialog from "./SessionDialog";
+import TeamEventDialog, { type TeamEventDraft } from "./TeamEventDialog";
+import {
+  remindOpenPlayers,
+  setAutoRemind,
+  timeAgo,
+} from "@/lib/coach-calendar";
 import {
   formatDay,
   formatTime,
@@ -52,6 +62,15 @@ const FC_VIEW: Record<Exclude<CalendarView, "agenda">, string> = {
   month: "dayGridMonth",
 };
 const TEAM_FILTER_KEY = "coach-calendar:team";
+const EVENT_MINUTES = 90;
+const REMIND_COOLDOWN_MS = 60 * 60 * 1000;
+const AUTO_REMIND_OPTIONS = [
+  { value: "", label: "Off" },
+  { value: "2", label: "2 h before" },
+  { value: "24", label: "1 day before" },
+  { value: "48", label: "2 days before" },
+  { value: "72", label: "3 days before" },
+];
 
 type PlayerOption = {
   id: string;
@@ -283,17 +302,18 @@ export default function CoachCalendarView() {
   const [overlayActivities, setOverlayActivities] = useState<
     CalendarActivity[]
   >([]);
+  const [eventDraft, setEventDraft] = useState<TeamEventDraft | null>(null);
+  const [draftKey, setDraftKey] = useState(0);
+  const [reminding, setReminding] = useState<string | null>(null);
 
   // Restore the last view and team filter (after hydration, so server and
   // client render the same first frame).
   useEffect(() => {
     const storedView = loadCalendarViewPreference();
     const storedTeam = readStored(TEAM_FILTER_KEY);
-    /* eslint-disable react-hooks/set-state-in-effect */
     if (storedView) setView(storedView);
     if (storedView === "agenda") setRange(agendaRange());
     if (storedTeam) setTeamId(storedTeam);
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   const requestKey = range
@@ -428,6 +448,118 @@ export default function CoachCalendarView() {
     if (activity) setSelected(activity);
   }, []);
 
+  const openEventDialog = (draft: TeamEventDraft) => {
+    setDraftKey((key) => key + 1);
+    setEventDraft(draft);
+  };
+
+  const openNewEvent = (start?: Date) => {
+    if (teams.length === 0) {
+      toast.info("Create a team first – events belong to a team.");
+      return;
+    }
+    const begin = start ? new Date(start) : new Date();
+    if (!start) {
+      begin.setHours(18, 0, 0, 0);
+      if (begin.getTime() < Date.now()) begin.setDate(begin.getDate() + 1);
+    }
+    openEventDialog({
+      teamId: teamId ?? teams[0].id,
+      title: "",
+      description: "",
+      location: "",
+      start: begin,
+      end: new Date(begin.getTime() + EVENT_MINUTES * 60_000),
+    });
+  };
+
+  const handleDateClick = (arg: DateClickArg) => {
+    if (arg.allDay) {
+      const start = new Date(arg.date);
+      start.setHours(18, 0, 0, 0);
+      openNewEvent(start);
+    } else {
+      openNewEvent(arg.date);
+    }
+  };
+
+  const openEditEvent = (activity: CoachCalendarActivity) => {
+    setSelected(null);
+    openEventDialog({
+      id: activity.sourceId,
+      teamId: activity.teamId ?? "",
+      title: activity.title,
+      description: activity.description ?? "",
+      location: activity.location ?? "",
+      start: new Date(activity.start),
+      end: new Date(activity.end),
+    });
+  };
+
+  const canRemind = (activity: CoachCalendarActivity) =>
+    isTeamSession(activity) &&
+    Boolean(activity.occurrenceKey) &&
+    (activity.attendance?.open ?? 0) > 0 &&
+    new Date(activity.end).getTime() > now;
+
+  /** The API allows one reminder per session and hour. */
+  const justReminded = (activity: CoachCalendarActivity) =>
+    Boolean(
+      activity.lastReminder &&
+      now - new Date(activity.lastReminder.sentAt).getTime() <
+        REMIND_COOLDOWN_MS,
+    );
+
+  const remind = async (activity: CoachCalendarActivity) => {
+    if (!activity.occurrenceKey) return;
+    setReminding(activity.occurrenceKey);
+    try {
+      const result = await remindOpenPlayers(activity.occurrenceKey);
+      if (result.sent > 0) {
+        toast.success(
+          `Reminder sent to ${result.sent} ${result.sent === 1 ? "player" : "players"}.`,
+        );
+      } else {
+        toast.warning("The reminder could not be delivered by e-mail.");
+      }
+      const update = (item: CoachCalendarActivity) =>
+        item.occurrenceKey === activity.occurrenceKey
+          ? { ...item, lastReminder: result.lastReminder }
+          : item;
+      setSelected((current) => (current ? update(current) : current));
+      setData((current) =>
+        current
+          ? { ...current, activities: current.activities.map(update) }
+          : current,
+      );
+      setUpcoming((current) => current.map(update));
+      setNow(Date.now());
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Reminder failed");
+    } finally {
+      setReminding(null);
+    }
+  };
+
+  const changeAutoRemind = async (team: CoachCalendarTeam, value: string) => {
+    const hours = value ? Number(value) : null;
+    try {
+      await setAutoRemind(team.id, hours);
+      setTeams((current) =>
+        current.map((item) =>
+          item.id === team.id ? { ...item, autoRemindHours: hours } : item,
+        ),
+      );
+      toast.success(
+        hours
+          ? `${team.shortName}: players without an answer get a reminder ${AUTO_REMIND_OPTIONS.find((o) => o.value === value)?.label ?? `${hours} h before`}.`
+          : `${team.shortName}: automatic reminders are off.`,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Setting not saved");
+    }
+  };
+
   const changeView = (value: string) => {
     const next = value as CalendarView;
     setView(next);
@@ -508,6 +640,14 @@ export default function CoachCalendarView() {
               </TabsList>
             </Tabs>
             <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                onClick={() => openNewEvent()}
+                disabled={teams.length === 0}
+                className="pointer-coarse:h-11"
+              >
+                <Plus className="mr-1 h-4 w-4" /> Team event
+              </Button>
               {overlayPlayerId ? (
                 <span className="inline-flex min-h-9 items-center gap-2 rounded-full bg-rose-50 pl-3 pr-1 text-sm text-rose-800">
                   Showing {overlayName}
@@ -610,6 +750,7 @@ export default function CoachCalendarView() {
                 events={events}
                 eventContent={(arg) => <EventContent arg={arg} />}
                 eventClick={handleEventClick}
+                dateClick={handleDateClick}
                 datesSet={handleDatesSet}
                 eventTimeFormat={{
                   hour: "2-digit",
@@ -628,6 +769,7 @@ export default function CoachCalendarView() {
                 nowIndicator
                 height="auto"
                 dayMaxEvents={4}
+                slotEventOverlap={false}
               />
             </div>
           )}
@@ -648,11 +790,11 @@ export default function CoachCalendarView() {
             ) : (
               <ul className="space-y-1">
                 {waiting.map((activity) => (
-                  <li key={activity.id}>
+                  <li key={activity.id} className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => setSelected(activity)}
-                      className="w-full rounded-lg px-2 py-1.5 text-left hover:bg-slate-50 pointer-coarse:py-2.5"
+                      className="min-w-0 flex-1 rounded-lg px-2 py-1.5 text-left hover:bg-slate-50 pointer-coarse:py-2.5"
                     >
                       <span className="flex items-center gap-1.5 text-sm font-medium text-slate-800">
                         <span
@@ -676,11 +818,85 @@ export default function CoachCalendarView() {
                         ) : null}
                       </span>
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => void remind(activity)}
+                      disabled={
+                        reminding === activity.occurrenceKey ||
+                        justReminded(activity)
+                      }
+                      aria-label={`Remind players without an answer for ${activity.title}`}
+                      title={
+                        activity.lastReminder
+                          ? `Last reminder ${timeAgo(activity.lastReminder.sentAt, now)}`
+                          : "Remind players without an answer"
+                      }
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-50 pointer-coarse:h-11 pointer-coarse:w-11"
+                    >
+                      {activity.lastReminder ? (
+                        <BellRing className="h-4 w-4 text-amber-600" />
+                      ) : (
+                        <Bell className="h-4 w-4" />
+                      )}
+                    </button>
                   </li>
                 ))}
               </ul>
             )}
           </section>
+
+          {teams.length > 0 ? (
+            <section className="rounded-2xl border bg-white p-4 shadow-sm">
+              <header className="mb-1 flex items-center gap-2">
+                <BellRing className="h-4 w-4 text-[var(--golf-primary)]" />
+                <h2 className="text-sm font-semibold text-slate-800">
+                  Automatic reminders
+                </h2>
+              </header>
+              <p className="mb-2 text-xs text-slate-500">
+                E-mail to players who have not answered yet.
+              </p>
+              <ul className="space-y-2">
+                {teams.map((team) => (
+                  <li key={team.id} className="flex items-center gap-2 text-sm">
+                    <span className="min-w-0 flex-1 truncate text-slate-700">
+                      {team.shortName}
+                    </span>
+                    <select
+                      aria-label={`Automatic reminder for ${team.shortName}`}
+                      className="h-9 rounded-md border border-slate-200 bg-white px-2 text-sm disabled:opacity-60 pointer-coarse:h-11"
+                      value={
+                        team.autoRemindHours ? String(team.autoRemindHours) : ""
+                      }
+                      disabled={!team.isHeadCoach}
+                      title={
+                        team.isHeadCoach
+                          ? undefined
+                          : "Only the head coach can change this"
+                      }
+                      onChange={(event) =>
+                        void changeAutoRemind(team, event.target.value)
+                      }
+                    >
+                      {AUTO_REMIND_OPTIONS.some(
+                        (option) =>
+                          option.value === String(team.autoRemindHours ?? ""),
+                      ) ? null : (
+                        <option value={String(team.autoRemindHours)}>
+                          {team.autoRemindHours} h before
+                        </option>
+                      )}
+                      {AUTO_REMIND_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           {teams.length > 0 ? (
             <section className="rounded-2xl border bg-white p-4 shadow-sm">
@@ -723,7 +939,65 @@ export default function CoachCalendarView() {
         </aside>
       </div>
 
-      <SessionDialog activity={selected} onClose={() => setSelected(null)} />
+      <SessionDialog
+        activity={selected}
+        onClose={() => setSelected(null)}
+        footnote={
+          selected?.lastReminder ? (
+            <p className="text-xs text-slate-500">
+              Last reminder {timeAgo(selected.lastReminder.sentAt, now)}
+              {selected.lastReminder.kind === "AUTO" ? " (automatic)" : ""}.
+            </p>
+          ) : null
+        }
+        actions={
+          selected &&
+          (selected.type === "team-event" || canRemind(selected)) ? (
+            <>
+              {selected.type === "team-event" ? (
+                <Button
+                  variant="outline"
+                  onClick={() => openEditEvent(selected)}
+                >
+                  Edit event
+                </Button>
+              ) : null}
+              {canRemind(selected) ? (
+                <Button
+                  onClick={() => void remind(selected)}
+                  disabled={
+                    reminding === selected.occurrenceKey ||
+                    justReminded(selected)
+                  }
+                >
+                  <Bell className="mr-1 h-4 w-4" />
+                  {justReminded(selected)
+                    ? "Reminded"
+                    : `Remind ${selected.attendance?.open} ${selected.attendance?.open === 1 ? "player" : "players"}`}
+                </Button>
+              ) : null}
+            </>
+          ) : null
+        }
+      />
+
+      <TeamEventDialog
+        key={draftKey}
+        draft={eventDraft}
+        teams={teams}
+        onClose={() => setEventDraft(null)}
+        onSaved={(_event, action) => {
+          setEventDraft(null);
+          toast.success(
+            action === "created"
+              ? "Team event created – the players can answer now."
+              : action === "updated"
+                ? "Team event saved."
+                : "Team event deleted.",
+          );
+          setReloadKey((key) => key + 1);
+        }}
+      />
     </div>
   );
 }

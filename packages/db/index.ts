@@ -16,5 +16,6 @@ export {
   DevelopmentMilestoneStatus,
   NoteVisibility,
   AttendanceStatus,
+  ReminderKind,
 } from './generated/client/client';
 export { prisma } from './db';

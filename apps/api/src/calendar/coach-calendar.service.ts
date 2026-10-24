@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { OwnerType } from '@challengepoint/db';
 import { PrismaService } from '../prisma/prisma.service';
+import { coachTeamsWhere } from '../teams/team-access';
+import { AttendanceReminderService } from './attendance-reminder.service';
 import { expandOccurrences } from '../roster/roster.helpers';
 import {
   eventOccurrenceKey,
@@ -62,6 +64,8 @@ export type CoachCalendarActivity = {
   priority?: string;
   /** Coach (or player) who created the entry. */
   createdById?: string | null;
+  /** Team sessions: the last reminder sent to players without an answer. */
+  lastReminder?: { sentAt: string; kind: string } | null;
 };
 
 function fullName(user: {
@@ -107,7 +111,10 @@ export function resolveRange(
  */
 @Injectable()
 export class CoachCalendarService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reminders: AttendanceReminderService,
+  ) {}
 
   async getCalendar(
     coachId: string,
@@ -121,13 +128,14 @@ export class CoachCalendarService {
 
     const [allTeams, links] = await Promise.all([
       this.prisma.team.findMany({
-        where: { coachId },
+        where: coachTeamsWhere(coachId),
         orderBy: { createdAt: 'asc' },
         select: {
           id: true,
           shortName: true,
           icon: true,
           coachId: true,
+          autoRemindHours: true,
           members: {
             select: {
               user: {
@@ -277,6 +285,17 @@ export class CoachCalendarService {
       };
     };
 
+    const lastReminders = await this.reminders.lastReminders([
+      ...occurrences.map((item) => item.key),
+      ...events.map((event) => eventOccurrenceKey(event.id)),
+    ]);
+    const reminderFor = (key: string) => {
+      const last = lastReminders.get(key);
+      return last
+        ? { sentAt: last.sentAt.toISOString(), kind: last.kind }
+        : null;
+    };
+
     const activities: CoachCalendarActivity[] = [];
     for (const { slot, occurrence, key } of occurrences) {
       const team = teamById.get(slot.teamId as string);
@@ -293,6 +312,7 @@ export class CoachCalendarService {
         recurrence: slot.recurrence,
         occurrenceKey: key,
         attendance: attendanceFor(key, slot.teamId as string),
+        lastReminder: reminderFor(key),
       });
     }
     for (const event of events) {
@@ -312,6 +332,7 @@ export class CoachCalendarService {
         location: event.location,
         occurrenceKey: key,
         attendance: attendanceFor(key, event.teamId),
+        lastReminder: reminderFor(key),
         createdById: event.coachId,
       });
     }
@@ -365,6 +386,9 @@ export class CoachCalendarService {
         shortName: team.shortName,
         icon: team.icon,
         memberCount: team.members.length,
+        autoRemindHours: team.autoRemindHours,
+        /** Head coach: may change team settings. */
+        isHeadCoach: role === 'ADMIN' || team.coachId === coachId,
       })),
       activities,
     };

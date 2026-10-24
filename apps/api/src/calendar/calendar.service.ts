@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { eventOccurrenceKey, slotOccurrenceKey } from './attendance.service';
@@ -235,6 +236,8 @@ export class CalendarService {
     playerIds: string[],
     intervals: SlotOccurrence[],
     ignoreAvailabilityBlockId?: string,
+    /** 409 with the list, so the client can offer "save anyway". */
+    asConflict = false,
   ) {
     if (playerIds.length === 0 || intervals.length === 0) return;
 
@@ -290,6 +293,13 @@ export class CalendarService {
       if (conflictMessages.length >= 5) break;
     }
 
+    if (conflictMessages.length > 0 && asConflict) {
+      throw new ConflictException({
+        statusCode: 409,
+        message: `Some players are not available: ${conflictMessages.join('; ')}`,
+        conflicts: conflictMessages,
+      });
+    }
     if (conflictMessages.length > 0) {
       throw new BadRequestException(
         `Scheduling conflict with blackout time: ${conflictMessages.join('; ')}`,
@@ -690,27 +700,37 @@ export class CalendarService {
       location?: string;
       startTime: string;
       endTime: string;
+      /** Save even if players are unavailable then. */
+      force?: boolean;
     },
   ) {
     this.requireCoachOrAdmin(role);
+    if (!data.teamId) throw new BadRequestException('teamId is required');
     if (role !== 'ADMIN') {
       await this.assertCoachOwnsTeam(userId, data.teamId);
     }
+    const title = this.cleanEventText(data.title, 120);
+    if (!title) throw new BadRequestException('Title is required');
     const startTime = new Date(data.startTime);
     const endTime = new Date(data.endTime);
     this.validateDateRange(startTime, endTime);
-    const playerIds = await this.getActivePlayerIdsForTeam(data.teamId);
-    await this.ensureNoAvailabilityConflicts(playerIds, [
-      { start: startTime, end: endTime },
-    ]);
+    if (!data.force) {
+      const playerIds = await this.getActivePlayerIdsForTeam(data.teamId);
+      await this.ensureNoAvailabilityConflicts(
+        playerIds,
+        [{ start: startTime, end: endTime }],
+        undefined,
+        true,
+      );
+    }
 
     return this.prisma.teamEvent.create({
       data: {
         teamId: data.teamId,
         coachId: userId,
-        title: data.title,
-        description: data.description,
-        location: data.location,
+        title,
+        description: this.cleanEventText(data.description, 2000),
+        location: this.cleanEventText(data.location, 200),
         startTime,
         endTime,
       },
@@ -727,8 +747,10 @@ export class CalendarService {
       location?: string | null;
       startTime?: string;
       endTime?: string;
+      force?: boolean;
     },
   ) {
+    this.requireCoachOrAdmin(role);
     const event = await this.prisma.teamEvent.findUnique({
       where: { id: eventId },
     });
@@ -741,26 +763,61 @@ export class CalendarService {
       : event.startTime;
     const endTime = data.endTime ? new Date(data.endTime) : event.endTime;
     this.validateDateRange(startTime, endTime);
-    const playerIds = await this.getActivePlayerIdsForTeam(event.teamId);
-    await this.ensureNoAvailabilityConflicts(playerIds, [
-      { start: startTime, end: endTime },
-    ]);
+    const timeChanged =
+      startTime.getTime() !== event.startTime.getTime() ||
+      endTime.getTime() !== event.endTime.getTime();
+    if (timeChanged && !data.force) {
+      const playerIds = await this.getActivePlayerIdsForTeam(event.teamId);
+      await this.ensureNoAvailabilityConflicts(
+        playerIds,
+        [{ start: startTime, end: endTime }],
+        undefined,
+        true,
+      );
+    }
+    let title: string | undefined;
+    if (data.title !== undefined) {
+      title = this.cleanEventText(data.title, 120) ?? undefined;
+      if (!title) throw new BadRequestException('Title is required');
+    }
 
-    return this.prisma.teamEvent.update({
+    const updated = await this.prisma.teamEvent.update({
       where: { id: eventId },
       data: {
-        ...(data.title !== undefined ? { title: data.title } : {}),
+        ...(title !== undefined ? { title } : {}),
         ...(data.description !== undefined
-          ? { description: data.description }
+          ? { description: this.cleanEventText(data.description, 2000) }
           : {}),
-        ...(data.location !== undefined ? { location: data.location } : {}),
+        ...(data.location !== undefined
+          ? { location: this.cleanEventText(data.location, 200) }
+          : {}),
         ...(data.startTime !== undefined ? { startTime } : {}),
         ...(data.endTime !== undefined ? { endTime } : {}),
       },
     });
+    // A new time is a new question: earlier answers no longer apply.
+    const reset = timeChanged
+      ? await this.prisma.attendance.deleteMany({
+          where: { occurrenceKey: eventOccurrenceKey(eventId) },
+        })
+      : { count: 0 };
+    return { ...updated, answersReset: reset.count };
+  }
+
+  private cleanEventText(value: string | null | undefined, max: number) {
+    if (value === undefined || value === null) return null;
+    if (typeof value !== 'string') {
+      throw new BadRequestException('Text fields must be strings');
+    }
+    const trimmed = value.trim();
+    if (trimmed.length > max) {
+      throw new BadRequestException(`Text is longer than ${max} characters`);
+    }
+    return trimmed || null;
   }
 
   async deleteTeamEvent(userId: string, role: string, eventId: string) {
+    this.requireCoachOrAdmin(role);
     const event = await this.prisma.teamEvent.findUnique({
       where: { id: eventId },
     });

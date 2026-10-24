@@ -41,7 +41,7 @@ export function AttendanceCounts({
         {attendance.notGoing}
       </span>
       {attendance.open > 0 ? (
-        <span className="rounded-full bg-slate-900/10 px-1.5 text-[0.7rem] font-semibold text-slate-700">
+        <span className="whitespace-nowrap rounded-full bg-slate-900/10 px-1.5 text-[0.7rem] font-semibold text-slate-700">
           {attendance.open} open
         </span>
       ) : null}

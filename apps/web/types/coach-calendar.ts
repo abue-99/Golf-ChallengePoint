@@ -44,6 +44,7 @@ export type CoachCalendarActivity = {
   playerName?: string | null;
   priority?: string;
   createdById?: string | null;
+  lastReminder?: { sentAt: string; kind: "MANUAL" | "AUTO" | string } | null;
 };
 
 export type CoachCalendarTeam = {
@@ -51,6 +52,8 @@ export type CoachCalendarTeam = {
   shortName: string;
   icon: string | null;
   memberCount: number;
+  autoRemindHours: number | null;
+  isHeadCoach: boolean;
 };
 
 export type CoachCalendarPayload = {

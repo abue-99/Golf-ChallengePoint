@@ -158,6 +158,7 @@ model User {
   notesAboutPlayer     CoachPlayerNote[]       @relation("NotesAboutPlayer")
   calendarFeedToken    CalendarFeedToken?
   attendances          Attendance[]            @relation("PlayerAttendances")
+  attendanceReminders  AttendanceReminder[]    @relation("ReminderSender")
 
   @@map("users")
 }
@@ -195,6 +196,9 @@ model Team {
   category    String
   coachId     String
   clubId      String?
+  /// Hours before a training/event when players without an answer get an
+  /// automatic reminder; null = off.
+  autoRemindHours Int?
   coach       User         @relation("CoachTeams", fields: [coachId], references: [id], onDelete: Cascade)
   club        Club?        @relation("TeamClub", fields: [clubId], references: [id])
   members     TeamMember[]
@@ -203,6 +207,7 @@ model Team {
   lessonAssignments LessonAssignment[]
   journeyTemplateAssignments JourneyTemplateAssignment[]
   events      TeamEvent[]
+  attendanceReminders AttendanceReminder[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -646,4 +651,28 @@ model Attendance {
   @@index([occurrenceKey])
   @@index([practiceSlotId, occurrenceStart])
   @@map("attendances")
+}
+
+enum ReminderKind {
+  MANUAL
+  AUTO
+}
+
+/// Reminder sent to the players who have not answered for a team session.
+model AttendanceReminder {
+  id             String       @id @default(cuid())
+  /// Same key as Attendance.occurrenceKey.
+  occurrenceKey  String
+  teamId         String
+  team           Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  /// Coach who pressed "Remind"; null for automatic reminders.
+  sentById       String?
+  sentBy         User?        @relation("ReminderSender", fields: [sentById], references: [id], onDelete: SetNull)
+  kind           ReminderKind
+  recipientCount Int
+  sentAt         DateTime     @default(now())
+
+  @@index([occurrenceKey, sentAt])
+  @@index([teamId, sentAt])
+  @@map("attendance_reminders")
 }

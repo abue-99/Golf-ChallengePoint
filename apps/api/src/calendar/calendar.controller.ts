@@ -214,6 +214,7 @@ export class CalendarController {
       location?: string;
       startTime: string;
       endTime: string;
+      force?: boolean;
     },
   ) {
     return this.calendarService.createTeamEvent(
@@ -234,6 +235,7 @@ export class CalendarController {
       location?: string | null;
       startTime?: string;
       endTime?: string;
+      force?: boolean;
     },
   ) {
     return this.calendarService.updateTeamEvent(
