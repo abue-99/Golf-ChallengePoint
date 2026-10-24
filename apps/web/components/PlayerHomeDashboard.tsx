@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import AttendanceButtons from "@/components/AttendanceButtons";
+import { canAnswer } from "@/lib/attendance";
 import { api } from "@/lib/api";
 import type { CalendarActivity } from "@/types/calendar";
 import {
@@ -348,6 +350,68 @@ function CurrentJourneyCard({ plan }: { plan: PlayerDevelopmentPlan | null }) {
   );
 }
 
+/**
+ * Next team training or team event of the coming two weeks with the
+ * "Going / Maybe / Can't make it" buttons right on the home screen.
+ */
+function TeamAttendanceCard({
+  activities,
+  nowIso,
+  timeZone,
+}: {
+  activities: CalendarActivity[];
+  nowIso: string;
+  timeZone: string;
+}) {
+  if (!nowIso) return null;
+  const now = new Date(nowIso).getTime();
+  const horizon = now + 14 * 24 * 60 * 60 * 1000;
+  const sessions = activities
+    .filter(
+      (activity) =>
+        canAnswer(activity) && new Date(activity.start).getTime() <= horizon,
+    )
+    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+  // Prefer the next session without an answer, otherwise just the next one.
+  const next = sessions.find((activity) => !activity.attendance) ?? sessions[0];
+  if (!next) return null;
+  const openCount = sessions.filter((activity) => !activity.attendance).length;
+
+  return (
+    <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-lg">
+          {next.type === "team-event" ? "📣" : "👥"}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+            {next.attendance ? "Next team session" : "Are you coming?"}
+          </p>
+          <p className="truncate font-semibold text-slate-900">{next.title}</p>
+          <p className="text-sm text-slate-500">
+            {formatDateInTimeZone(next.start, timeZone, {
+              weekday: "short",
+              day: "numeric",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            })}
+            {next.teamName ? ` · ${next.teamName}` : ""}
+            {next.location ? ` · ${next.location}` : ""}
+          </p>
+        </div>
+      </div>
+      <AttendanceButtons key={next.id} activity={next} compact />
+      {openCount > 1 ? (
+        <Link href="/calendar" className="mt-2 block text-xs font-medium text-emerald-700">
+          {openCount - 1} more session{openCount - 1 === 1 ? "" : "s"} waiting for your answer →
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
 function CalendarSummaryCard({
   activities,
   nowIso,
@@ -540,6 +604,15 @@ export default function PlayerHomeDashboard({
             nextLevelXp={gamification.nextLevelXp}
             currentStreak={gamification.currentStreak}
           />
+
+          {/* Team session answer – only when there is one to answer */}
+          {!loading ? (
+            <TeamAttendanceCard
+              activities={calendarActivities}
+              nowIso={calendarNowIso}
+              timeZone={resolvedTimeZone}
+            />
+          ) : null}
 
           {/* Next Up – directly below Player Development */}
           {loading ? (

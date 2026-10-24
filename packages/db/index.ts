@@ -14,5 +14,7 @@ export {
   AvailabilityBlockType,
   TournamentPriority,
   DevelopmentMilestoneStatus,
+  NoteVisibility,
+  AttendanceStatus,
 } from './generated/client/client';
 export { prisma } from './db';

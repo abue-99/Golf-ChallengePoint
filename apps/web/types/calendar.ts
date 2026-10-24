@@ -50,7 +50,13 @@ export type CalendarActivity = {
   location?: string | null;
   planName?: string | null;
   blockName?: string | null;
+  /** Team trainings and team events: id of this occurrence for attendance. */
+  occurrenceKey?: string;
+  /** The player's own answer for this occurrence, if any. */
+  attendance?: { status: AttendanceStatus; note: string | null } | null;
 };
+
+export type AttendanceStatus = "GOING" | "MAYBE" | "NOT_GOING";
 
 export type CalendarEventExtendedProps = CalendarActivity & {
   slotId?: string;

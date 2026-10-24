@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { CalendarDays, Check, ChevronRight, MessageSquare, Trophy, X } from "lucide-react";
+import { CalendarDays, Check, ChevronRight, HelpCircle, MessageSquare, Trophy, X } from "lucide-react";
 import TeamIcon from "@/components/TeamIcon";
 import { cn } from "@/lib/utils";
 import {
@@ -9,6 +10,8 @@ import {
   nameOf,
   relativeDays,
   teamColor,
+  type AgendaItem,
+  type AttendanceSummary,
   type RosterResponse,
 } from "@/lib/coach-roster";
 
@@ -37,6 +40,136 @@ function Card({
   );
 }
 
+type TeamLike = RosterResponse["teams"][number];
+type PlayerLike = RosterResponse["players"][number];
+
+function AgendaRow({
+  item,
+  label,
+  teamsById,
+  playersById,
+  onOpenPlayer,
+}: {
+  item: AgendaItem;
+  label: string;
+  teamsById: Map<string, TeamLike>;
+  playersById: Map<string, PlayerLike>;
+  onOpenPlayer: (playerId: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const team = item.teamId ? teamsById.get(item.teamId) : undefined;
+  const player = item.playerId ? playersById.get(item.playerId) : undefined;
+  const attendance = item.attendance && item.attendance.members > 0 ? item.attendance : null;
+
+  return (
+    <li className="text-sm">
+      <div className="flex items-center gap-2">
+        <span
+          className="h-8 w-1 shrink-0 rounded-full"
+          style={{ backgroundColor: team ? teamColor(team.icon) : "#cbd5e1" }}
+          aria-hidden="true"
+        />
+        <span className="w-11 shrink-0 tabular-nums text-slate-500">{label}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-medium text-slate-800">{item.title}</span>
+          <span className="flex items-center gap-1 truncate text-xs text-slate-500">
+            {team?.icon ? <TeamIcon icon={team.icon} size={10} /> : null}
+            {team ? team.shortName : player ? nameOf(player) : ""}
+            {item.kind === "event" ? " · Team event" : ""}
+            {item.location ? ` · ${item.location}` : ""}
+          </span>
+        </span>
+        {attendance ? (
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            aria-expanded={open}
+            aria-label={`Attendance: ${attendance.going} going, ${attendance.maybe} maybe, ${attendance.notGoing} not going, ${attendance.open} open`}
+            className="flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-1.5 text-xs tabular-nums hover:bg-slate-100 pointer-coarse:min-h-11 pointer-coarse:px-2"
+          >
+            <span className="inline-flex items-center gap-0.5 text-emerald-700">
+              <Check className="h-3 w-3" />
+              {attendance.going}
+            </span>
+            {attendance.maybe ? (
+              <span className="inline-flex items-center gap-0.5 text-amber-600">
+                <HelpCircle className="h-3 w-3" />
+                {attendance.maybe}
+              </span>
+            ) : null}
+            <span
+              className={cn(
+                "inline-flex items-center gap-0.5",
+                attendance.notGoing ? "text-rose-600" : "text-slate-400",
+              )}
+            >
+              <X className="h-3 w-3" />
+              {attendance.notGoing}
+            </span>
+            <span className="text-slate-400">/{attendance.members}</span>
+          </button>
+        ) : null}
+      </div>
+      {open && attendance ? (
+        <AttendanceDetails attendance={attendance} playersById={playersById} onOpenPlayer={onOpenPlayer} />
+      ) : null}
+    </li>
+  );
+}
+
+function AttendanceDetails({
+  attendance,
+  playersById,
+  onOpenPlayer,
+}: {
+  attendance: AttendanceSummary;
+  playersById: Map<string, PlayerLike>;
+  onOpenPlayer: (playerId: string) => void;
+}) {
+  const groups: { label: string; status: AttendanceSummary["responses"][number]["status"]; tone: string }[] = [
+    { label: "Can't make it", status: "NOT_GOING", tone: "text-rose-700" },
+    { label: "Maybe", status: "MAYBE", tone: "text-amber-700" },
+    { label: "Going", status: "GOING", tone: "text-emerald-700" },
+  ];
+  return (
+    <div className="ml-3 mt-1 space-y-1.5 rounded-lg bg-slate-50 p-2 text-xs">
+      {groups.map((group) => {
+        const people = attendance.responses.filter((response) => response.status === group.status);
+        if (people.length === 0) return null;
+        return (
+          <div key={group.status}>
+            <p className={cn("font-semibold", group.tone)}>
+              {group.label} ({people.length})
+            </p>
+            <ul className="mt-0.5 space-y-0.5">
+              {people.map((response) => {
+                const who = playersById.get(response.playerId);
+                return (
+                  <li key={response.playerId}>
+                    <button
+                      type="button"
+                      onClick={() => onOpenPlayer(response.playerId)}
+                      className="text-left text-slate-700 hover:underline pointer-coarse:py-1"
+                    >
+                      {who ? nameOf(who) : "Player"}
+                      {response.note ? <span className="text-slate-500"> – “{response.note}”</span> : null}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })}
+      {attendance.open > 0 ? (
+        <p className="text-slate-500">
+          {attendance.open} {attendance.open === 1 ? "player has" : "players have"} not answered yet.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 /** "Today" strip on the coach home: what is on today and what waits for the coach. */
 export default function CoachToday({
   data,
@@ -56,6 +189,10 @@ export default function CoachToday({
       minute: "2-digit",
       hour12: false,
     });
+  const day = (value: string) =>
+    formatDateTime(value, { timeZone: data.timeZone, weekday: "short" });
+  // Only a few, so the card keeps its height next to the other two.
+  const upcoming = (data.upcoming ?? []).slice(0, data.agenda.length > 1 ? 2 : 3);
 
   return (
     <div className="grid gap-3 md:grid-cols-3">
@@ -72,34 +209,40 @@ export default function CoachToday({
           <p className="text-sm text-slate-500">No training windows or team events today.</p>
         ) : (
           <ul className="space-y-1.5">
-            {data.agenda.slice(0, 4).map((item, index) => {
-              const team = item.teamId ? teamsById.get(item.teamId) : undefined;
-              const player = item.playerId ? playersById.get(item.playerId) : undefined;
-              return (
-                <li key={`${item.kind}-${item.start}-${index}`} className="flex items-center gap-2 text-sm">
-                  <span
-                    className="h-8 w-1 shrink-0 rounded-full"
-                    style={{ backgroundColor: team ? teamColor(team.icon) : "#cbd5e1" }}
-                    aria-hidden="true"
-                  />
-                  <span className="w-11 shrink-0 tabular-nums text-slate-500">{time(item.start)}</span>
-                  <span className="min-w-0">
-                    <span className="block truncate font-medium text-slate-800">{item.title}</span>
-                    <span className="flex items-center gap-1 truncate text-xs text-slate-500">
-                      {team?.icon ? <TeamIcon icon={team.icon} size={10} /> : null}
-                      {team ? team.shortName : player ? nameOf(player) : ""}
-                      {item.kind === "event" ? " · Team event" : ""}
-                      {item.location ? ` · ${item.location}` : ""}
-                    </span>
-                  </span>
-                </li>
-              );
-            })}
+            {data.agenda.slice(0, 4).map((item, index) => (
+              <AgendaRow
+                key={`${item.kind}-${item.start}-${index}`}
+                item={item}
+                label={time(item.start)}
+                teamsById={teamsById}
+                playersById={playersById}
+                onOpenPlayer={onOpenPlayer}
+              />
+            ))}
             {data.agenda.length > 4 ? (
               <li className="text-xs text-slate-500">+{data.agenda.length - 4} more</li>
             ) : null}
           </ul>
         )}
+        {upcoming.length > 0 ? (
+          <div className="mt-3 border-t border-slate-100 pt-2">
+            <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              Coming up
+            </p>
+            <ul className="space-y-1.5">
+              {upcoming.map((item, index) => (
+                <AgendaRow
+                  key={`up-${item.kind}-${item.start}-${index}`}
+                  item={item}
+                  label={day(item.start)}
+                  teamsById={teamsById}
+                  playersById={playersById}
+                  onOpenPlayer={onOpenPlayer}
+                />
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </Card>
 
       <Card

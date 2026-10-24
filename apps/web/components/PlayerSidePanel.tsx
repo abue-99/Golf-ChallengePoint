@@ -269,7 +269,7 @@ export function PlayerDetails({
             </Section>
           ) : null}
 
-          <Section title="Private notes">
+          <Section title="Coach notes">
             <CoachNotes playerId={player.id} timeZone={timeZone} onChanged={onChanged} />
           </Section>
 

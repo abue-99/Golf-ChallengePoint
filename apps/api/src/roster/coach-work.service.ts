@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { AssignmentStatus } from '@challengepoint/db';
+import { AssignmentStatus, NoteVisibility } from '@challengepoint/db';
 import { PrismaService } from '../prisma/prisma.service';
 import { feedbackWhere } from './roster.service';
 
@@ -39,7 +39,49 @@ function cleanBody(body: unknown) {
   return trimmed;
 }
 
-/** Feedback inbox and private notes for the coach home page. */
+function cleanVisibility(value: unknown): NoteVisibility | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (value === 'PRIVATE' || value === 'SHARED') return value as NoteVisibility;
+  throw new BadRequestException('Visibility must be PRIVATE or SHARED');
+}
+
+const NOTE_SELECT = {
+  id: true,
+  body: true,
+  visibility: true,
+  createdAt: true,
+  updatedAt: true,
+  coachId: true,
+  coach: { select: { id: true, firstName: true, lastName: true } },
+} as const;
+
+type NoteRow = {
+  id: string;
+  body: string;
+  visibility: NoteVisibility;
+  createdAt: Date;
+  updatedAt: Date;
+  coachId: string;
+  coach: { id: string; firstName: string | null; lastName: string | null };
+};
+
+function toNote(row: NoteRow, viewerId: string) {
+  return {
+    id: row.id,
+    body: row.body,
+    visibility: row.visibility,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    mine: row.coachId === viewerId,
+    author: {
+      id: row.coach.id,
+      firstName: row.coach.firstName,
+      lastName: row.coach.lastName,
+    },
+  };
+}
+
+/** Feedback inbox and coach notes (private or shared) for the coach home page. */
 @Injectable()
 export class CoachWorkService {
   constructor(private readonly prisma: PrismaService) {}
@@ -181,21 +223,40 @@ export class CoachWorkService {
 
   // ── Notes ────────────────────────────────────────────────────────────
 
+  /**
+   * Own notes plus notes other coaches of this player chose to share.
+   * Shared notes are visible to every coach who may see the player.
+   */
   async listNotes(coachId: string, playerId: string) {
     await this.assertCoachCanSeePlayer(coachId, playerId);
-    return this.prisma.coachPlayerNote.findMany({
-      where: { coachId, playerId },
+    const rows = await this.prisma.coachPlayerNote.findMany({
+      where: {
+        playerId,
+        OR: [{ coachId }, { visibility: NoteVisibility.SHARED }],
+      },
       orderBy: { createdAt: 'desc' },
-      select: { id: true, body: true, createdAt: true, updatedAt: true },
+      select: NOTE_SELECT,
     });
+    return rows.map((row) => toNote(row as NoteRow, coachId));
   }
 
-  async createNote(coachId: string, playerId: string, body: unknown) {
+  async createNote(
+    coachId: string,
+    playerId: string,
+    body: unknown,
+    visibility?: unknown,
+  ) {
     await this.assertCoachCanSeePlayer(coachId, playerId);
-    return this.prisma.coachPlayerNote.create({
-      data: { coachId, playerId, body: cleanBody(body) },
-      select: { id: true, body: true, createdAt: true, updatedAt: true },
+    const row = await this.prisma.coachPlayerNote.create({
+      data: {
+        coachId,
+        playerId,
+        body: cleanBody(body),
+        visibility: cleanVisibility(visibility) ?? NoteVisibility.PRIVATE,
+      },
+      select: NOTE_SELECT,
     });
+    return toNote(row as NoteRow, coachId);
   }
 
   private async ownNote(coachId: string, noteId: string) {
@@ -210,13 +271,24 @@ export class CoachWorkService {
     return note;
   }
 
-  async updateNote(coachId: string, noteId: string, body: unknown) {
+  /** Only the author edits; text and visibility can be changed separately. */
+  async updateNote(
+    coachId: string,
+    noteId: string,
+    body: unknown,
+    visibility?: unknown,
+  ) {
     await this.ownNote(coachId, noteId);
-    return this.prisma.coachPlayerNote.update({
+    const nextVisibility = cleanVisibility(visibility);
+    const row = await this.prisma.coachPlayerNote.update({
       where: { id: noteId },
-      data: { body: cleanBody(body) },
-      select: { id: true, body: true, createdAt: true, updatedAt: true },
+      data: {
+        ...(body !== undefined ? { body: cleanBody(body) } : {}),
+        ...(nextVisibility ? { visibility: nextVisibility } : {}),
+      },
+      select: NOTE_SELECT,
     });
+    return toNote(row as NoteRow, coachId);
   }
 
   async deleteNote(coachId: string, noteId: string) {

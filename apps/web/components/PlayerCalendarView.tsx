@@ -42,6 +42,8 @@ import type {
   CalendarActivity,
   CalendarEventExtendedProps,
 } from "@/types/calendar";
+import AttendanceButtons from "./AttendanceButtons";
+import { ATTENDANCE_LABEL, canAnswer } from "@/lib/attendance";
 import PracticeSlotDialog, {
   type PracticeSlotFormData,
 } from "./PracticeSlotDialog";
@@ -123,18 +125,55 @@ function formatAgendaDate(value: string, timeZone: string) {
   });
 }
 
+/** The viewer's own answer on a team session, or a nudge to answer. */
+function AttendanceBadge({
+  activity,
+  canRespond,
+}: {
+  activity: CalendarActivity;
+  canRespond: boolean;
+}) {
+  if (activity.attendance) {
+    const tone =
+      activity.attendance.status === "GOING"
+        ? "bg-emerald-50 text-emerald-700"
+        : activity.attendance.status === "MAYBE"
+          ? "bg-amber-50 text-amber-700"
+          : "bg-rose-50 text-rose-700";
+    return (
+      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}>
+        {ATTENDANCE_LABEL[activity.attendance.status]}
+      </span>
+    );
+  }
+  if (!canRespond || !canAnswer(activity)) return null;
+  return (
+    <span className="rounded-full border border-dashed border-emerald-300 px-2 py-0.5 text-xs font-medium text-emerald-700">
+      Answer needed
+    </span>
+  );
+}
+
 function ActivityDialog({
   activity,
   open,
   onClose,
   onToggleTask,
   timeZone,
+  canRespond = false,
+  onAttendanceSaved,
 }: {
   activity: CalendarActivity | null;
   open: boolean;
   onClose: () => void;
   onToggleTask?: (activity: CalendarActivity) => Promise<void>;
   timeZone: string;
+  /** The viewer is the player and may answer for team sessions. */
+  canRespond?: boolean;
+  onAttendanceSaved?: (
+    activity: CalendarActivity,
+    answer: NonNullable<CalendarActivity["attendance"]>,
+  ) => void;
 }) {
   if (!activity) return null;
 
@@ -235,6 +274,19 @@ function ActivityDialog({
                   Open mission
                 </Link>
               ) : null}
+            </div>
+          ) : null}
+
+          {canRespond && canAnswer(activity) ? (
+            <div className="space-y-2 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                Are you coming?
+              </p>
+              <AttendanceButtons
+                key={activity.id}
+                activity={activity}
+                onSaved={(answer) => onAttendanceSaved?.(activity, answer)}
+              />
             </div>
           ) : null}
 
@@ -765,8 +817,9 @@ export default function PlayerCalendarView({
                         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                           {formatAgendaDate(activity.start, resolvedTimeZone)}
                         </p>
-                        <p className="mt-1 font-semibold text-slate-800">
+                        <p className="mt-1 flex flex-wrap items-center gap-2 font-semibold text-slate-800">
                           {activity.title}
+                          <AttendanceBadge activity={activity} canRespond={role === "PLAYER"} />
                         </p>
                         <p className="mt-1 text-sm text-slate-600">
                           {formatRange(
@@ -998,6 +1051,21 @@ export default function PlayerCalendarView({
         onClose={() => setSelectedActivity(null)}
         onToggleTask={editable ? handleTaskToggle : undefined}
         timeZone={resolvedTimeZone}
+        canRespond={role === "PLAYER"}
+        onAttendanceSaved={(activity, answer) => {
+          // Keep the calendar in sync without reloading everything.
+          setCalendarData((prev) => ({
+            ...prev,
+            activities: prev.activities.map((item) =>
+              item.occurrenceKey && item.occurrenceKey === activity.occurrenceKey
+                ? { ...item, attendance: answer }
+                : item,
+            ),
+          }));
+          setSelectedActivity((prev) =>
+            prev && prev.id === activity.id ? { ...prev, attendance: answer } : prev,
+          );
+        }}
       />
     </div>
   );

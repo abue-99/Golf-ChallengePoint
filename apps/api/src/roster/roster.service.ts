@@ -8,6 +8,12 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { loadPlayerLearningSummaries } from '../assignments/assignment-lifecycle';
 import {
+  eventOccurrenceKey,
+  loadAttendanceSummaries,
+  slotOccurrenceKey,
+  type AttendanceSummary,
+} from '../calendar/attendance.service';
+import {
   buildActivityDays,
   buildDayKeys,
   dayKey,
@@ -294,7 +300,11 @@ export class RosterService {
       playerIds.length
         ? this.prisma.coachPlayerNote.groupBy({
             by: ['playerId'],
-            where: { coachId, playerId: { in: playerIds } },
+            // Own notes plus notes other coaches shared about the player.
+            where: {
+              playerId: { in: playerIds },
+              OR: [{ coachId }, { visibility: 'SHARED' }],
+            },
             _count: { _all: true },
           })
         : [],
@@ -532,10 +542,17 @@ export class RosterService {
       };
     });
 
-    // ── Today: training windows and team events of today, tournaments this week
+    // ── Today: training windows and team events of today, tournaments this week.
+    // "upcoming" lists the team sessions of the next 7 days with attendance,
+    // so the coach sees early who is coming.
     const isToday = (date: Date) => dayKey(date, timeZone) === today;
+    const upcomingLimit = shiftDayKey(today, 7);
+    const isUpcoming = (date: Date) => {
+      const key = dayKey(date, timeZone);
+      return key > today && key <= upcomingLimit;
+    };
     const coachTeamIds = new Set(teamIds);
-    const agenda: {
+    type AgendaItem = {
       kind: 'window' | 'event';
       title: string;
       start: Date;
@@ -543,36 +560,64 @@ export class RosterService {
       location?: string | null;
       teamId?: string | null;
       playerId?: string | null;
-    }[] = [];
+      occurrenceKey?: string;
+      attendance?: AttendanceSummary | null;
+    };
+    const agenda: AgendaItem[] = [];
+    const upcoming: AgendaItem[] = [];
     for (const slot of slots) {
       const ownTeamSlot = slot.teamId && coachTeamIds.has(slot.teamId);
       const linkedPlayerSlot =
         slot.playerId && playersById.get(slot.playerId)?.linked;
       if (!ownTeamSlot && !linkedPlayerSlot) continue;
       for (const occurrence of expandOccurrences(slot, rangeStart, rangeEnd)) {
-        if (!isToday(occurrence.start)) continue;
-        agenda.push({
+        const onToday = isToday(occurrence.start);
+        if (!onToday && !(ownTeamSlot && isUpcoming(occurrence.start)))
+          continue;
+        (onToday ? agenda : upcoming).push({
           kind: 'window',
           title: slot.title,
           start: occurrence.start,
           end: occurrence.end,
           teamId: ownTeamSlot ? slot.teamId : null,
           playerId: ownTeamSlot ? null : slot.playerId,
+          ...(ownTeamSlot
+            ? { occurrenceKey: slotOccurrenceKey(slot.id, occurrence.start) }
+            : {}),
         });
       }
     }
     for (const event of teamEvents) {
-      if (!isToday(event.startTime)) continue;
-      agenda.push({
+      const onToday = isToday(event.startTime);
+      if (!onToday && !isUpcoming(event.startTime)) continue;
+      (onToday ? agenda : upcoming).push({
         kind: 'event',
         title: event.title,
         start: event.startTime,
         end: event.endTime,
         location: event.location,
         teamId: event.teamId,
+        occurrenceKey: eventOccurrenceKey(event.id),
       });
     }
     agenda.sort((a, b) => a.start.getTime() - b.start.getTime());
+    upcoming.sort((a, b) => a.start.getTime() - b.start.getTime());
+    upcoming.splice(5);
+
+    const summaries = await loadAttendanceSummaries(
+      this.prisma,
+      [...agenda, ...upcoming]
+        .filter((item) => item.occurrenceKey && item.teamId)
+        .map((item) => ({
+          key: item.occurrenceKey as string,
+          teamId: item.teamId as string,
+        })),
+    );
+    for (const item of [...agenda, ...upcoming]) {
+      if (item.occurrenceKey) {
+        item.attendance = summaries.get(item.occurrenceKey) ?? null;
+      }
+    }
 
     const weekLimit = shiftDayKey(today, 7);
     const tournamentsThisWeek = tournaments
@@ -591,6 +636,7 @@ export class RosterService {
       timeZone,
       today,
       agenda,
+      upcoming,
       tournamentsThisWeek,
       feedbackTotal: feedbackCounts.reduce(
         (sum, entry) => sum + entry._count._all,

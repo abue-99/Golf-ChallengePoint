@@ -156,6 +156,8 @@ model User {
   teamEvents           TeamEvent[]             @relation("CoachTeamEvents")
   coachPlayerNotes     CoachPlayerNote[]       @relation("CoachNotes")
   notesAboutPlayer     CoachPlayerNote[]       @relation("NotesAboutPlayer")
+  calendarFeedToken    CalendarFeedToken?
+  attendances          Attendance[]            @relation("PlayerAttendances")
 
   @@map("users")
 }
@@ -290,6 +292,7 @@ model PracticeSlot {
   recurrence        Recurrence   @default(NONE)
   recurrenceEndDate DateTime?
   tasks             CalendarTask[]
+  attendances       Attendance[]
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
@@ -541,6 +544,7 @@ model TeamEvent {
   startTime    DateTime
   endTime      DateTime
   assignments  LessonAssignment[]
+  attendances  Attendance[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -587,9 +591,59 @@ model CoachPlayerNote {
   playerId  String
   player    User     @relation("NotesAboutPlayer", fields: [playerId], references: [id], onDelete: Cascade)
   body      String
+  /// PRIVATE: only the author. SHARED: every coach who works with the player.
+  visibility NoteVisibility @default(PRIVATE)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([coachId, playerId, createdAt])
+  @@index([playerId, visibility, createdAt])
   @@map("coach_player_notes")
+}
+
+enum NoteVisibility {
+  PRIVATE
+  SHARED
+}
+
+/// Secret token behind a user's calendar subscription URL (ICS feed).
+model CalendarFeedToken {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token          String    @unique
+  lastAccessedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("calendar_feed_tokens")
+}
+
+enum AttendanceStatus {
+  GOING
+  MAYBE
+  NOT_GOING
+}
+
+/// A player's answer for one occurrence of a team training window or team event.
+model Attendance {
+  id              String           @id @default(cuid())
+  playerId        String
+  player          User             @relation("PlayerAttendances", fields: [playerId], references: [id], onDelete: Cascade)
+  practiceSlotId  String?
+  practiceSlot    PracticeSlot?    @relation(fields: [practiceSlotId], references: [id], onDelete: Cascade)
+  teamEventId     String?
+  teamEvent       TeamEvent?       @relation(fields: [teamEventId], references: [id], onDelete: Cascade)
+  /// "slot:<slotId>:<occurrence start ISO>" or "event:<eventId>"
+  occurrenceKey   String
+  occurrenceStart DateTime
+  status          AttendanceStatus
+  note            String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([playerId, occurrenceKey])
+  @@index([occurrenceKey])
+  @@index([practiceSlotId, occurrenceStart])
+  @@map("attendances")
 }

@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { eventOccurrenceKey, slotOccurrenceKey } from './attendance.service';
 import {
   AvailabilityBlockType,
   CalendarTaskStatus,
@@ -1260,20 +1261,39 @@ export class CalendarService {
 
     const activities: Array<Record<string, unknown>> = [];
 
+    // The player's answers for team trainings and team events.
+    const attendances = await this.prisma.attendance.findMany({
+      where: { playerId },
+      select: { occurrenceKey: true, status: true, note: true },
+    });
+    const attendanceByKey = new Map(
+      attendances.map((entry) => [
+        entry.occurrenceKey,
+        { status: entry.status, note: entry.note },
+      ]),
+    );
+
     for (const slot of expandedSlots) {
+      const isTeamSlot = slot.ownerType === OwnerType.TEAM;
       for (const occurrence of slot.occurrences) {
+        const occurrenceKey = isTeamSlot
+          ? slotOccurrenceKey(slot.id, occurrence.start)
+          : undefined;
         activities.push({
           id: `slot-${slot.id}-${occurrence.start.toISOString()}`,
           sourceId: slot.id,
-          type:
-            slot.ownerType === OwnerType.TEAM
-              ? 'team-practice'
-              : 'practice-slot',
+          type: isTeamSlot ? 'team-practice' : 'practice-slot',
           title: slot.title,
           start: occurrence.start.toISOString(),
           end: occurrence.end.toISOString(),
           ownerType: slot.ownerType,
           teamName: slot.team?.shortName ?? null,
+          ...(occurrenceKey
+            ? {
+                occurrenceKey,
+                attendance: attendanceByKey.get(occurrenceKey) ?? null,
+              }
+            : {}),
         });
       }
 
@@ -1330,6 +1350,8 @@ export class CalendarService {
         description: event.description,
         location: event.location,
         teamName: event.team.shortName,
+        occurrenceKey: eventOccurrenceKey(event.id),
+        attendance: attendanceByKey.get(eventOccurrenceKey(event.id)) ?? null,
       });
     }
 

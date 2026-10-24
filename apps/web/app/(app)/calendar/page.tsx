@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { verifyJwt } from "@/lib/jwt";
 import PlayerCalendarView from "@/components/PlayerCalendarView";
+import CalendarSubscribeButton from "@/components/CalendarSubscribeButton";
 
 type CurrentUser = {
   id: string;
@@ -37,8 +38,9 @@ export default async function CalendarPage() {
 
   return (
     <div className="space-y-4">
-      <header className="space-y-2">
+      <header className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">Calendar</h1>
+        <CalendarSubscribeButton role={user.role} />
       </header>
 
       {user.role === "ADMIN" ? (

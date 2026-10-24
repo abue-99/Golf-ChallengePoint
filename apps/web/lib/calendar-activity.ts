@@ -68,7 +68,25 @@ function resolveFocusColors(focusArea?: string | null) {
   );
 }
 
+/** Short marker for the player's own answer on team sessions. */
+function attendanceSuffix(activity: CalendarActivity) {
+  switch (activity.attendance?.status) {
+    case "GOING":
+      return " · ✓";
+    case "MAYBE":
+      return " · ?";
+    case "NOT_GOING":
+      return " · ✗";
+    default:
+      return "";
+  }
+}
+
 export function getActivityLabel(activity: CalendarActivity) {
+  return `${getBaseLabel(activity)}${attendanceSuffix(activity)}`;
+}
+
+function getBaseLabel(activity: CalendarActivity) {
   switch (activity.type) {
     case "practice-slot":
       return `🏌️ ${activity.title}`;

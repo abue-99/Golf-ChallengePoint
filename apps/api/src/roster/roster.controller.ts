@@ -95,20 +95,30 @@ export class RosterController {
   createNote(
     @CurrentUser() user: AuthenticatedUser,
     @Param('playerId') playerId: string,
-    @Body() body: { body?: unknown },
+    @Body() body: { body?: unknown; visibility?: unknown },
   ) {
     requireCoach(user);
-    return this.coachWork.createNote(user.id, playerId, body?.body);
+    return this.coachWork.createNote(
+      user.id,
+      playerId,
+      body?.body,
+      body?.visibility,
+    );
   }
 
   @Patch('notes/:noteId')
   updateNote(
     @CurrentUser() user: AuthenticatedUser,
     @Param('noteId') noteId: string,
-    @Body() body: { body?: unknown },
+    @Body() body: { body?: unknown; visibility?: unknown },
   ) {
     requireCoach(user);
-    return this.coachWork.updateNote(user.id, noteId, body?.body);
+    return this.coachWork.updateNote(
+      user.id,
+      noteId,
+      body?.body,
+      body?.visibility,
+    );
   }
 
   @Delete('notes/:noteId')

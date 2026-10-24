@@ -30,6 +30,14 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.coachPlayerNote;
   }
 
+  get calendarFeedToken() {
+    return this.client.calendarFeedToken;
+  }
+
+  get attendance() {
+    return this.client.attendance;
+  }
+
   get taskTemplate() {
     return this.client.taskTemplate;
   }

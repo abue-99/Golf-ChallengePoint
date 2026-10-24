@@ -39,7 +39,7 @@ export type RosterPlayer = {
   } | null;
   /** Completed lessons from this coach that the coach has not seen yet. */
   feedbackCount: number;
-  /** Private notes this coach keeps about the player. */
+  /** Notes about the player this coach can read (own and shared). */
   noteCount: number;
   /** Journey templates from this coach the player has not finished yet. */
   openJourneyTemplateIds: string[];
@@ -53,6 +53,22 @@ export type AgendaItem = {
   location?: string | null;
   teamId?: string | null;
   playerId?: string | null;
+  /** Team sessions only. */
+  occurrenceKey?: string;
+  attendance?: AttendanceSummary | null;
+};
+
+export type AttendanceSummary = {
+  going: number;
+  maybe: number;
+  notGoing: number;
+  open: number;
+  members: number;
+  responses: {
+    playerId: string;
+    status: "GOING" | "MAYBE" | "NOT_GOING";
+    note: string | null;
+  }[];
 };
 
 export type WeekTournament = {
@@ -79,11 +95,18 @@ export type FeedbackItem = {
   plan: { id: string; name: string } | null;
 };
 
+export type NoteVisibility = "PRIVATE" | "SHARED";
+
 export type CoachNote = {
   id: string;
   body: string;
   createdAt: string;
   updatedAt: string;
+  /** PRIVATE: only the author. SHARED: every coach of this player. */
+  visibility: NoteVisibility;
+  /** Written by the viewer (only the author edits or deletes). */
+  mine: boolean;
+  author: { id: string; firstName: string | null; lastName: string | null };
 };
 
 export type RosterTeam = {
@@ -109,6 +132,8 @@ export type RosterResponse = {
   timeZone: string;
   today: string;
   agenda: AgendaItem[];
+  /** Team sessions of the next 7 days (after today), with attendance. */
+  upcoming?: AgendaItem[];
   tournamentsThisWeek: WeekTournament[];
   feedbackTotal: number;
   firstDay: string;
