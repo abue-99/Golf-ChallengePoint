@@ -62,8 +62,9 @@ export type CoachCalendarActivity = {
   status?: string;
   playerName?: string | null;
   priority?: string;
-  /** Coach (or player) who created the entry. */
+  /** Coach who created the entry. */
   createdById?: string | null;
+  createdByName?: string | null;
   /** Team sessions: the last reminder sent to players without an answer. */
   lastReminder?: { sentAt: string; kind: string } | null;
 };
@@ -197,6 +198,11 @@ export class CoachCalendarService {
               startTime: { lte: to },
             },
             orderBy: { startTime: 'asc' },
+            include: {
+              coach: {
+                select: { firstName: true, lastName: true, email: true },
+              },
+            },
           })
         : Promise.resolve([]),
       this.prisma.calendarTask.findMany({
@@ -212,6 +218,7 @@ export class CoachCalendarService {
               ],
         },
         include: {
+          coach: { select: { firstName: true, lastName: true, email: true } },
           lesson: { select: { id: true, focusArea: true } },
           practiceSlot: {
             select: {
@@ -334,6 +341,7 @@ export class CoachCalendarService {
         attendance: attendanceFor(key, event.teamId),
         lastReminder: reminderFor(key),
         createdById: event.coachId,
+        createdByName: fullName(event.coach),
       });
     }
     for (const task of tasks) {
@@ -361,6 +369,7 @@ export class CoachCalendarService {
         durationMinutes: task.durationMinutes,
         status: task.status,
         createdById: task.coachId,
+        createdByName: fullName(task.coach),
       });
     }
     for (const tournament of tournaments) {

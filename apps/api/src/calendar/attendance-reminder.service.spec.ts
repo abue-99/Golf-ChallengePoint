@@ -163,6 +163,8 @@ describe('AttendanceReminderService.remind', () => {
                 id: 't1',
                 coachId: 'coach1',
                 shortName: 'U16',
+                clubId: null,
+                staff: [],
               }),
         ),
       },

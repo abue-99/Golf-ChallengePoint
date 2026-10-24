@@ -15,6 +15,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
 import { RosterService } from './roster.service';
 import { CoachWorkService } from './coach-work.service';
+import { TeamStaffService } from '../teams/team-staff.service';
 
 function requireCoach(user: AuthenticatedUser) {
   const role = user.role as string;
@@ -29,7 +30,24 @@ export class RosterController {
   constructor(
     private readonly rosterService: RosterService,
     private readonly coachWork: CoachWorkService,
+    private readonly staff: TeamStaffService,
   ) {}
+
+  /** PATCH /coach/roster/players/:playerId/role – { role: CoachRole | null } */
+  @Patch('players/:playerId/role')
+  setPlayerRole(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('playerId') playerId: string,
+    @Body() body: { role?: unknown },
+  ) {
+    requireCoach(user);
+    return this.staff.setPlayerRole(
+      user.id,
+      user.role as string,
+      playerId,
+      body?.role ?? null,
+    );
+  }
 
   /** GET /coach/roster?tz=Europe/Berlin – the coach home page in one call. */
   @Get()

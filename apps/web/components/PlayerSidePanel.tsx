@@ -25,6 +25,7 @@ import { PlayerCapabilitiesRadarCard } from "@/components/player-capabilities-wi
 import ActivityStrip, { ActivityLegend } from "@/components/ActivityStrip";
 import TeamIcon from "@/components/TeamIcon";
 import CoachNotes from "@/components/CoachNotes";
+import { COACH_ROLE_LABEL, roleLabel, type CoachRole } from "@/lib/coach-roles";
 import { FeedbackList } from "@/components/FeedbackList";
 import QuickAssign from "@/components/QuickAssign";
 import {
@@ -322,10 +323,22 @@ export function PlayerDetails({
                   <dt className="text-slate-500">Coaches</dt>
                   <dd className="text-right text-slate-700">
                     {player.coaches
-                      .map((coach) => nameOf(coach))
+                      .map((coach) =>
+                        coach.role
+                          ? `${nameOf(coach)} (${roleLabel(coach.role)})`
+                          : nameOf(coach),
+                      )
                       .join(", ")}
                   </dd>
                 </div>
+              ) : null}
+              {player.linked ? (
+                <MyRoleRow
+                  key={`${player.id}:${player.myRole ?? ""}`}
+                  playerId={player.id}
+                  role={player.myRole ?? null}
+                  onChanged={onChanged}
+                />
               ) : null}
             </dl>
           </Section>
@@ -371,4 +384,60 @@ function InlineTitle({ className, children }: { className?: string; children: Re
 
 function InlineDescription({ children }: { children: React.ReactNode }) {
   return <p className="text-sm text-slate-500">{children}</p>;
+}
+
+/** The coach's own role for a linked player (head, assistant, fitness, mental). */
+function MyRoleRow({
+  playerId,
+  role,
+  onChanged,
+}: {
+  playerId: string;
+  role: string | null;
+  onChanged?: () => void;
+}) {
+  const [value, setValue] = useState(role ?? "");
+  const [saving, setSaving] = useState(false);
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <dt className="text-slate-500">My role</dt>
+      <dd>
+        <select
+          aria-label="My role for this player"
+          className="h-8 rounded-md border border-slate-200 bg-white px-2 text-sm disabled:opacity-60 pointer-coarse:h-11"
+          value={value}
+          disabled={saving}
+          onChange={async (event) => {
+            const next = event.target.value;
+            const previous = value;
+            setValue(next);
+            setSaving(true);
+            try {
+              const res = await fetch(
+                `/api/coach/roster/players/${encodeURIComponent(playerId)}/role`,
+                {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ role: next || null }),
+                },
+              );
+              if (!res.ok) throw new Error(String(res.status));
+              onChanged?.();
+            } catch {
+              setValue(previous);
+            } finally {
+              setSaving(false);
+            }
+          }}
+        >
+          <option value="">Not set</option>
+          {(Object.keys(COACH_ROLE_LABEL) as CoachRole[]).map((key) => (
+            <option key={key} value={key}>
+              {COACH_ROLE_LABEL[key]}
+            </option>
+          ))}
+        </select>
+      </dd>
+    </div>
+  );
 }

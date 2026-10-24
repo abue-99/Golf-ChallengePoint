@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Put,
   Delete,
   Body,
   Param,
@@ -16,11 +17,15 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
 import { TeamsService } from './teams.service';
+import { TeamStaffService } from './team-staff.service';
 
 @Controller('teams')
 @UseGuards(JwtAuthGuard)
 export class TeamsController {
-  constructor(private readonly teamsService: TeamsService) {}
+  constructor(
+    private readonly teamsService: TeamsService,
+    private readonly staff: TeamStaffService,
+  ) {}
 
   private requireCoachOrAdmin(user: AuthenticatedUser) {
     const role = user.role as string;
@@ -118,5 +123,77 @@ export class TeamsController {
   ) {
     this.requireCoachOrAdmin(user);
     return this.teamsService.removeMember(user.id, id, userId);
+  }
+
+  // ── Coaching staff ─────────────────────────────────────────────────────
+
+  @Get(':id/staff')
+  listStaff(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    this.requireCoachOrAdmin(user);
+    return this.staff.list(user.id, user.role as string, id);
+  }
+
+  @Get(':id/staff/candidates')
+  staffCandidates(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    this.requireCoachOrAdmin(user);
+    return this.staff.candidates(user.id, user.role as string, id);
+  }
+
+  @Post(':id/staff')
+  @HttpCode(HttpStatus.OK)
+  addStaff(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() body: { coachId?: unknown; role?: unknown },
+  ) {
+    this.requireCoachOrAdmin(user);
+    return this.staff.add(user.id, user.role as string, id, body ?? {});
+  }
+
+  @Post(':id/staff/head')
+  @HttpCode(HttpStatus.OK)
+  transferHead(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() body: { coachId?: unknown },
+  ) {
+    this.requireCoachOrAdmin(user);
+    return this.staff.transferHead(
+      user.id,
+      user.role as string,
+      id,
+      body?.coachId,
+    );
+  }
+
+  @Put(':id/staff/:coachId')
+  changeStaffRole(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Param('coachId') coachId: string,
+    @Body() body: { role?: unknown },
+  ) {
+    this.requireCoachOrAdmin(user);
+    return this.staff.changeRole(
+      user.id,
+      user.role as string,
+      id,
+      coachId,
+      body?.role,
+    );
+  }
+
+  @Delete(':id/staff/:coachId')
+  @HttpCode(HttpStatus.OK)
+  removeStaff(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Param('coachId') coachId: string,
+  ) {
+    this.requireCoachOrAdmin(user);
+    return this.staff.remove(user.id, user.role as string, id, coachId);
   }
 }

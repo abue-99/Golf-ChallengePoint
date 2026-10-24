@@ -544,14 +544,18 @@ export default function TeamsPage() {
             <CalendarDays size={16} />
             Training window{windowCount > 0 ? ` (${windowCount})` : ""}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEditingTeam(team)}>
-            <SquarePen size={16} />
-            Edit team
-          </DropdownMenuItem>
-          <DropdownMenuItem variant="destructive" onClick={() => void handleDelete(team.id)}>
-            <Trash2 size={16} />
-            Delete team
-          </DropdownMenuItem>
+          {team.isHeadCoach !== false ? (
+            <>
+              <DropdownMenuItem onClick={() => setEditingTeam(team)}>
+                <SquarePen size={16} />
+                Edit team
+              </DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onClick={() => void handleDelete(team.id)}>
+                <Trash2 size={16} />
+                Delete team
+              </DropdownMenuItem>
+            </>
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -573,6 +577,7 @@ export default function TeamsPage() {
         onTrainingWindows={() => setTrainingWindowsTeam(team)}
         onDelete={() => void handleDelete(team.id)}
         onOpenPlayer={(playerId) => openDetail({ kind: "player", id: playerId })}
+        onStaffChanged={() => void loadAll()}
       />
     );
   }

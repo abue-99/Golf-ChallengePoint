@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { AssignmentStatus, NoteVisibility } from '@challengepoint/db';
 import { PrismaService } from '../prisma/prisma.service';
+import { coachTeamsWhere } from '../teams/team-access';
 import { feedbackWhere } from './roster.service';
 
 const MAX_NOTE_LENGTH = 5000;
@@ -94,7 +95,7 @@ export class CoachWorkService {
         select: { id: true },
       }),
       this.prisma.teamMember.findFirst({
-        where: { userId: playerId, team: { coachId } },
+        where: { userId: playerId, team: coachTeamsWhere(coachId) },
         select: { id: true },
       }),
     ]);

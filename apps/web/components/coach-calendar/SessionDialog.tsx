@@ -105,6 +105,13 @@ export default function SessionDialog({
                   {activity.location}
                 </p>
               ) : null}
+              {activity.createdByName &&
+              (activity.type === "team-event" ||
+                activity.type === "coach-assignment") ? (
+                <p className="text-xs text-slate-500">
+                  Planned by {activity.createdByName}
+                </p>
+              ) : null}
               {activity.description ? (
                 <p className="whitespace-pre-wrap">{activity.description}</p>
               ) : null}

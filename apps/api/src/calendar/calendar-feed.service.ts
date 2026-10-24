@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { OwnerType } from '@challengepoint/db';
 import { PrismaService } from '../prisma/prisma.service';
+import { coachTeamsWhere } from '../teams/team-access';
 import { expandOccurrences } from '../roster/roster.helpers';
 import { CalendarService } from './calendar.service';
 import { buildIcs, type IcsEvent } from './ics';
@@ -208,7 +209,7 @@ export class CalendarFeedService {
     const { from, to } = this.range();
     const [teams, links] = await Promise.all([
       this.prisma.team.findMany({
-        where: { coachId },
+        where: coachTeamsWhere(coachId),
         select: { id: true, shortName: true },
       }),
       this.prisma.coachPlayerLink.findMany({

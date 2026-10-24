@@ -16,6 +16,10 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  assertCoachCanSeePlayer,
+  assertTeamAccess,
+} from '../teams/team-access';
+import {
   syncJourneyAssignmentLifecycleForPlanIds,
   toStoredAssignmentStatus,
 } from '../assignments/assignment-lifecycle';
@@ -48,22 +52,14 @@ export class JourneysService {
     }
   }
 
+  /** Linked player or member of one of the coach's teams. */
   private async assertCoachPlayerLink(coachId: string, playerId: string) {
-    const link = await this.prisma.coachPlayerLink.findFirst({
-      where: { coachId, playerId },
-      select: { id: true },
-    });
-    if (!link) throw new ForbiddenException('Not linked to this player');
+    await assertCoachCanSeePlayer(this.prisma, coachId, playerId);
   }
 
+  /** Head coach or coaching staff of the team. */
   private async assertCoachOwnsTeam(coachId: string, teamId: string) {
-    const team = await this.prisma.team.findUnique({
-      where: { id: teamId },
-      select: { id: true, coachId: true },
-    });
-    if (!team) throw new NotFoundException('Team not found');
-    if (team.coachId !== coachId) throw new ForbiddenException('Not your team');
-    return team;
+    return assertTeamAccess(this.prisma, coachId, 'COACH', teamId);
   }
 
   private parseDifficulty(value?: string | null): JourneyDifficulty | null {

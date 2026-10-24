@@ -42,6 +42,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.attendanceReminder;
   }
 
+  get teamCoach() {
+    return this.client.teamCoach;
+  }
+
   get taskTemplate() {
     return this.client.taskTemplate;
   }

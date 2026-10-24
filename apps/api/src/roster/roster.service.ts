@@ -6,6 +6,7 @@ import {
   OwnerType,
 } from '@challengepoint/db';
 import { PrismaService } from '../prisma/prisma.service';
+import { coachTeamsWhere } from '../teams/team-access';
 import { loadPlayerLearningSummaries } from '../assignments/assignment-lifecycle';
 import {
   eventOccurrenceKey,
@@ -99,6 +100,7 @@ export class RosterService {
       },
       playerCoachLinks: {
         select: {
+          role: true,
           coach: {
             select: { id: true, firstName: true, lastName: true, email: true },
           },
@@ -112,10 +114,19 @@ export class RosterService {
         select: { player: { select: playerSelect } },
       }),
       this.prisma.team.findMany({
-        where: { coachId },
+        where: coachTeamsWhere(coachId),
         orderBy: { createdAt: 'asc' },
         select: {
           id: true,
+          coachId: true,
+          coach: { select: { id: true, firstName: true, lastName: true } },
+          staff: {
+            orderBy: { createdAt: 'asc' },
+            select: {
+              role: true,
+              coach: { select: { id: true, firstName: true, lastName: true } },
+            },
+          },
           icon: true,
           shortName: true,
           description: true,
@@ -309,7 +320,10 @@ export class RosterService {
           })
         : [],
       this.prisma.teamEvent.findMany({
-        where: { coachId, startTime: { gte: rangeStart, lte: rangeEnd } },
+        where: {
+          teamId: { in: teamIds },
+          startTime: { gte: rangeStart, lte: rangeEnd },
+        },
         select: {
           id: true,
           title: true,
@@ -468,7 +482,13 @@ export class RosterService {
       const tournament = nextTournamentByPlayer.get(player.id);
       return {
         ...data,
-        coaches: playerCoachLinks.map((link) => link.coach).filter(Boolean),
+        coaches: playerCoachLinks
+          .filter((link) => link.coach)
+          .map((link) => ({ ...link.coach, role: link.role })),
+        /** This coach's role for the player (linked players only). */
+        myRole:
+          playerCoachLinks.find((link) => link.coach?.id === coachId)?.role ??
+          null,
         linked,
         teamIds: [...playerTeamIds],
         learningProgress: learning[player.id],
@@ -515,8 +535,23 @@ export class RosterService {
       const memberIds = team.members
         .filter((member) => member.user?.role === 'PLAYER')
         .map((member) => member.userId);
+      const isHeadCoach = team.coachId === coachId;
       return {
         id: team.id,
+        coachId: team.coachId,
+        isHeadCoach,
+        myRole: isHeadCoach
+          ? 'HEAD_COACH'
+          : (team.staff.find((member) => member.coach.id === coachId)?.role ??
+            null),
+        staff: [{ role: 'HEAD_COACH', coach: team.coach }, ...team.staff].map(
+          (member) => ({
+            coachId: member.coach.id,
+            firstName: member.coach.firstName,
+            lastName: member.coach.lastName,
+            role: member.role,
+          }),
+        ),
         icon: team.icon,
         shortName: team.shortName,
         description: team.description,

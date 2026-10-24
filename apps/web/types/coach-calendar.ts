@@ -44,6 +44,7 @@ export type CoachCalendarActivity = {
   playerName?: string | null;
   priority?: string;
   createdById?: string | null;
+  createdByName?: string | null;
   lastReminder?: { sentAt: string; kind: "MANUAL" | "AUTO" | string } | null;
 };
 

@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import CompactCoachPlayerCard from "@/components/CompactCoachPlayerCard";
 import TeamIcon from "@/components/TeamIcon";
 import { cn } from "@/lib/utils";
+import { COACH_ROLE_SHORT, roleLabel } from "@/lib/coach-roles";
 import {
   countLabel,
   initials,
@@ -104,6 +105,14 @@ export function TeamCard({
       title={[team.shortName, team.description?.trim()].filter(Boolean).join(" — ")}
     >
       {selecting ? <SelectMark selected={selected} /> : null}
+      {!selecting && team.isHeadCoach === false && team.myRole ? (
+        <span
+          className="absolute right-2 top-2 rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800"
+          title={`You are ${roleLabel(team.myRole).toLowerCase()} of this team`}
+        >
+          {COACH_ROLE_SHORT[team.myRole]}
+        </span>
+      ) : null}
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100">
           {team.icon ? <TeamIcon icon={team.icon} size={18} /> : <span className="text-lg">⛳</span>}

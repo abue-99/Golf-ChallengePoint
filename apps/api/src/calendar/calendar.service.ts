@@ -6,6 +6,11 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  assertCoachCanSeePlayer,
+  assertTeamAccess,
+  coachTeamsWhere,
+} from '../teams/team-access';
 import { eventOccurrenceKey, slotOccurrenceKey } from './attendance.service';
 import {
   AvailabilityBlockType,
@@ -167,13 +172,9 @@ export class CalendarService {
     }
   }
 
+  /** Linked player or member of one of the coach's teams. */
   private async assertCoachPlayerLink(coachId: string, playerId: string) {
-    const link = await this.prisma.coachPlayerLink.findFirst({
-      where: { coachId, playerId },
-    });
-    if (!link) {
-      throw new ForbiddenException('Not linked to this player');
-    }
+    await assertCoachCanSeePlayer(this.prisma, coachId, playerId);
   }
 
   private requireCoachOrAdmin(role: string) {
@@ -184,11 +185,9 @@ export class CalendarService {
     }
   }
 
+  /** Head coach or coaching staff of the team. */
   private async assertCoachOwnsTeam(coachId: string, teamId: string) {
-    const team = await this.prisma.team.findUnique({ where: { id: teamId } });
-    if (!team) throw new NotFoundException('Team not found');
-    if (team.coachId !== coachId) throw new ForbiddenException('Not your team');
-    return team;
+    return assertTeamAccess(this.prisma, coachId, 'COACH', teamId);
   }
 
   private async assertCanAccessPlayer(
@@ -685,7 +684,11 @@ export class CalendarService {
       await this.assertCoachOwnsTeam(userId, teamId);
     }
     return this.prisma.teamEvent.findMany({
-      where: teamId ? { teamId } : role === 'ADMIN' ? {} : { coachId: userId },
+      where: teamId
+        ? { teamId }
+        : role === 'ADMIN'
+          ? {}
+          : { team: coachTeamsWhere(userId) },
       orderBy: { startTime: 'asc' },
     });
   }

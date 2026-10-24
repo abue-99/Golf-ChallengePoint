@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { loadPlayerLearningSummaries } from '../assignments/assignment-lifecycle';
+import { coachTeamsWhere } from './team-access';
 
 @Injectable()
 export class TeamsService {
@@ -12,8 +13,16 @@ export class TeamsService {
 
   async getCoachTeams(coachId: string) {
     const teams = await this.prisma.team.findMany({
-      where: { coachId },
+      where: coachTeamsWhere(coachId),
       include: {
+        coach: { select: { id: true, firstName: true, lastName: true } },
+        staff: {
+          orderBy: { createdAt: 'asc' },
+          select: {
+            role: true,
+            coach: { select: { id: true, firstName: true, lastName: true } },
+          },
+        },
         members: {
           include: {
             user: {
@@ -41,8 +50,19 @@ export class TeamsService {
       memberIds,
     );
 
-    return teams.map((team) => ({
+    return teams.map(({ coach, staff, ...team }) => ({
       ...team,
+      isHeadCoach: team.coachId === coachId,
+      myRole:
+        team.coachId === coachId
+          ? 'HEAD_COACH'
+          : (staff.find((member) => member.coach.id === coachId)?.role ?? null),
+      staff: [{ role: 'HEAD_COACH', coach }, ...staff].map((member) => ({
+        coachId: member.coach.id,
+        firstName: member.coach.firstName,
+        lastName: member.coach.lastName,
+        role: member.role,
+      })),
       pendingLessons: team.members.reduce(
         (sum, member) =>
           sum +
@@ -54,7 +74,7 @@ export class TeamsService {
 
   async getCoachCategories(coachId: string) {
     const teams = await this.prisma.team.findMany({
-      where: { coachId },
+      where: coachTeamsWhere(coachId),
       select: { category: true },
       distinct: ['category'],
     });
@@ -265,7 +285,15 @@ export class TeamsService {
       },
     });
     if (!team) throw new NotFoundException('Team not found');
-    if (team.coachId !== coachId) throw new ForbiddenException();
+    if (
+      team.coachId !== coachId &&
+      !(await this.prisma.teamCoach.findUnique({
+        where: { teamId_coachId: { teamId, coachId } },
+        select: { id: true },
+      }))
+    ) {
+      throw new ForbiddenException();
+    }
     return team;
   }
 

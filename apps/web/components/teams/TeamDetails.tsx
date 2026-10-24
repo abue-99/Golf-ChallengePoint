@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   CalendarDays,
   ClipboardPlus,
@@ -17,6 +19,7 @@ import {
   type RosterTeam,
 } from "@/lib/coach-roster";
 import { initials, playerDisplayName, type Team } from "./shared";
+import { StaffDialog, StaffList } from "./TeamStaff";
 
 function ActionButton({
   icon: Icon,
@@ -67,6 +70,7 @@ export default function TeamDetails({
   onTrainingWindows,
   onDelete,
   onOpenPlayer,
+  onStaffChanged,
 }: {
   team: Team;
   rosterTeam?: RosterTeam;
@@ -80,7 +84,12 @@ export default function TeamDetails({
   onTrainingWindows: () => void;
   onDelete: () => void;
   onOpenPlayer: (playerId: string) => void;
+  /** Reload teams after the staff changed (or the viewer left). */
+  onStaffChanged?: () => void;
 }) {
+  const [staffOpen, setStaffOpen] = useState(false);
+  // Older API responses have no staff info: treat the viewer as head coach.
+  const isHeadCoach = team.isHeadCoach !== false;
   const next = rosterTeam?.nextTrainingWindow;
   const plans = rosterTeam?.plans ?? [];
 
@@ -101,9 +110,28 @@ export default function TeamDetails({
         <ActionButton icon={ClipboardPlus} label="Assign" tone="primary" onClick={onAssign} />
         <ActionButton icon={RouteIcon} label="Journeys" onClick={onJourneys} badge={planCount} />
         <ActionButton icon={CalendarDays} label="Windows" onClick={onTrainingWindows} badge={windowCount} />
-        <ActionButton icon={SquarePen} label="Edit team" onClick={onEdit} />
-        <ActionButton icon={Trash2} label="Delete" tone="danger" onClick={onDelete} />
+        {isHeadCoach ? (
+          <>
+            <ActionButton icon={SquarePen} label="Edit team" onClick={onEdit} />
+            <ActionButton icon={Trash2} label="Delete" tone="danger" onClick={onDelete} />
+          </>
+        ) : null}
       </div>
+
+      {team.staff && team.staff.length > 0 ? (
+        <StaffList
+          staff={team.staff}
+          isHeadCoach={isHeadCoach}
+          onManage={() => setStaffOpen(true)}
+        />
+      ) : null}
+      <StaffDialog
+        teamId={team.id}
+        teamName={team.shortName}
+        open={staffOpen}
+        onClose={() => setStaffOpen(false)}
+        onChanged={() => onStaffChanged?.()}
+      />
 
       {next || plans.length > 0 ? (
         <section className="space-y-2 rounded-xl border border-slate-200 p-3 text-sm">
@@ -141,7 +169,11 @@ export default function TeamDetails({
           Members ({team.members.length})
         </h3>
         {team.members.length === 0 ? (
-          <p className="text-sm text-slate-500">No members yet. Use “Edit team” to add players.</p>
+          <p className="text-sm text-slate-500">
+            {isHeadCoach
+              ? "No members yet. Use “Edit team” to add players."
+              : "No members yet. The head coach adds players."}
+          </p>
         ) : (
           <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
             {team.members.map((member) => {

@@ -16,7 +16,11 @@ export type RosterPlayer = {
     firstName?: string | null;
     lastName?: string | null;
     email?: string;
+    /** The coach's role for this player (null = not specified). */
+    role?: string | null;
   }[];
+  /** This coach's own role for the player (linked players). */
+  myRole?: string | null;
   /** True when the player is linked to the coach ("My Players"). */
   linked: boolean;
   teamIds: string[];
@@ -126,6 +130,15 @@ export type RosterTeam = {
   }[];
   trainingWindowCount: number;
   nextTrainingWindow: { title: string; start: string; end: string } | null;
+  coachId?: string;
+  isHeadCoach?: boolean;
+  myRole?: string | null;
+  staff?: {
+    coachId: string;
+    firstName: string | null;
+    lastName: string | null;
+    role: string;
+  }[];
 };
 
 export type RosterResponse = {

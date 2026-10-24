@@ -17,5 +17,6 @@ export {
   NoteVisibility,
   AttendanceStatus,
   ReminderKind,
+  CoachRole,
 } from './generated/client/client';
 export { prisma } from './db';

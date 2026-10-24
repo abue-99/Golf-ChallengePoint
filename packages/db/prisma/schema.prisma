@@ -159,6 +159,7 @@ model User {
   calendarFeedToken    CalendarFeedToken?
   attendances          Attendance[]            @relation("PlayerAttendances")
   attendanceReminders  AttendanceReminder[]    @relation("ReminderSender")
+  teamStaff            TeamCoach[]             @relation("TeamStaff")
 
   @@map("users")
 }
@@ -208,6 +209,8 @@ model Team {
   journeyTemplateAssignments JourneyTemplateAssignment[]
   events      TeamEvent[]
   attendanceReminders AttendanceReminder[]
+  /// Further coaches of the team (the head coach is `coachId`).
+  staff       TeamCoach[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -259,6 +262,8 @@ model CoachPlayerLink {
   coach     User     @relation("CoachToPlayer", fields: [coachId], references: [id], onDelete: Cascade)
   playerId  String
   player    User     @relation("PlayerToCoach", fields: [playerId], references: [id], onDelete: Cascade)
+  /// The coach's role for this player (null = not specified).
+  role      CoachRole?
   createdAt DateTime @default(now())
 
   @@unique([coachId, playerId])
@@ -675,4 +680,26 @@ model AttendanceReminder {
   @@index([occurrenceKey, sentAt])
   @@index([teamId, sentAt])
   @@map("attendance_reminders")
+}
+
+enum CoachRole {
+  HEAD_COACH
+  ASSISTANT
+  FITNESS
+  MENTAL
+}
+
+/// A further coach of a team (assistant, fitness, mental …).
+model TeamCoach {
+  id        String    @id @default(cuid())
+  teamId    String
+  team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  coachId   String
+  coach     User      @relation("TeamStaff", fields: [coachId], references: [id], onDelete: Cascade)
+  role      CoachRole @default(ASSISTANT)
+  createdAt DateTime  @default(now())
+
+  @@unique([teamId, coachId])
+  @@index([coachId])
+  @@map("team_coaches")
 }

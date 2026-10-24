@@ -1,3 +1,5 @@
+import type { CoachRole } from "@/lib/coach-roles";
+
 /** Shared types, constants and helpers for the coach Teams page. */
 export const TEAM_ICONS = [
   "⛳",
@@ -93,6 +95,17 @@ export type Team = {
   clubId: string | null;
   members: TeamMember[];
   pendingLessons?: number;
+  /** The viewer is the head coach (may edit, delete and manage staff). */
+  isHeadCoach?: boolean;
+  /** The viewer's role in this team. */
+  myRole?: CoachRole | null;
+  /** Head coach first, then the further coaches. */
+  staff?: {
+    coachId: string;
+    firstName: string | null;
+    lastName: string | null;
+    role: CoachRole;
+  }[];
 };
 
 export type AssignmentTarget =
