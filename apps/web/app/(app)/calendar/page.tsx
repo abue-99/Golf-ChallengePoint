@@ -4,6 +4,7 @@ import Link from "next/link";
 import { verifyJwt } from "@/lib/jwt";
 import PlayerCalendarView from "@/components/PlayerCalendarView";
 import CalendarSubscribeButton from "@/components/CalendarSubscribeButton";
+import CoachCalendarView from "@/components/coach-calendar/CoachCalendarView";
 
 type CurrentUser = {
   id: string;
@@ -35,6 +36,19 @@ export default async function CalendarPage() {
   if (!user) redirect("/api/auth/logout");
 
   const editable = user.role === "PLAYER" || user.role === "COACH";
+
+  // Coaches get their own view: teams, sessions and the players' answers.
+  if (user.role === "COACH") {
+    return (
+      <div className="space-y-4">
+        <header className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight">Calendar</h1>
+          <CalendarSubscribeButton role={user.role} />
+        </header>
+        <CoachCalendarView />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
