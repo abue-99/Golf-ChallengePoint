@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { DndLessonProvider } from "@/components/DndLessonProvider";
+import { createdIdsFromResult, hasCreatedIds, undoAssignments } from "@/lib/assign-undo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -672,10 +673,28 @@ export default function TeamsPage() {
 
   return (
     <DndLessonProvider
-      onAssigned={(target, _result, sourceType) => {
+      onAssigned={(target, result, sourceType) => {
         if (target.kind === "queue") return;
         const who = target.kind === "player" ? target.playerName : target.teamName;
-        toast.success(`${sourceType === "journey" ? "Journey" : "Lesson"} assigned to ${who}`);
+        // Same undo as the bulk assign bar, so a mis-drop is one tap away from fixed.
+        const created = createdIdsFromResult(sourceType ?? "lesson", result);
+        toast.success(`${sourceType === "journey" ? "Journey" : "Lesson"} assigned to ${who}`, {
+          duration: 10000,
+          action: hasCreatedIds(created)
+            ? {
+                label: "Undo",
+                onClick: () => {
+                  undoAssignments(created)
+                    .then((removed) => {
+                      const count = removed.lessonsRemoved + removed.journeysRemoved;
+                      toast.success(count ? "Assignment undone." : "Nothing to undo any more.");
+                      void loadAll();
+                    })
+                    .catch(() => toast.error("Undo failed."));
+                },
+              }
+            : undefined,
+        });
         void loadAll();
       }}
     >

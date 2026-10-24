@@ -11,10 +11,6 @@ import React, {
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -24,6 +20,8 @@ import type { TrainingLesson } from "@/lib/lesson-types";
 import { trackCoachTelemetry } from "@/lib/telemetry";
 import type { JourneyTemplate } from "@/types/journey-template";
 import { toast } from "sonner";
+import { BookOpen, Route as RouteIcon } from "lucide-react";
+import { dragStartFeedback, useDragSensors } from "@/lib/dnd";
 
 type AssignmentTarget =
   | { kind: "player"; playerId: string; playerName: string }
@@ -105,14 +103,8 @@ export function DndLessonProvider({
   const [lastError, setLastError] = useState<string | null>(null);
   const lastHoverTargetRef = useRef<string | null>(null);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 500, tolerance: 5 },
-    }),
-  );
+  // Shared drag behaviour: mouse after 6 px, touch after a 250 ms hold.
+  const sensors = useDragSensors();
 
   const assignItem = useCallback(
     async (source: DndSource, target: AssignmentTarget) => {
@@ -231,6 +223,7 @@ export function DndLessonProvider({
       const data = event.active.data.current as
         | { lesson?: TrainingLesson; journeyTemplate?: JourneyTemplate }
         | undefined;
+      dragStartFeedback();
       if (data?.lesson) {
         onDragStart(data.lesson);
       } else if (data?.journeyTemplate) {
@@ -315,14 +308,28 @@ export function DndLessonProvider({
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
+        onDragCancel={() => {
+          setActiveSource(null);
+          lastHoverTargetRef.current = null;
+        }}
       >
         {children}
-        <DragOverlay>
+        <DragOverlay dropAnimation={{ duration: 180, easing: "ease-out" }}>
           {activeSource ? (
-            <div className="w-56 truncate rounded-lg border border-primary bg-card px-3 py-2 text-sm font-medium shadow-2xl ring-1 ring-primary/20">
-              {activeSource.type === "lesson"
-                ? activeSource.lesson.name
-                : activeSource.journey.name}
+            <div className="flex w-64 rotate-1 scale-105 items-center gap-2 rounded-xl border border-[var(--golf-primary)] bg-white px-3 py-2.5 shadow-2xl ring-4 ring-[var(--golf-primary)]/15">
+              {activeSource.type === "lesson" ? (
+                <BookOpen className="h-4 w-4 shrink-0 text-[var(--golf-primary)]" />
+              ) : (
+                <RouteIcon className="h-4 w-4 shrink-0 text-[var(--golf-primary)]" />
+              )}
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-medium text-slate-800">
+                  {activeSource.type === "lesson"
+                    ? activeSource.lesson.name
+                    : activeSource.journey.name}
+                </span>
+                <span className="block text-xs text-slate-500">Drop on a team or player</span>
+              </span>
             </div>
           ) : null}
         </DragOverlay>

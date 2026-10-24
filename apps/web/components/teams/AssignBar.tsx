@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { libraryItemName, rememberRecent, type LibraryItem } from "./AssignLibrary";
+import { undoAssignments, type CreatedIds } from "@/lib/assign-undo";
 
 export type SelectionSummary = {
   teamIds: string[];
@@ -21,21 +22,9 @@ export type SelectionSummary = {
 
 type Priority = "LOW" | "MEDIUM" | "HIGH";
 
-type CreatedIds = { lessonAssignmentIds: string[]; planIds: string[] };
-
 function plural(count: number, word: string) {
   if (word === "person") return `${count} ${count === 1 ? "person" : "people"}`;
   return `${count} ${word}${count === 1 ? "" : "s"}`;
-}
-
-async function undo(ids: CreatedIds) {
-  const res = await fetch("/api/coach/roster/undo", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(ids),
-  });
-  if (!res.ok) throw new Error(String(res.status));
-  return (await res.json()) as { lessonsRemoved: number; journeysRemoved: number };
 }
 
 /**
@@ -159,7 +148,7 @@ export default function AssignBar({
       action: {
         label: "Undo",
         onClick: () => {
-          undo(created)
+          undoAssignments(created)
             .then((result) => {
               const removed = result.lessonsRemoved + result.journeysRemoved;
               toast.success(removed ? "Assignment undone." : "Nothing to undo any more.");

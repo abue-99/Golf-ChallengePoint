@@ -73,7 +73,7 @@ export function TeamCard({
   onCardClick: () => void;
   onMemberClick: (playerId: string) => void;
 }) {
-  const { isOver, setNodeRef } = useDroppable({
+  const { active, isOver, setNodeRef } = useDroppable({
     id: `team:${team.id}`,
     data: { teamName: team.shortName },
   });
@@ -97,6 +97,8 @@ export function TeamCard({
         highlighted && !selecting && "border-slate-400 ring-2 ring-slate-300",
         selected && "border-[var(--golf-primary)] bg-green-50/60 ring-2 ring-[var(--golf-primary)]",
         isOver && "border-emerald-400 bg-emerald-50 shadow-md ring-2 ring-emerald-400/60",
+        // While something is being dragged, mark every card that accepts it.
+        active && !isOver && "outline-2 outline-offset-2 outline-dashed outline-emerald-300",
       )}
       onClick={onCardClick}
       title={[team.shortName, team.description?.trim()].filter(Boolean).join(" — ")}
@@ -231,7 +233,7 @@ export function PlayerCard({
   onCardClick: () => void;
   onRemove: () => void;
 }) {
-  const { isOver, setNodeRef } = useDroppable({
+  const { active, isOver, setNodeRef } = useDroppable({
     id: `player:${player.id}`,
     data: { playerName: playerDisplayName(player) },
   });
@@ -287,6 +289,7 @@ export function PlayerCard({
           highlighted && !selecting && "border-slate-400 ring-2 ring-slate-300",
           selected && "border-[var(--golf-primary)] bg-green-50/60 ring-2 ring-[var(--golf-primary)]",
           isOver && "border-emerald-400 bg-emerald-50 shadow-md ring-2 ring-emerald-400/60",
+          active && !isOver && "outline-2 outline-offset-2 outline-dashed outline-emerald-300",
         )}
         contentClassName="gap-2 p-3"
         nameClassName="min-h-[2.2rem] text-[13px]"

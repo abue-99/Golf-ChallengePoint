@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
 import { BookOpen, Check, Clock, GripVertical, Route as RouteIcon, Search } from "lucide-react";
 import { api } from "@/lib/api";
 import { FOCUS_AREAS, FOCUS_AREA_EMOJI, type TrainingLesson } from "@/lib/lesson-types";
 import type { JourneyTemplate } from "@/types/journey-template";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { DRAG_SOURCE_CLASS } from "@/lib/dnd";
 
 export type LibraryItem =
   | { type: "lesson"; lesson: TrainingLesson }
@@ -74,7 +74,7 @@ function LibraryRow({
   idPrefix?: string;
 }) {
   const key = libraryItemKey(item);
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useDraggable({
     id: `${idPrefix}${key}`,
     data: item.type === "lesson" ? { lesson: item.lesson } : { journeyTemplate: item.journey },
   });
@@ -92,22 +92,28 @@ function LibraryRow({
         ];
 
   return (
+    // The whole row is the drag source: drag with the mouse, or press and
+    // hold on iPad. The floating copy comes from the DragOverlay in
+    // DndLessonProvider, so the row itself stays in place as a placeholder.
     <div
-      ref={setNodeRef}
-      style={{ transform: CSS.Translate.toString(transform) }}
+      ref={(node) => {
+        setNodeRef(node);
+        // Keyboard drags start only on the row itself, so Enter on the inner
+        // select button keeps selecting instead of picking the row up.
+        setActivatorNodeRef(node);
+      }}
+      {...attributes}
+      {...listeners}
+      aria-roledescription="draggable"
+      aria-label={`${libraryItemName(item)}. Drag onto a team or player.`}
       className={cn(
-        "flex min-h-12 items-center gap-2 rounded-lg border bg-white px-2 py-1.5 transition-colors",
+        "flex min-h-12 cursor-grab items-center gap-2 rounded-lg border bg-white px-2 py-1.5 transition-colors active:cursor-grabbing",
+        DRAG_SOURCE_CLASS,
         selected ? "border-[var(--golf-primary)] bg-green-50 ring-1 ring-[var(--golf-primary)]" : "border-slate-200 hover:border-slate-300",
-        isDragging && "z-50 opacity-75 shadow-xl ring-2 ring-[var(--golf-primary)]",
+        isDragging && "border-dashed opacity-40",
       )}
     >
-      <span
-        {...attributes}
-        {...listeners}
-        className="hidden shrink-0 cursor-grab touch-none p-1 text-slate-300 hover:text-slate-500 active:cursor-grabbing pointer-fine:block"
-        aria-label={`Drag ${libraryItemName(item)}`}
-        title="Drag onto a team or player"
-      >
+      <span className="shrink-0 p-1 text-slate-300" aria-hidden="true">
         <GripVertical className="h-4 w-4" />
       </span>
       <button
@@ -340,6 +346,7 @@ export default function AssignLibrary({
       <p className="text-xs text-slate-500">
         Tap an entry, then tap teams and players to assign it to all of them at once.
         <span className="hidden pointer-fine:inline"> You can also drag it onto a card.</span>
+        <span className="hidden pointer-coarse:inline"> Or press and hold an entry, then drag it onto a card.</span>
       </p>
     </div>
   );
