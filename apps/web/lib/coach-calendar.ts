@@ -88,7 +88,8 @@ export type ReminderResult = {
   open: number;
   sent: number;
   failed: number;
-  lastReminder: { sentAt: string; kind: string };
+  /** null when no e-mail could be delivered (nothing recorded). */
+  lastReminder: { sentAt: string; kind: string } | null;
 };
 
 export function remindOpenPlayers(occurrenceKey: string) {

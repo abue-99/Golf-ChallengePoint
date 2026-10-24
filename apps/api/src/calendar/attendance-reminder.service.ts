@@ -348,6 +348,7 @@ export class AttendanceReminderService
                   email: true,
                   firstName: true,
                   timezone: true,
+                  role: true,
                 },
               },
             },
@@ -361,11 +362,13 @@ export class AttendanceReminderService
     ]);
     if (!team) throw new NotFoundException('Team not found');
     const answered = new Set(answers.map((answer) => answer.playerId));
+    // Only players answer; coaches listed as members are not asked.
     const open = team.members
       .map((member) => member.user)
-      .filter((user) => !answered.has(user.id));
+      .filter((user) => user.role === 'PLAYER' && !answered.has(user.id));
 
-    const url = `${appUrl()}/home`;
+    // Player home shows "Are you coming?" with the answer buttons.
+    const url = `${appUrl()}/dashboard`;
     const results = await Promise.all(
       open
         .filter((user) => Boolean(user.email))
@@ -388,7 +391,21 @@ export class AttendanceReminderService
     );
     const sent = results.filter(Boolean).length;
 
-    // Recorded even if nobody was open, so the button shows it was used.
+    // Nothing delivered although players were open (e.g. the mail provider
+    // is down): do not record it, so the cooldown does not block a retry and
+    // the automatic reminder runs again on the next pass.
+    if (sent === 0 && open.length > 0) {
+      this.logger.warn(
+        `Reminder for ${occurrence.key}: no e-mail could be delivered`,
+      );
+      return {
+        occurrenceKey: occurrence.key,
+        open: open.length,
+        sent,
+        failed: open.length,
+        lastReminder: null,
+      };
+    }
     const record = await this.prisma.attendanceReminder.create({
       data: {
         occurrenceKey: occurrence.key,

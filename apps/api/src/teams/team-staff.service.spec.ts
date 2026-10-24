@@ -20,7 +20,7 @@ function makePrisma(
     email: `${id}@x.de`,
     profileImage: null,
   });
-  return {
+  const prisma = {
     team: {
       findUnique: jest.fn().mockImplementation(({ select }) => {
         if (select?.staff?.where) {
@@ -60,6 +60,7 @@ function makePrisma(
           ),
         ),
       create: jest.fn().mockResolvedValue({}),
+      upsert: jest.fn().mockResolvedValue({}),
       delete: jest.fn().mockResolvedValue({}),
       deleteMany: jest.fn().mockImplementation(({ where }) =>
         Promise.resolve({
@@ -72,7 +73,12 @@ function makePrisma(
       findMany: jest.fn().mockResolvedValue([coach('newcoach')]),
     },
     userClub: { findMany: jest.fn().mockResolvedValue([]) },
+    $transaction: jest.fn(),
   };
+  prisma.$transaction.mockImplementation((fn: (tx: unknown) => unknown) =>
+    Promise.resolve(fn(prisma)),
+  );
+  return prisma;
 }
 
 describe('coachTeamsWhere', () => {
@@ -164,8 +170,10 @@ describe('TeamStaffService', () => {
       where: { id: 't1' },
       data: { coachId: 'assist' },
     });
-    expect(prisma.teamCoach.create).toHaveBeenCalledWith({
-      data: { teamId: 't1', coachId: 'head', role: 'ASSISTANT' },
-    });
+    expect(prisma.teamCoach.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: { teamId: 't1', coachId: 'head', role: 'ASSISTANT' },
+      }),
+    );
   });
 });

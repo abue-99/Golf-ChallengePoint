@@ -188,11 +188,14 @@ export class TeamStaffService {
       );
     }
     const previousHead = access.coachId;
-    // Sequential: PrismaService exposes no typed batch transaction.
-    await this.prisma.teamCoach.delete({ where: { id: member.id } });
-    await this.prisma.team.update({ where: { id: teamId }, data: { coachId } });
-    await this.prisma.teamCoach.create({
-      data: { teamId, coachId: previousHead, role: 'ASSISTANT' },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.teamCoach.delete({ where: { id: member.id } });
+      await tx.team.update({ where: { id: teamId }, data: { coachId } });
+      await tx.teamCoach.upsert({
+        where: { teamId_coachId: { teamId, coachId: previousHead } },
+        create: { teamId, coachId: previousHead, role: 'ASSISTANT' },
+        update: { role: 'ASSISTANT' },
+      });
     });
     return this.list(userId, role, teamId);
   }

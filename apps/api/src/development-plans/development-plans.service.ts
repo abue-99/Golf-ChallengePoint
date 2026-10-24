@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
-  assertCoachCanSeePlayer,
+  assertCoachLinkedToPlayer,
   assertTeamAccess,
 } from '../teams/team-access';
 import {
@@ -33,9 +33,9 @@ export class DevelopmentPlansService {
     }
   }
 
-  /** Linked player or member of one of the coach's teams. */
+  /** Writes on a player's data need a real coach–player link. */
   private async assertCoachPlayerLink(coachId: string, playerId: string) {
-    await assertCoachCanSeePlayer(this.prisma, coachId, playerId);
+    await assertCoachLinkedToPlayer(this.prisma, coachId, playerId);
   }
 
   /** Head coach or coaching staff of the team. */

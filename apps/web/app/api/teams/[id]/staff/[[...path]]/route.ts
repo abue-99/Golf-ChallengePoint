@@ -15,6 +15,9 @@ type Context = { params: Promise<{ id: string; path?: string[] }> };
 async function proxy(req: NextRequest, context: Context) {
   try {
     const { id, path = [] } = await context.params;
+    if ([id, ...path].some((segment) => segment === "." || segment === "..")) {
+      return Response.json({ message: "Not found" }, { status: 404 });
+    }
     const rest = path.map((segment) => encodeURIComponent(segment)).join("/");
     const hasBody = req.method === "POST" || req.method === "PUT";
     return await proxyJsonWithAuthRetry({

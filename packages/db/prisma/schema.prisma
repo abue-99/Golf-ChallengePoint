@@ -160,6 +160,7 @@ model User {
   attendances          Attendance[]            @relation("PlayerAttendances")
   attendanceReminders  AttendanceReminder[]    @relation("ReminderSender")
   teamStaff            TeamCoach[]             @relation("TeamStaff")
+  createdSlots         PracticeSlot[]          @relation("SlotCreator")
 
   @@map("users")
 }
@@ -301,6 +302,9 @@ model PracticeSlot {
   endTime           DateTime
   recurrence        Recurrence   @default(NONE)
   recurrenceEndDate DateTime?
+  /// Coach (or player) who created the window; team staff may change their own.
+  createdById       String?
+  createdBy         User?        @relation("SlotCreator", fields: [createdById], references: [id], onDelete: SetNull)
   tasks             CalendarTask[]
   attendances       Attendance[]
   createdAt         DateTime     @default(now())

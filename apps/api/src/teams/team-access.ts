@@ -122,3 +122,16 @@ export async function assertCoachCanSeePlayer(
     throw new ForbiddenException(message);
   }
 }
+
+/** Writes on a player's own data (blocks, plans …) need a real link. */
+export async function assertCoachLinkedToPlayer(
+  prisma: PrismaService,
+  coachId: string,
+  playerId: string,
+) {
+  const link = await prisma.coachPlayerLink.findFirst({
+    where: { coachId, playerId },
+    select: { id: true },
+  });
+  if (!link) throw new ForbiddenException('Not linked to this player');
+}

@@ -175,14 +175,20 @@ export function isMovable(
   activity: CoachCalendarActivity,
   viewerId: string | undefined,
   now: number,
+  headTeamIds: Set<string>,
 ) {
   if (new Date(activity.end).getTime() < now) return false;
+  // Head coaches change everything of their team, further coaches only
+  // what they planned themselves (the API checks the same).
+  const mayChange =
+    Boolean(activity.teamId && headTeamIds.has(activity.teamId)) ||
+    (Boolean(viewerId) && activity.createdById === viewerId);
   switch (activity.type) {
     case "team-event":
-      return true;
+      return mayChange;
     case "team-practice":
       // Recurring windows are edited as a series on the Teams page.
-      return activity.recurrence === "NONE";
+      return activity.recurrence === "NONE" && mayChange;
     case "coach-assignment":
       return Boolean(viewerId) && activity.createdById === viewerId;
     default:
@@ -492,10 +498,19 @@ export default function CoachCalendarView() {
   }, [view]);
 
   const colors = useMemo(() => teamColors(teams), [teams]);
+  const headTeamIds = useMemo(
+    () =>
+      new Set(teams.filter((team) => team.isHeadCoach).map((team) => team.id)),
+    [teams],
+  );
 
   const events = useMemo<EventInput[]>(() => {
     const own = (data?.activities ?? []).map((activity) =>
-      toEventInput(activity, colors, isMovable(activity, data?.viewerId, now)),
+      toEventInput(
+        activity,
+        colors,
+        isMovable(activity, data?.viewerId, now, headTeamIds),
+      ),
     );
     const overlay = (overlayPlayerId ? overlayActivities : []).map<EventInput>(
       (activity) =>
@@ -521,7 +536,7 @@ export default function CoachCalendarView() {
             },
     );
     return [...own, ...overlay];
-  }, [colors, data, now, overlayActivities, overlayPlayerId]);
+  }, [colors, data, headTeamIds, now, overlayActivities, overlayPlayerId]);
 
   const handleDatesSet = useCallback((arg: DatesSetArg) => {
     setRange((current) =>
@@ -875,7 +890,14 @@ export default function CoachCalendarView() {
     (activity.type === "coach-assignment" &&
       Boolean(data?.viewerId) &&
       activity.createdById === data?.viewerId) ||
-    (activity.type === "team-practice" && activity.recurrence === "NONE");
+    (activity.type === "team-practice" &&
+      activity.recurrence === "NONE" &&
+      isMovable(activity, data?.viewerId, 0, headTeamIds));
+
+  /** Head coach of the team, or the coach who created the event. */
+  const canEditEvent = (activity: CoachCalendarActivity) =>
+    Boolean(activity.teamId && headTeamIds.has(activity.teamId)) ||
+    (Boolean(data?.viewerId) && activity.createdById === data?.viewerId);
 
   /** The API allows one reminder per session and hour. */
   const justReminded = (activity: CoachCalendarActivity) =>
@@ -897,9 +919,10 @@ export default function CoachCalendarView() {
       } else {
         toast.warning("The reminder could not be delivered by e-mail.");
       }
+      const lastReminder = result.lastReminder;
       const update = (item: CoachCalendarActivity) =>
-        item.occurrenceKey === activity.occurrenceKey
-          ? { ...item, lastReminder: result.lastReminder }
+        lastReminder && item.occurrenceKey === activity.occurrenceKey
+          ? { ...item, lastReminder }
           : item;
       setSelected((current) => (current ? update(current) : current));
       setData((current) =>
@@ -1516,7 +1539,7 @@ export default function CoachCalendarView() {
         }
         actions={
           selected &&
-          (selected.type === "team-event" ||
+          ((selected.type === "team-event" && canEditEvent(selected)) ||
             canRemind(selected) ||
             canRemove(selected)) ? (
             <>
@@ -1531,7 +1554,7 @@ export default function CoachCalendarView() {
                     : "Delete training"}
                 </Button>
               ) : null}
-              {selected.type === "team-event" ? (
+              {selected.type === "team-event" && canEditEvent(selected) ? (
                 <Button
                   variant="outline"
                   onClick={() => openEditEvent(selected)}

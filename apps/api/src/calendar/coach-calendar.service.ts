@@ -318,6 +318,7 @@ export class CoachCalendarService {
         teamIcon: team?.icon ?? null,
         recurrence: slot.recurrence,
         occurrenceKey: key,
+        createdById: slot.createdById,
         attendance: attendanceFor(key, slot.teamId as string),
         lastReminder: reminderFor(key),
       });

@@ -139,6 +139,7 @@ describe('AttendanceReminderService.remind', () => {
                       email: 'p1@x.de',
                       firstName: 'A',
                       timezone: null,
+                      role: 'PLAYER',
                     },
                   },
                   {
@@ -147,6 +148,7 @@ describe('AttendanceReminderService.remind', () => {
                       email: 'p2@x.de',
                       firstName: 'B',
                       timezone: null,
+                      role: 'PLAYER',
                     },
                   },
                   {
@@ -155,6 +157,7 @@ describe('AttendanceReminderService.remind', () => {
                       email: 'p3@x.de',
                       firstName: 'C',
                       timezone: null,
+                      role: 'PLAYER',
                     },
                   },
                 ],
@@ -234,5 +237,14 @@ describe('AttendanceReminderService.remind', () => {
     await expect(
       service.remind('coach1', 'COACH', 'event:e1'),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('does not record a reminder nobody received', async () => {
+    const { service, mailer, prisma } = setup();
+    mailer.send.mockResolvedValue(false);
+    const result = await service.remind('coach1', 'COACH', 'event:e1');
+    expect(result.sent).toBe(0);
+    expect(result.lastReminder).toBeNull();
+    expect(prisma.attendanceReminder.create).not.toHaveBeenCalled();
   });
 });

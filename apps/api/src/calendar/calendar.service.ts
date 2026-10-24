@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import {
   assertCoachCanSeePlayer,
+  assertCoachLinkedToPlayer,
   assertTeamAccess,
   coachTeamsWhere,
 } from '../teams/team-access';
@@ -173,9 +174,9 @@ export class CalendarService {
     }
   }
 
-  /** Linked player or member of one of the coach's teams. */
+  /** Writes on a player's data need a real coach–player link. */
   private async assertCoachPlayerLink(coachId: string, playerId: string) {
-    await assertCoachCanSeePlayer(this.prisma, coachId, playerId);
+    await assertCoachLinkedToPlayer(this.prisma, coachId, playerId);
   }
 
   private requireCoachOrAdmin(role: string) {
@@ -191,6 +192,23 @@ export class CalendarService {
     return assertTeamAccess(this.prisma, coachId, 'COACH', teamId);
   }
 
+  /**
+   * Changing or deleting a team training/event: the head coach may change
+   * everything of the team, further coaches only what they created.
+   */
+  private async assertCanChangeTeamItem(
+    coachId: string,
+    teamId: string,
+    createdById: string | null,
+  ) {
+    const access = await this.assertCoachOwnsTeam(coachId, teamId);
+    if (!access.isHead && createdById !== coachId) {
+      throw new ForbiddenException(
+        'Only the head coach or the coach who planned it can change this',
+      );
+    }
+  }
+
   private async assertCanAccessPlayer(
     userId: string,
     role: string,
@@ -198,6 +216,19 @@ export class CalendarService {
   ) {
     if (userId === playerId || role === 'ADMIN') return;
     await this.assertCoachPlayerLink(userId, playerId);
+  }
+
+  /**
+   * Reading a player's calendar: linked players and members of the coach's
+   * teams (head coach or staff), so team coaches see absences when planning.
+   */
+  private async assertCanReadPlayer(
+    userId: string,
+    role: string,
+    playerId: string,
+  ) {
+    if (userId === playerId || role === 'ADMIN') return;
+    await assertCoachCanSeePlayer(this.prisma, userId, playerId);
   }
 
   private async getActiveTeamIdsForPlayer(playerId: string) {
@@ -328,7 +359,7 @@ export class CalendarService {
 
   async listSlots(userId: string, role: string, playerId?: string) {
     const targetId = playerId ?? userId;
-    await this.assertCanAccessPlayer(userId, role, targetId);
+    await this.assertCanReadPlayer(userId, role, targetId);
 
     const activeTeamIds = await this.getActiveTeamIdsForPlayer(targetId);
 
@@ -387,6 +418,7 @@ export class CalendarService {
       data: {
         ownerType: OwnerType.PLAYER,
         playerId: userId,
+        createdById: userId,
         teamId: null,
         title: data.title,
         startTime,
@@ -470,6 +502,7 @@ export class CalendarService {
         ownerType: OwnerType.TEAM,
         playerId: null,
         teamId,
+        createdById: userId,
         title: data.title,
         startTime,
         endTime,
@@ -510,7 +543,11 @@ export class CalendarService {
     if (slot.ownerType === OwnerType.TEAM) {
       this.requireCoachOrAdmin(role);
       if (role !== 'ADMIN' && slot.teamId) {
-        await this.assertCoachOwnsTeam(userId, slot.teamId);
+        await this.assertCanChangeTeamItem(
+          userId,
+          slot.teamId,
+          slot.createdById,
+        );
       }
     } else if (slot.playerId !== userId) {
       throw new ForbiddenException('Not your practice slot');
@@ -560,6 +597,27 @@ export class CalendarService {
       );
     }
 
+    // One-time sessions: planned lessons move along and must still fit.
+    const movesTasks =
+      slot.recurrence === Recurrence.NONE && recurrence === Recurrence.NONE;
+    const delta = startTime.getTime() - slot.startTime.getTime();
+    const slotTasks = movesTasks
+      ? await this.prisma.calendarTask.findMany({
+          where: { practiceSlotId: slotId },
+          select: { id: true, scheduledDate: true, durationMinutes: true },
+        })
+      : [];
+    const outside = slotTasks.some((task) => {
+      const taskStart = task.scheduledDate.getTime() + delta;
+      const taskEnd = taskStart + task.durationMinutes * 60_000;
+      return taskStart < startTime.getTime() || taskEnd > endTime.getTime();
+    });
+    if (outside) {
+      throw new BadRequestException(
+        'A planned lesson would no longer fit into the training – shorten or remove it first',
+      );
+    }
+
     const updated = await this.prisma.practiceSlot.update({
       where: { id: slotId },
       data: {
@@ -575,17 +633,8 @@ export class CalendarService {
     // A one-time session that moved takes its planned lessons along, and
     // the players are asked again (the old answers were for the old time).
     let answersReset = 0;
-    if (
-      slot.recurrence === Recurrence.NONE &&
-      recurrence === Recurrence.NONE &&
-      startTime.getTime() !== slot.startTime.getTime()
-    ) {
-      const delta = startTime.getTime() - slot.startTime.getTime();
-      const tasks = await this.prisma.calendarTask.findMany({
-        where: { practiceSlotId: slotId },
-        select: { id: true, scheduledDate: true },
-      });
-      for (const task of tasks) {
+    if (movesTasks && delta !== 0) {
+      for (const task of slotTasks) {
         await this.prisma.calendarTask.update({
           where: { id: task.id },
           data: {
@@ -610,7 +659,11 @@ export class CalendarService {
     if (slot.ownerType === OwnerType.TEAM) {
       this.requireCoachOrAdmin(role);
       if (role !== 'ADMIN' && slot.teamId) {
-        await this.assertCoachOwnsTeam(userId, slot.teamId);
+        await this.assertCanChangeTeamItem(
+          userId,
+          slot.teamId,
+          slot.createdById,
+        );
       }
     } else if (slot.playerId !== userId) {
       throw new ForbiddenException('Not your practice slot');
@@ -626,7 +679,7 @@ export class CalendarService {
     playerId?: string,
   ) {
     const targetPlayerId = playerId ?? userId;
-    await this.assertCanAccessPlayer(userId, role, targetPlayerId);
+    await this.assertCanReadPlayer(userId, role, targetPlayerId);
     return this.prisma.availabilityBlock.findMany({
       where: { playerId: targetPlayerId },
       orderBy: { startTime: 'asc' },
@@ -811,7 +864,7 @@ export class CalendarService {
     });
     if (!event) throw new NotFoundException('Team event not found');
     if (role !== 'ADMIN') {
-      await this.assertCoachOwnsTeam(userId, event.teamId);
+      await this.assertCanChangeTeamItem(userId, event.teamId, event.coachId);
     }
     const startTime = data.startTime
       ? new Date(data.startTime)
@@ -856,6 +909,12 @@ export class CalendarService {
           where: { occurrenceKey: eventOccurrenceKey(eventId) },
         })
       : { count: 0 };
+    if (timeChanged) {
+      // New time, new question: reminders may be sent again.
+      await this.prisma.attendanceReminder.deleteMany({
+        where: { occurrenceKey: eventOccurrenceKey(eventId) },
+      });
+    }
     return { ...updated, answersReset: reset.count };
   }
 
@@ -878,7 +937,7 @@ export class CalendarService {
     });
     if (!event) throw new NotFoundException('Team event not found');
     if (role !== 'ADMIN') {
-      await this.assertCoachOwnsTeam(userId, event.teamId);
+      await this.assertCanChangeTeamItem(userId, event.teamId, event.coachId);
     }
     await this.prisma.teamEvent.delete({ where: { id: eventId } });
     return { ok: true };
@@ -886,7 +945,7 @@ export class CalendarService {
 
   async listTournaments(userId: string, role: string, playerId?: string) {
     const targetPlayerId = playerId ?? userId;
-    await this.assertCanAccessPlayer(userId, role, targetPlayerId);
+    await this.assertCanReadPlayer(userId, role, targetPlayerId);
     return this.prisma.tournament.findMany({
       where: { playerId: targetPlayerId },
       orderBy: { startTime: 'asc' },
@@ -1008,7 +1067,7 @@ export class CalendarService {
       if (!slot.playerId) {
         throw new NotFoundException('Practice slot player not found');
       }
-      await this.assertCoachPlayerLink(userId, slot.playerId);
+      await assertCoachCanSeePlayer(this.prisma, userId, slot.playerId);
     }
 
     return this.prisma.calendarTask.findMany({
@@ -1294,7 +1353,7 @@ export class CalendarService {
   }
 
   async getPlayerCalendar(userId: string, role: string, playerId: string) {
-    await this.assertCanAccessPlayer(userId, role, playerId);
+    await this.assertCanReadPlayer(userId, role, playerId);
 
     const activeTeamIds = await this.getActiveTeamIdsForPlayer(playerId);
     const slots = await this.prisma.practiceSlot.findMany({
