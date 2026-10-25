@@ -42,10 +42,16 @@ export default function QuickAssign({
   target,
   onAssigned,
   onCancel,
+  loadWarning,
+  lessonWarnings,
 }: {
   target: AssignTarget;
   onAssigned?: () => void;
   onCancel?: () => void;
+  /** e.g. "Max already has 11 h this week (limit 10 h)." */
+  loadWarning?: string | null;
+  /** lessonId → hint, e.g. "Already open from Ben". */
+  lessonWarnings?: Record<string, string>;
 }) {
   const [mode, setMode] = useState<Mode>("lesson");
   const [lessons, setLessons] = useState<TrainingLesson[] | null>(null);
@@ -222,6 +228,11 @@ export default function QuickAssign({
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium text-slate-800">{option.name}</span>
                   {option.meta ? <span className="block truncate text-xs text-slate-500">{option.meta}</span> : null}
+                  {mode === "lesson" && lessonWarnings?.[option.id] ? (
+                    <span className="block truncate text-xs font-medium text-amber-700">
+                      {lessonWarnings[option.id]}
+                    </span>
+                  ) : null}
                 </span>
               </button>
             );
@@ -266,6 +277,10 @@ export default function QuickAssign({
           their queue to accept.
         </p>
       )}
+
+      {loadWarning ? (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">{loadWarning}</p>
+      ) : null}
 
       <div className="flex justify-end gap-2">
         {onCancel ? (

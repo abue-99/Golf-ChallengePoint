@@ -129,6 +129,8 @@ model User {
   phoneNumber  String?
   timezone     String?
   country      String?
+  /// Training load per week (minutes) the coaches aim to stay below; null = default.
+  weeklyLoadLimit Int?
   role         Role      @default(PLAYER)
   lastLogin    DateTime?
   createdAt    DateTime  @default(now())

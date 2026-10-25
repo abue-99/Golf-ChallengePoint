@@ -28,6 +28,12 @@ import CoachNotes from "@/components/CoachNotes";
 import { COACH_ROLE_LABEL, roleLabel, type CoachRole } from "@/lib/coach-roles";
 import { FeedbackList } from "@/components/FeedbackList";
 import QuickAssign from "@/components/QuickAssign";
+import PlayerLoadCard from "@/components/PlayerLoadCard";
+import {
+  formatMinutes,
+  refreshPlayerLoad,
+  usePlayerLoad,
+} from "@/lib/player-load";
 import {
   formatDateTime,
   initialsOf,
@@ -107,6 +113,14 @@ export function PlayerDetails({
   const missed = missedCount(player);
   const inactive = isInactive(player);
   const playerTeams = teams.filter((team) => player.teamIds.includes(team.id));
+  const loadData = usePlayerLoad();
+  const load = loadData?.players.find((entry) => entry.playerId === player.id);
+  const busyWeekIndex = load?.weeks.findIndex((week) => week.level !== "ok") ?? -1;
+  const busyWeek = busyWeekIndex >= 0 ? load?.weeks[busyWeekIndex] : undefined;
+  const assignLoadWarning =
+    load && busyWeek
+      ? `${player.firstName || name} already has ${formatMinutes(busyWeek.minutes)} ${busyWeekIndex === 0 ? "this" : "next"} week (limit ${formatMinutes(load.limit)}).`
+      : null;
   const journey = player.currentJourney;
   const journeyPercent =
     journey && journey.totalLessons > 0
@@ -196,8 +210,16 @@ export function PlayerDetails({
             <Section title={`Assign to ${player.firstName || name}`}>
               <QuickAssign
                 target={{ kind: "player", id: player.id, name }}
+                loadWarning={assignLoadWarning}
+                lessonWarnings={Object.fromEntries(
+                  (load?.otherCoachLessons ?? []).map((entry) => [
+                    entry.lessonId,
+                    `Already open from ${entry.coach}`,
+                  ]),
+                )}
                 onAssigned={() => {
                   setAssignOpen(false);
+                  void refreshPlayerLoad();
                   onChanged?.();
                 }}
                 onCancel={() => setAssignOpen(false)}
@@ -220,6 +242,16 @@ export function PlayerDetails({
             <Section title="Past week · next week">
               <ActivityStrip days={player.days} today={today} size="lg" />
               <ActivityLegend className="pt-1" />
+            </Section>
+          ) : null}
+
+          {load && loadData ? (
+            <Section title="Training load · all coaches">
+              <PlayerLoadCard
+                load={load}
+                defaultLimit={loadData.defaultLimit}
+                playerName={player.firstName || name}
+              />
             </Section>
           ) : null}
 

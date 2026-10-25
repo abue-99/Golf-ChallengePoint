@@ -10,6 +10,7 @@ import {
   LayoutList,
   Route as RouteIcon,
   Trophy,
+  Gauge,
   MoreHorizontal,
   MessageSquare,
   Inbox,
@@ -39,6 +40,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import PlayerSidePanel from "@/components/PlayerSidePanel";
+import {
+  loadWarning,
+  refreshPlayerLoad,
+  usePlayerLoad,
+  type PlayerLoad,
+} from "@/lib/player-load";
 import FeedbackSheet from "@/components/FeedbackList";
 import CoachToday, { GettingStarted } from "@/components/CoachToday";
 import { QuickAssignSheet, type AssignTarget } from "@/components/QuickAssign";
@@ -209,7 +216,9 @@ function PlayerRow({
   onAddToTeam,
   onRemoveFromTeam,
   onSelectTeam,
+  load,
 }: {
+  load?: PlayerLoad;
   player: RosterPlayer;
   teams: Team[];
   today: string;
@@ -238,6 +247,7 @@ function PlayerRow({
       ? player.nextTournament
       : null;
   const tournamentDays = tournamentSoon ? Math.max(0, daysUntil(tournamentSoon.startTime) ?? 0) : 0;
+  const loadHint = loadWarning(load);
 
   return (
     <li
@@ -332,6 +342,9 @@ function PlayerRow({
           >
             {tournamentDays === 0 ? "today" : `${tournamentDays}d`}
           </Indicator>
+        ) : null}
+        {loadHint ? (
+          <Indicator icon={Gauge} tone={loadHint.tone} label={loadHint.text} />
         ) : null}
         {player.noteCount > 0 ? (
           <Indicator
@@ -531,6 +544,7 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
       if (!res.ok) throw new Error(String(res.status));
       const next: RosterResponse = await res.json();
       setData(next);
+      void refreshPlayerLoad();
       setFailed(false);
     } catch {
       setFailed(true);
@@ -546,6 +560,11 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
     });
   }, [load]);
 
+  const loadData = usePlayerLoad();
+  const loadByPlayer = useMemo(
+    () => new Map((loadData?.players ?? []).map((entry) => [entry.playerId, entry])),
+    [loadData],
+  );
   const teams = useMemo(() => data?.teams ?? [], [data]);
   const roster = useMemo(() => data?.players ?? [], [data]);
   const today = data?.today ?? "";
@@ -650,6 +669,7 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
         onAddToTeam={(teamId) => void addToTeam(player.id, teamId)}
         onRemoveFromTeam={(teamId) => void removeFromTeam(player.id, teamId)}
         onSelectTeam={(teamId) => setTeamFilter(teamId)}
+        load={loadByPlayer.get(player.id)}
       />
     );
   }
@@ -955,6 +975,7 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
                   { icon: Moon, text: `No activity for ${INACTIVE_AFTER_DAYS}+ days`, cls: "text-amber-700" },
                   { icon: UserX, text: "Account not activated yet", cls: "text-amber-700" },
                   { icon: Trophy, text: "Tournament within 14 days", cls: "text-amber-700" },
+                  { icon: Gauge, text: "Training load near or above the weekly limit, or the same lesson from two coaches", cls: "text-amber-700" },
                   { icon: StickyNote, text: "You have private notes", cls: "text-slate-600" },
                   { icon: ClipboardPlus, text: "Assign a lesson or journey", cls: "text-[var(--golf-primary)]" },
                 ].map(({ icon: Icon, text, cls }) => (

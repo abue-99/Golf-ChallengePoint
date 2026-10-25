@@ -15,6 +15,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
 import { RosterService } from './roster.service';
 import { CoachWorkService } from './coach-work.service';
+import { PlayerLoadService } from './player-load.service';
 import { TeamStaffService } from '../teams/team-staff.service';
 
 function requireCoach(user: AuthenticatedUser) {
@@ -31,7 +32,29 @@ export class RosterController {
     private readonly rosterService: RosterService,
     private readonly coachWork: CoachWorkService,
     private readonly staff: TeamStaffService,
+    private readonly load: PlayerLoadService,
   ) {}
+
+  /** GET /coach/roster/load?tz= – training load per player and week. */
+  @Get('load')
+  getLoad(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('tz') timeZone?: string,
+  ) {
+    requireCoach(user);
+    return this.load.getLoad(user.id, timeZone);
+  }
+
+  /** PATCH /coach/roster/players/:playerId/load-limit – { minutes: number | null } */
+  @Patch('players/:playerId/load-limit')
+  setLoadLimit(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('playerId') playerId: string,
+    @Body() body: { minutes?: unknown },
+  ) {
+    requireCoach(user);
+    return this.load.setLimit(user.id, playerId, body?.minutes ?? null);
+  }
 
   /** PATCH /coach/roster/players/:playerId/role – { role: CoachRole | null } */
   @Patch('players/:playerId/role')
