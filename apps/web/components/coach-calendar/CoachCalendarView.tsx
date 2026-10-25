@@ -27,6 +27,7 @@ import {
   BellRing,
   BookOpen,
   CalendarClock,
+  CalendarSearch,
   CalendarX2,
   MoveRight,
   Plus,
@@ -62,6 +63,7 @@ import LessonLibrary, {
   type PlannableLesson,
 } from "./LessonLibrary";
 import PlanLessonDialog, { type PlanDraft } from "./PlanLessonDialog";
+import TimeFinderDialog from "./TimeFinderDialog";
 import OccurrenceDialog, {
   type OccurrenceAction,
   type OccurrenceDraft,
@@ -408,6 +410,8 @@ export default function CoachCalendarView() {
   const [occurrenceDraft, setOccurrenceDraft] =
     useState<OccurrenceDraft | null>(null);
   const [occurrenceKeyCounter, setOccurrenceKeyCounter] = useState(0);
+  const [finderOpen, setFinderOpen] = useState(false);
+  const [finderKey, setFinderKey] = useState(0);
   const [planKey, setPlanKey] = useState(0);
   // The real pointer position while dragging. dnd-kit's delta also contains
   // the auto-scroll offset, which would put the drop point off by that much.
@@ -1125,6 +1129,18 @@ export default function CoachCalendarView() {
                 >
                   <Plus className="mr-1 h-4 w-4" /> Team event
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setFinderKey((key) => key + 1);
+                    setFinderOpen(true);
+                  }}
+                  disabled={teams.length === 0}
+                  className="pointer-coarse:h-11"
+                >
+                  <CalendarSearch className="mr-1 h-4 w-4" /> Find a time
+                </Button>
                 {overlayPlayerId ? (
                   <span className="inline-flex min-h-9 items-center gap-2 rounded-full bg-rose-50 pl-3 pr-1 text-sm text-rose-800">
                     Showing {overlayName}
@@ -1677,6 +1693,49 @@ export default function CoachCalendarView() {
             </>
           ) : null
         }
+      />
+
+      <TimeFinderDialog
+        key={`finder-${finderKey}`}
+        open={finderOpen}
+        teams={teams}
+        defaultTeamId={teamId}
+        onClose={() => setFinderOpen(false)}
+        onPlanEvent={(eventTeamId, window) => {
+          setFinderOpen(false);
+          openEventDialog({
+            teamId: eventTeamId,
+            title: "",
+            description: "",
+            location: "",
+            start: window.start,
+            end: window.end,
+          });
+        }}
+        onTrainingCreated={(slotId, title, window) => {
+          setFinderOpen(false);
+          reload();
+          toast.success(
+            `${title} planned for ${formatDay(window.start.toISOString())} ${formatTime(window.start.toISOString())}. The players can answer now.`,
+            {
+              action: {
+                label: "Undo",
+                onClick: () => {
+                  void deleteTraining(slotId)
+                    .then(() => {
+                      toast.success("Undone.");
+                      reload();
+                    })
+                    .catch((err: unknown) =>
+                      toast.error(
+                        err instanceof Error ? err.message : "Undo failed",
+                      ),
+                    );
+                },
+              },
+            },
+          );
+        }}
       />
 
       <OccurrenceDialog

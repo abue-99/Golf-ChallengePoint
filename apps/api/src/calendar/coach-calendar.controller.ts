@@ -16,6 +16,7 @@ import { AuthenticatedUser } from '../auth/jwt.strategy';
 import { CoachCalendarService } from './coach-calendar.service';
 import { AttendanceReminderService } from './attendance-reminder.service';
 import { OccurrenceChangeService } from './occurrence-change.service';
+import { TeamAvailabilityService } from './team-availability.service';
 
 /** The coach's own calendar: teams, sessions and the players' answers. */
 @Controller('calendar/coach')
@@ -25,6 +26,7 @@ export class CoachCalendarController {
     private readonly coachCalendar: CoachCalendarService,
     private readonly reminders: AttendanceReminderService,
     private readonly occurrences: OccurrenceChangeService,
+    private readonly availability: TeamAvailabilityService,
   ) {}
 
   /** GET /calendar/coach?from=&to=&teamId= */
@@ -76,6 +78,25 @@ export class CoachCalendarController {
     },
   ) {
     return this.occurrences.change(user.id, user.role as string, body ?? {});
+  }
+
+  /**
+   * GET /calendar/coach/teams/:teamId/availability?from=&to= – when the
+   * team's players are busy (time finder).
+   */
+  @Get('teams/:teamId/availability')
+  getAvailability(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('teamId') teamId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.availability.getAvailability(
+      user.id,
+      user.role as string,
+      teamId,
+      { from, to },
+    );
   }
 
   /** PUT /calendar/coach/teams/:teamId/auto-remind – { hours: number | null } */

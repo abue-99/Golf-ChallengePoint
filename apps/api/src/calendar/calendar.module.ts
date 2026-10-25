@@ -9,6 +9,7 @@ import { CoachCalendarService } from './coach-calendar.service';
 import { AttendanceReminderService } from './attendance-reminder.service';
 import { ReminderMailer } from './reminder-mail';
 import { OccurrenceChangeService } from './occurrence-change.service';
+import { TeamAvailabilityService } from './team-availability.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 
@@ -27,6 +28,7 @@ import { AuthModule } from '../auth/auth.module';
     AttendanceReminderService,
     ReminderMailer,
     OccurrenceChangeService,
+    TeamAvailabilityService,
   ],
 })
 export class CalendarModule {}
