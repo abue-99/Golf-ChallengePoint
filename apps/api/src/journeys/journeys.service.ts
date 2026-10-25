@@ -16,6 +16,11 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  clubIdsOf,
+  libraryVisibleWhere,
+  userCanSeeLibraryItem,
+} from '../library/library-access';
+import {
   assertCoachLinkedToPlayer,
   assertTeamAccess,
 } from '../teams/team-access';
@@ -80,6 +85,9 @@ export class JourneysService {
 
   private includeTemplate() {
     return {
+      coach: {
+        select: { id: true, firstName: true, lastName: true, email: true },
+      },
       lessons: {
         include: {
           lesson: {
@@ -113,7 +121,10 @@ export class JourneysService {
         ...(role === 'ADMIN'
           ? {}
           : {
-              OR: [{ coachId: userId }, { visibility: 'PUBLIC' }],
+              OR: libraryVisibleWhere(
+                userId,
+                await clubIdsOf(this.prisma, userId),
+              ),
             }),
       },
       select: { id: true },
@@ -162,10 +173,10 @@ export class JourneysService {
                 ...(visibilityFilter
                   ? { visibility: this.parseVisibility(visibilityFilter) }
                   : {}),
-                OR: [
-                  { coachId: userId },
-                  { visibility: JourneyVisibility.PUBLIC },
-                ],
+                OR: libraryVisibleWhere(
+                  userId,
+                  await clubIdsOf(this.prisma, userId),
+                ),
               },
       include: this.includeTemplate(),
       orderBy: { createdAt: 'desc' },
@@ -180,9 +191,11 @@ export class JourneysService {
     });
     if (!template) throw new NotFoundException('Journey template not found');
     if (
-      role !== 'ADMIN' &&
-      template.coachId !== userId &&
-      template.visibility !== JourneyVisibility.PUBLIC
+      !(await userCanSeeLibraryItem(
+        this.prisma,
+        { id: userId, role },
+        template,
+      ))
     ) {
       throw new ForbiddenException('Not your journey template');
     }
@@ -297,14 +310,18 @@ export class JourneysService {
 
   async duplicateTemplate(userId: string, role: string, id: string) {
     const template = await this.getTemplate(userId, role, id);
+    // Own template: a second version. Somebody else's (club or public
+    // library): a private copy to adapt, which remembers its origin.
+    const own = template.coachId === userId;
     return this.prisma.journeyTemplate.create({
       data: {
         coachId: userId,
-        name: `${template.name} (Copy)`,
+        name: own ? `${template.name} (Copy)` : template.name,
         description: template.description,
         category: template.category,
         difficulty: template.difficulty,
-        visibility: template.visibility,
+        visibility: own ? template.visibility : JourneyVisibility.PRIVATE,
+        copiedFromId: own ? template.copiedFromId : template.id,
         coverImageUrl: template.coverImageUrl,
         lessons: {
           create: template.lessons.map((entry, index) => ({
@@ -320,6 +337,10 @@ export class JourneysService {
 
   async deleteTemplate(userId: string, role: string, id: string) {
     const template = await this.getTemplate(userId, role, id);
+    // Seeing a club or public template does not mean owning it.
+    if (role !== 'ADMIN' && template.coachId !== userId) {
+      throw new ForbiddenException('Only the creator can delete this journey');
+    }
     await this.prisma.journeyTemplate.delete({ where: { id: template.id } });
     return { ok: true };
   }
@@ -430,9 +451,11 @@ export class JourneysService {
     });
     if (!template) throw new NotFoundException('Journey template not found');
     if (
-      role !== 'ADMIN' &&
-      template.coachId !== coachId &&
-      template.visibility !== JourneyVisibility.PUBLIC
+      !(await userCanSeeLibraryItem(
+        this.prisma,
+        { id: coachId, role },
+        template,
+      ))
     ) {
       throw new ForbiddenException('Not your journey template');
     }
@@ -466,9 +489,11 @@ export class JourneysService {
     });
     if (!template) throw new NotFoundException('Journey template not found');
     if (
-      role !== 'ADMIN' &&
-      template.coachId !== coachId &&
-      template.visibility !== JourneyVisibility.PUBLIC
+      !(await userCanSeeLibraryItem(
+        this.prisma,
+        { id: coachId, role },
+        template,
+      ))
     ) {
       throw new ForbiddenException('Not your journey template');
     }

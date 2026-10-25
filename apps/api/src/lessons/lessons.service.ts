@@ -1,9 +1,23 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  clubIdsOf,
+  libraryVisibleWhere,
+  parseLibraryVisibility,
+  userCanSeeLibraryItem,
+} from '../library/library-access';
+
+const COACH_SELECT = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  email: true,
+} as const;
 
 @Injectable()
 export class LessonsService {
@@ -25,8 +39,8 @@ export class LessonsService {
     filters: { status?: string; focusArea?: string; subCapability?: string; subSubCapability?: string; visibility?: string },
   ) {
     this.requireCoachOrAdmin(role);
-    // Coaches see their own lessons + public lessons from other coaches
-    // Admins see all lessons
+    // Coaches see their own lessons, club lessons of coaches in their clubs
+    // and public lessons; admins see all lessons.
     const where: any = {
       ...(filters.status ? { status: filters.status as any } : {}),
       ...(filters.focusArea ? { focusArea: filters.focusArea as any } : {}),
@@ -35,10 +49,10 @@ export class LessonsService {
       ...(filters.visibility ? { visibility: filters.visibility as any } : {}),
     };
     if (role !== 'ADMIN') {
-      where.OR = [
-        { coachId: userId },
-        { visibility: 'PUBLIC' },
-      ];
+      where.OR = libraryVisibleWhere(
+        userId,
+        await clubIdsOf(this.prisma, userId),
+      );
       if (filters.visibility === 'PRIVATE') {
         // If filtering for private only, restrict to own lessons
         delete where.OR;
@@ -103,6 +117,15 @@ export class LessonsService {
     },
   ) {
     this.requireCoachOrAdmin(role);
+    if (
+      data.visibility !== undefined &&
+      data.visibility !== null &&
+      !parseLibraryVisibility(data.visibility)
+    ) {
+      throw new BadRequestException(
+        'Visibility must be PRIVATE, CLUB or PUBLIC',
+      );
+    }
     return this.prisma.trainingLesson.create({
       data: {
         coachId,
@@ -178,11 +201,46 @@ export class LessonsService {
       },
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
-    // Coaches can view their own lessons + public lessons from other coaches; admins see all
-    if (role !== 'ADMIN' && lesson.coachId !== userId && lesson.visibility !== 'PUBLIC') {
+    // Own lessons, club lessons of coaches in the same club, public lessons.
+    if (
+      !(await userCanSeeLibraryItem(this.prisma, { id: userId, role }, lesson))
+    ) {
       throw new ForbiddenException('Not authorized to view this lesson');
     }
     return lesson;
+  }
+
+  // ─── Copy (club / public library) ─────────────────────────────────────────
+
+  /**
+   * Copies a lesson the coach may see into the coach's own library
+   * (private, without results), so it can be adapted.
+   */
+  async copyLesson(userId: string, role: string, id: string) {
+    const lesson = await this.getLesson(userId, role, id);
+    return this.prisma.trainingLesson.create({
+      data: {
+        coachId: userId,
+        copiedFromId: lesson.id,
+        name: lesson.name,
+        description: lesson.description,
+        durationMinutes: lesson.durationMinutes,
+        focusArea: lesson.focusArea,
+        subCapability: lesson.subCapability,
+        subSubCapability: lesson.subSubCapability,
+        location: lesson.location,
+        status: 'PLANNED',
+        visibility: 'PRIVATE',
+        videoUrl: lesson.videoUrl,
+        trainingObjective: lesson.trainingObjective,
+        currentSituation: lesson.currentSituation,
+        targetOutcome: lesson.targetOutcome,
+        priority: lesson.priority,
+        plannedExercises: lesson.plannedExercises,
+        successCriteria: lesson.successCriteria,
+      },
+      include: { coach: { select: COACH_SELECT } },
+    });
   }
 
   // ─── Update ───────────────────────────────────────────────────────────────
@@ -226,6 +284,15 @@ export class LessonsService {
     // Only the original creator (or admin) can edit any lesson
     if (role !== 'ADMIN' && lesson.coachId !== userId) {
       throw new ForbiddenException('Only the creator can edit this lesson');
+    }
+    if (
+      data.visibility !== undefined &&
+      data.visibility !== null &&
+      !parseLibraryVisibility(data.visibility)
+    ) {
+      throw new BadRequestException(
+        'Visibility must be PRIVATE, CLUB or PUBLIC',
+      );
     }
 
     return this.prisma.trainingLesson.update({

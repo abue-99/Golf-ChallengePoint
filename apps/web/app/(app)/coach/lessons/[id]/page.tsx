@@ -24,11 +24,13 @@ import {
   Target,
   BarChart2,
   Play,
-  Globe,
-  Lock,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import LibraryVisibilityBadge, {
+  copyLessonToMyLibrary,
+} from "@/components/LibraryVisibilityBadge";
 
 export default function LessonDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +40,30 @@ export default function LessonDetailPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const [myId, setMyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((me) => {
+        if (me?.id) setMyId(me.id);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function handleCopy() {
+    setCopying(true);
+    try {
+      const copy = await copyLessonToMyLibrary(id);
+      toast.success("Copied to your lessons – adapt it as you like.");
+      router.push(`/coach/lessons/${copy.id}?mode=edit`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Copy failed");
+    } finally {
+      setCopying(false);
+    }
+  }
 
   useEffect(() => {
     setEditing(searchParams.get("mode") === "edit");
@@ -126,7 +152,18 @@ export default function LessonDetailPage() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          {editing ? null : (
+          {!editing && myId && lesson.coachId !== myId ? (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={copying}
+              onClick={() => void handleCopy()}
+            >
+              <Copy className="mr-1.5 h-4 w-4" />
+              {copying ? "Copying…" : "Copy to my lessons"}
+            </Button>
+          ) : null}
+          {editing || (myId && lesson.coachId !== myId) ? null : (
             <>
               <Button
                 variant="ghost"
@@ -193,18 +230,7 @@ function ViewMode({
           {subCapabilityLabel && <InfoItem label="Sub Capability">{subCapabilityLabel}</InfoItem>}
           {subSubCapabilityLabel && <InfoItem label="Sub Sub Capability">{subSubCapabilityLabel}</InfoItem>}
           <InfoItem label="Visibility">
-            <span className={cn(
-              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-              lesson.visibility === "PUBLIC"
-                ? "bg-green-50 text-green-700"
-                : "bg-slate-100 text-slate-600"
-            )}>
-              {lesson.visibility === "PUBLIC" ? (
-                <><Globe className="h-2.5 w-2.5" /> Public</>
-              ) : (
-                <><Lock className="h-2.5 w-2.5" /> Private</>
-              )}
-            </span>
+            <LibraryVisibilityBadge visibility={lesson.visibility} />
           </InfoItem>
           <InfoItem label="Duration">
             <span className="flex items-center gap-1">

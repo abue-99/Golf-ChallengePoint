@@ -13,6 +13,7 @@ import {
   Prisma,
 } from '@challengepoint/db';
 import { PrismaService } from '../prisma/prisma.service';
+import { userCanSeeLibraryItem } from '../library/library-access';
 import {
   assertCoachLinkedToPlayer,
   assertTeamAccess,
@@ -209,9 +210,17 @@ export class AssignmentsService {
         name: true,
         durationMinutes: true,
         trainingObjective: true,
+        coachId: true,
+        visibility: true,
       },
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
+    // Own, club (same club) or public lessons only.
+    if (
+      !(await userCanSeeLibraryItem(this.prisma, { id: coachId, role }, lesson))
+    ) {
+      throw new ForbiddenException('This lesson is not in your library');
+    }
 
     const targetType =
       (data.targetType as AssignmentTargetType | undefined) ??

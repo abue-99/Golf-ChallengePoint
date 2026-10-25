@@ -19,7 +19,9 @@ export type JourneyTemplateLesson = {
 export type JourneyTemplate = {
   id: string;
   coachId: string;
-  visibility: "PUBLIC" | "PRIVATE";
+  visibility: "PUBLIC" | "PRIVATE" | "CLUB";
+  /** Set on copies from the club or public library. */
+  copiedFromId?: string | null;
   name: string;
   description: string | null;
   category: string | null;

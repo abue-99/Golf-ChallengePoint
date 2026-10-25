@@ -15,7 +15,10 @@ import {
   getLocationLabel,
   type TrainingLesson,
 } from "@/lib/lesson-types";
-import { Plus, Search, BookOpen, Clock, MapPin, User, Globe, Lock, Upload } from "lucide-react";
+import { Plus, Search, BookOpen, Clock, MapPin, User, Upload, Copy, Check } from "lucide-react";
+import LibraryVisibilityBadge, {
+  copyLessonToMyLibrary,
+} from "@/components/LibraryVisibilityBadge";
 import AssignLessonModal from "@/components/AssignLessonModal";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -191,6 +194,17 @@ export default function LessonsPage() {
     };
   }, []);
 
+  // Library lessons the coach already copied (no second copy by mistake).
+  const copiedIds = useMemo(
+    () =>
+      new Set(
+        (lessons ?? [])
+          .filter((lesson) => lesson.coachId === myId && lesson.copiedFromId)
+          .map((lesson) => lesson.copiedFromId as string),
+      ),
+    [lessons, myId],
+  );
+
   const filtered = useMemo(() => {
     if (!lessons) return [];
     return lessons.filter((l) => {
@@ -280,7 +294,8 @@ export default function LessonsPage() {
             Lesson Library
           </h1>
           <p className="text-sm text-slate-500">
-            Create reusable lessons. Public lessons are shared across all coaches.
+            Create reusable lessons. Club lessons are shared with the coaches
+            of your club, public ones with all coaches – copy them to adapt.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -405,7 +420,15 @@ export default function LessonsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((lesson) => (
-            <LessonCard key={lesson.id} lesson={lesson} myId={myId} />
+            <LessonCard
+              key={lesson.id}
+              lesson={lesson}
+              myId={myId}
+              copied={copiedIds.has(lesson.id)}
+              onCopied={(copy) =>
+                setLessons((current) => (current ? [copy, ...current] : [copy]))
+              }
+            />
           ))}
         </div>
       )}
@@ -413,7 +436,19 @@ export default function LessonsPage() {
   );
 }
 
-function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | null }) {
+function LessonCard({
+  lesson,
+  myId,
+  copied,
+  onCopied,
+}: {
+  lesson: TrainingLesson;
+  myId: string | null;
+  /** The coach already has a copy of this lesson. */
+  copied: boolean;
+  onCopied: (copy: TrainingLesson) => void;
+}) {
+  const [copying, setCopying] = useState(false);
   const router = useRouter();
   const [assignOpen, setAssignOpen] = useState(false);
   const focusLabel =
@@ -427,7 +462,23 @@ function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | n
   const showCapabilityPath = capabilityPath !== focusLabel;
 
   const isOwner = myId && lesson.coachId === myId;
-  const isPublic = lesson.visibility === "PUBLIC";
+  const copyToMine = async () => {
+    setCopying(true);
+    try {
+      const copy = await copyLessonToMyLibrary(lesson.id);
+      onCopied(copy as unknown as TrainingLesson);
+      toast.success(`"${lesson.name}" copied to your lessons.`, {
+        action: {
+          label: "Edit copy",
+          onClick: () => router.push(`/coach/lessons/${copy.id}?mode=edit`),
+        },
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Copy failed");
+    } finally {
+      setCopying(false);
+    }
+  };
 
   const coachName = lesson.coach
     ? lesson.coach.firstName || lesson.coach.lastName
@@ -465,7 +516,10 @@ function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | n
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
-            <VisibilityBadge visibility={lesson.visibility} />
+            <LibraryVisibilityBadge visibility={lesson.visibility} />
+            {isOwner && lesson.copiedFromId ? (
+              <span className="text-[11px] text-slate-400">Your copy</span>
+            ) : null}
           </div>
         </div>
 
@@ -519,12 +573,18 @@ function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | n
                 </Button>
               </Link>
             )}
-            {!isOwner && isPublic && (
-              <Link href={`/coach/lessons/${lesson.id}`}>
-                <Button size="sm" variant="outline" className="border-green-300 text-green-700 hover:bg-green-50">
-                  View
-                </Button>
-              </Link>
+            {!isOwner && (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={copying || copied}
+                onClick={() => void copyToMine()}
+                title={copied ? "You already have a copy" : "Copy to your lessons to adapt it"}
+                className="gap-1 border-slate-300 text-slate-700"
+              >
+                {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                {copied ? "Copied" : "Copy"}
+              </Button>
             )}
           </div>
         </div>
@@ -540,23 +600,6 @@ function LessonCard({ lesson, myId }: { lesson: TrainingLesson; myId: string | n
         }}
       />
     </Card>
-  );
-}
-
-function VisibilityBadge({ visibility }: { visibility: string }) {
-  if (visibility === "PUBLIC") {
-    return (
-      <span className="inline-flex items-center gap-0.5 rounded-full bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700">
-        <Globe className="h-2.5 w-2.5" />
-        Public
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-0.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
-      <Lock className="h-2.5 w-2.5" />
-      Private
-    </span>
   );
 }
 

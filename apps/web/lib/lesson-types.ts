@@ -46,8 +46,9 @@ export const LESSON_STATUSES = [
 ] as const;
 
 export const LESSON_VISIBILITIES = [
-  { value: "PUBLIC", label: "Public" },
   { value: "PRIVATE", label: "Private" },
+  { value: "CLUB", label: "Club" },
+  { value: "PUBLIC", label: "Public" },
 ] as const;
 
 export const PRIORITIES = [
@@ -201,6 +202,8 @@ export interface TrainingLesson {
   location?: string | null;
   status: LessonStatus;
   visibility: LessonVisibility;
+  /** Set on copies from the club or public library. */
+  copiedFromId?: string | null;
   videoUrl?: string | null;
   coachId: string;
   playerId?: string | null;

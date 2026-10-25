@@ -37,7 +37,7 @@ type FormState = {
   description: string;
   category: string;
   difficulty: "" | "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
-  visibility: "PUBLIC" | "PRIVATE";
+  visibility: "PUBLIC" | "PRIVATE" | "CLUB";
   coverImageUrl: string;
   lessons: LessonDraft[];
 };
@@ -230,6 +230,35 @@ export default function JourneyEditor({ journeyId }: { journeyId?: string }) {
   const insertHintRef = useRef<InsertHint>(null);
 
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: DROPZONE_ID });
+  // A club or public journey of another coach: view and copy, not edit.
+  const [owner, setOwner] = useState<{ coachId: string; name: string | null } | null>(null);
+  const [myId, setMyId] = useState<string | null>(null);
+  const [copying, setCopying] = useState(false);
+  const readOnly = Boolean(journeyId && owner && myId && owner.coachId !== myId);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((me) => {
+        if (me?.id) setMyId(me.id);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function copyJourney() {
+    if (!journeyId) return;
+    setCopying(true);
+    try {
+      const copy = (await api.duplicateJourneyTemplate(journeyId)) as { id?: string };
+      if (!copy?.id) throw new Error("Copy failed");
+      toast.success("Copied to your journeys – adapt it as you like.");
+      router.push(`/coach/journeys/${copy.id}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Copy failed");
+    } finally {
+      setCopying(false);
+    }
+  }
 
   useEffect(() => {
     let ignore = false;
@@ -245,6 +274,12 @@ export default function JourneyEditor({ journeyId }: { journeyId?: string }) {
 
         if (template && typeof template === "object") {
           const journey = template as JourneyTemplate;
+          setOwner({
+            coachId: journey.coachId,
+            name: journey.coach
+              ? [journey.coach.firstName, journey.coach.lastName].filter(Boolean).join(" ") || null
+              : null,
+          });
           setForm({
             name: journey.name,
             description: journey.description ?? "",
@@ -426,22 +461,42 @@ export default function JourneyEditor({ journeyId }: { journeyId?: string }) {
         <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
-              {journeyId ? "Edit Journey" : "New Journey"}
+              {readOnly ? form.name : journeyId ? "Edit Journey" : "New Journey"}
             </h1>
             <p className="text-sm text-slate-500">
-              Build journey details and add lessons from the library.
+              {readOnly
+                ? `A ${form.visibility === "CLUB" ? "club" : "public"} journey${owner?.name ? ` by ${owner.name}` : ""}. Copy it to adapt it for your players.`
+                : "Build journey details and add lessons from the library."}
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.push("/coach/journeys")}>Cancel</Button>
-            <Button className="bg-green-600 text-white hover:bg-green-500" onClick={onSave} disabled={saving}>
-              {saving ? "Saving..." : journeyId ? "Save Journey" : "Create Journey"}
+            <Button variant="outline" onClick={() => router.push("/coach/journeys")}>
+              {readOnly ? "Back" : "Cancel"}
             </Button>
+            {readOnly ? (
+              <Button
+                className="bg-green-600 text-white hover:bg-green-500"
+                onClick={() => void copyJourney()}
+                disabled={copying}
+              >
+                {copying ? "Copying…" : "Copy to my journeys"}
+              </Button>
+            ) : (
+              <Button className="bg-green-600 text-white hover:bg-green-500" onClick={onSave} disabled={saving}>
+                {saving ? "Saving..." : journeyId ? "Save Journey" : "Create Journey"}
+              </Button>
+            )}
           </div>
         </header>
 
         {/* Side by side from iPad landscape up, so lessons can be dragged across without scrolling. */}
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div
+          className={cn(
+            "grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_380px]",
+            readOnly && "pointer-events-none opacity-80",
+          )}
+          aria-disabled={readOnly || undefined}
+        >
           <section className="rounded-xl border bg-white p-4 shadow-sm space-y-3">
             <Input
               value={form.name}
@@ -478,11 +533,12 @@ export default function JourneyEditor({ journeyId }: { journeyId?: string }) {
                 className="h-9 w-full rounded-md border px-3 text-sm"
                 value={form.visibility}
                 onChange={(event) =>
-                  setForm((prev) => ({ ...prev, visibility: event.target.value as "PUBLIC" | "PRIVATE" }))
+                  setForm((prev) => ({ ...prev, visibility: event.target.value as "PUBLIC" | "PRIVATE" | "CLUB" }))
                 }
               >
-                <option value="PRIVATE">Private</option>
-                <option value="PUBLIC">Public</option>
+                <option value="PRIVATE">Private – only you</option>
+                <option value="CLUB">Club – coaches of your club</option>
+                <option value="PUBLIC">Public – all coaches</option>
               </select>
               <Input
                 value={form.coverImageUrl}

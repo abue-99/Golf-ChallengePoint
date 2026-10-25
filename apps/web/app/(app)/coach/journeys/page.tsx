@@ -3,28 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Globe, Lock, Plus, Route as RouteIcon, Search } from "lucide-react";
+import { Check, Copy, Plus, Route as RouteIcon, Search } from "lucide-react";
+import LibraryVisibilityBadge from "@/components/LibraryVisibilityBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import type { JourneyTemplate } from "@/types/journey-template";
 import { toast } from "sonner";
-
-function visibilityBadge(visibility: JourneyTemplate["visibility"]) {
-  if (visibility === "PUBLIC") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
-        <Globe className="h-3 w-3" /> Public
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-      <Lock className="h-3 w-3" /> Private
-    </span>
-  );
-}
 
 export default function CoachJourneysPage() {
   const router = useRouter();
@@ -71,6 +57,36 @@ export default function CoachJourneysPage() {
       );
     });
   }, [journeys, q]);
+
+  const [copyingId, setCopyingId] = useState<string | null>(null);
+  // Library journeys the coach already copied.
+  const copiedIds = useMemo(
+    () =>
+      new Set(
+        journeys
+          .filter((journey) => journey.coachId === myId && journey.copiedFromId)
+          .map((journey) => journey.copiedFromId as string),
+      ),
+    [journeys, myId],
+  );
+
+  async function copyJourney(journey: JourneyTemplate) {
+    setCopyingId(journey.id);
+    try {
+      const copy = (await api.duplicateJourneyTemplate(journey.id)) as JourneyTemplate;
+      setJourneys((current) => [copy, ...current]);
+      toast.success(`"${journey.name}" copied to your journeys.`, {
+        action: {
+          label: "Edit copy",
+          onClick: () => router.push(`/coach/journeys/${copy.id}?mode=edit`),
+        },
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Copy failed");
+    } finally {
+      setCopyingId(null);
+    }
+  }
 
   async function assignJourney(journey: JourneyTemplate) {
     try {
@@ -122,8 +138,9 @@ export default function CoachJourneysPage() {
           className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none"
         >
           <option value="">All Visibility</option>
-          <option value="PUBLIC">Public</option>
           <option value="PRIVATE">Private</option>
+          <option value="CLUB">Club</option>
+          <option value="PUBLIC">Public</option>
         </select>
       </div>
 
@@ -156,7 +173,12 @@ export default function CoachJourneysPage() {
                         <p className="text-xs text-slate-500">{journey.category ?? "Uncategorized"}</p>
                       </div>
                     </div>
-                    {visibilityBadge(journey.visibility)}
+                    <span className="flex flex-col items-end gap-1">
+                      <LibraryVisibilityBadge visibility={journey.visibility} />
+                      {isOwner && journey.copiedFromId ? (
+                        <span className="text-[11px] text-slate-400">Your copy</span>
+                      ) : null}
+                    </span>
                   </div>
 
                   {journey.description ? (
@@ -165,6 +187,9 @@ export default function CoachJourneysPage() {
 
                   <div className="text-xs text-slate-500">
                     {journey.lessons.length} lesson{journey.lessons.length === 1 ? "" : "s"}
+                    {!isOwner && journey.coach
+                      ? ` · by ${[journey.coach.firstName, journey.coach.lastName].filter(Boolean).join(" ") || journey.coach.email}`
+                      : ""}
                   </div>
 
                   <div className="flex items-center justify-between" onClick={(event) => event.stopPropagation()}>
@@ -176,13 +201,28 @@ export default function CoachJourneysPage() {
                     >
                       Assign
                     </Button>
-                    <Button
-                      size="sm"
-                      className="bg-green-600 text-white hover:bg-green-500"
-                      onClick={() => router.push(`/coach/journeys/${journey.id}${isOwner ? "?mode=edit" : ""}`)}
-                    >
-                      {isOwner ? "Edit" : "Open"}
-                    </Button>
+                    <span className="flex gap-1">
+                      {!isOwner ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={copiedIds.has(journey.id) || copyingId === journey.id}
+                          onClick={() => void copyJourney(journey)}
+                          title={copiedIds.has(journey.id) ? "You already have a copy" : "Copy to your journeys to adapt it"}
+                          className="gap-1"
+                        >
+                          {copiedIds.has(journey.id) ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                          {copiedIds.has(journey.id) ? "Copied" : "Copy"}
+                        </Button>
+                      ) : null}
+                      <Button
+                        size="sm"
+                        className="bg-green-600 text-white hover:bg-green-500"
+                        onClick={() => router.push(`/coach/journeys/${journey.id}${isOwner ? "?mode=edit" : ""}`)}
+                      >
+                        {isOwner ? "Edit" : "Open"}
+                      </Button>
+                    </span>
                   </div>
                 </CardContent>
               </Card>

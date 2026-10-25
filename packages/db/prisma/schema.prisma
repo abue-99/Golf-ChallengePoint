@@ -48,6 +48,8 @@ enum LessonStatus {
 enum LessonVisibility {
   PUBLIC
   PRIVATE
+  /// Coaches who share a club with the author.
+  CLUB
 }
 
 enum LessonPriority {
@@ -115,6 +117,8 @@ enum JourneyDifficulty {
 enum JourneyVisibility {
   PUBLIC
   PRIVATE
+  /// Coaches who share a club with the author.
+  CLUB
 }
 
 model User {
@@ -376,6 +380,8 @@ model TrainingLesson {
   status          LessonStatus     @default(PLANNED)
   visibility      LessonVisibility @default(PRIVATE)
   videoUrl        String?
+  /// The lesson this one was copied from (club or public library).
+  copiedFromId    String?
 
   // Ownership
   coachId         String
@@ -408,6 +414,7 @@ model TrainingLesson {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
+  @@index([coachId, copiedFromId])
   @@map("training_lessons")
 }
 
@@ -507,12 +514,15 @@ model JourneyTemplate {
   difficulty   JourneyDifficulty?
   visibility   JourneyVisibility      @default(PRIVATE)
   coverImageUrl String?
+  /// The journey this one was copied from (club or public library).
+  copiedFromId String?
   lessons      JourneyTemplateLesson[]
   assignments  JourneyTemplateAssignment[]
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
 
   @@index([coachId, createdAt])
+  @@index([coachId, copiedFromId])
   @@map("journey_templates")
 }
 

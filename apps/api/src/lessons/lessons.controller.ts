@@ -95,6 +95,16 @@ export class LessonsController {
     return this.lessonsService.getLesson(user.id, user.role as string, id);
   }
 
+  // ─── Copy into my library ─────────────────────────────────────────────────
+
+  @Post(':id/copy')
+  copyLesson(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.lessonsService.copyLesson(user.id, user.role as string, id);
+  }
+
   // ─── Update lesson ────────────────────────────────────────────────────────
 
   @Patch(':id')

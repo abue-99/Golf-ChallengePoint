@@ -311,7 +311,8 @@ export default function LessonForm({
               ))}
             </select>
             <p className="mt-1 text-xs text-slate-400">
-              Public lessons are visible and assignable by all coaches.
+              Club: the coaches of your club can see, assign and copy it.
+              Public: all coaches.
             </p>
           </div>
 
