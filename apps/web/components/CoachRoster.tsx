@@ -11,6 +11,7 @@ import {
   Route as RouteIcon,
   Trophy,
   Gauge,
+  MessageCircle,
   MoreHorizontal,
   MessageSquare,
   Inbox,
@@ -40,6 +41,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import PlayerSidePanel from "@/components/PlayerSidePanel";
+import { useUnreadMessages } from "@/lib/messages";
 import {
   loadWarning,
   refreshPlayerLoad,
@@ -217,8 +219,10 @@ function PlayerRow({
   onRemoveFromTeam,
   onSelectTeam,
   load,
+  unreadMessages = 0,
 }: {
   load?: PlayerLoad;
+  unreadMessages?: number;
   player: RosterPlayer;
   teams: Team[];
   today: string;
@@ -303,6 +307,15 @@ function PlayerRow({
           className="flex flex-wrap items-center gap-1.5 rounded-full empty:hidden"
           aria-label={`Show details for ${name}`}
         >
+        {unreadMessages > 0 ? (
+          <Indicator
+            icon={MessageCircle}
+            tone="rose"
+            label={`${unreadMessages} unread message${unreadMessages === 1 ? "" : "s"}`}
+          >
+            {unreadMessages}
+          </Indicator>
+        ) : null}
         {player.feedbackCount > 0 ? (
           <Indicator
             icon={MessageSquare}
@@ -560,6 +573,7 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
     });
   }, [load]);
 
+  const unread = useUnreadMessages();
   const loadData = usePlayerLoad();
   const loadByPlayer = useMemo(
     () => new Map((loadData?.players ?? []).map((entry) => [entry.playerId, entry])),
@@ -670,6 +684,7 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
         onRemoveFromTeam={(teamId) => void removeFromTeam(player.id, teamId)}
         onSelectTeam={(teamId) => setTeamFilter(teamId)}
         load={loadByPlayer.get(player.id)}
+        unreadMessages={unread?.byUser[player.id] ?? 0}
       />
     );
   }
@@ -975,6 +990,7 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
                   { icon: Moon, text: `No activity for ${INACTIVE_AFTER_DAYS}+ days`, cls: "text-amber-700" },
                   { icon: UserX, text: "Account not activated yet", cls: "text-amber-700" },
                   { icon: Trophy, text: "Tournament within 14 days", cls: "text-amber-700" },
+                  { icon: MessageCircle, text: "Unread messages from the player", cls: "text-rose-700" },
                   { icon: Gauge, text: "Training load near or above the weekly limit, or the same lesson from two coaches", cls: "text-amber-700" },
                   { icon: StickyNote, text: "You have private notes", cls: "text-slate-600" },
                   { icon: ClipboardPlus, text: "Assign a lesson or journey", cls: "text-[var(--golf-primary)]" },

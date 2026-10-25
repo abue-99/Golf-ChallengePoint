@@ -8,6 +8,7 @@ import {
   ExternalLink,
   LayoutList,
   Mail,
+  MessageCircle,
   Phone,
   Route as RouteIcon,
   Trophy,
@@ -29,6 +30,7 @@ import { COACH_ROLE_LABEL, roleLabel, type CoachRole } from "@/lib/coach-roles";
 import { FeedbackList } from "@/components/FeedbackList";
 import QuickAssign from "@/components/QuickAssign";
 import PlayerLoadCard from "@/components/PlayerLoadCard";
+import { useUnreadMessages } from "@/lib/messages";
 import {
   formatMinutes,
   refreshPlayerLoad,
@@ -113,6 +115,7 @@ export function PlayerDetails({
   const missed = missedCount(player);
   const inactive = isInactive(player);
   const playerTeams = teams.filter((team) => player.teamIds.includes(team.id));
+  const unreadMessages = useUnreadMessages()?.byUser[player.id] ?? 0;
   const loadData = usePlayerLoad();
   const load = loadData?.players.find((entry) => entry.playerId === player.id);
   const busyWeekIndex = load?.weeks.findIndex((week) => week.level !== "ok") ?? -1;
@@ -171,7 +174,7 @@ export function PlayerDetails({
         </Header>
 
         <div className={inline ? "space-y-6 p-4" : "space-y-6 p-5"}>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-5 gap-2">
             <button
               type="button"
               onClick={() => setAssignOpen((open) => !open)}
@@ -186,6 +189,17 @@ export function PlayerDetails({
             >
               <Plus className="h-4 w-4" /> Assign
             </button>
+            <Link
+              href={`/messages?with=${encodeURIComponent(player.id)}`}
+              className="relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-xs font-medium text-slate-700 hover:border-[var(--golf-primary)] hover:text-[var(--golf-primary)]"
+            >
+              <MessageCircle className="h-4 w-4" /> Message
+              {unreadMessages > 0 ? (
+                <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-semibold text-white">
+                  {unreadMessages}
+                </span>
+              ) : null}
+            </Link>
             <Link
               href={`/coach/players/${player.id}`}
               className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-xs font-medium text-slate-700 hover:border-[var(--golf-primary)] hover:text-[var(--golf-primary)]"

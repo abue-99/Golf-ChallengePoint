@@ -41,7 +41,8 @@ export async function middleware(req: NextRequest) {
     "/coach",
     "/club",
     "/admin",
-    "/settings"
+    "/settings",
+    "/messages"
   ];
   const isProtected = PROTECTED.some((p) => path.startsWith(p));
 

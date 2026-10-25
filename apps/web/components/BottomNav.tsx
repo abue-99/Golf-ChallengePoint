@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { NavItem } from "./sidebar";
+import { NavBadge, type NavItem } from "./sidebar";
 
 interface BottomNavProps {
   navItems: NavItem[];
@@ -40,15 +40,18 @@ export default function BottomNav({ navItems }: BottomNavProps) {
       className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 flex"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      {primary.map(({ href, icon: Icon, label }) => {
+      {primary.map(({ href, icon: Icon, label, badge }) => {
         const active = isActive(pathname, href);
         return (
           <Link key={label} href={href} className={itemClass(active)}>
-            <Icon
-              size={22}
-              className={active ? "text-[var(--golf-primary)]" : "text-gray-500"}
-              strokeWidth={active ? 2.5 : 1.75}
-            />
+            <span className="relative">
+              <Icon
+                size={22}
+                className={active ? "text-[var(--golf-primary)]" : "text-gray-500"}
+                strokeWidth={active ? 2.5 : 1.75}
+              />
+              <NavBadge count={badge} />
+            </span>
             <span className="leading-none">{label}</span>
           </Link>
         );

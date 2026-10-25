@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import Header from './header';
 import Sidebar from './sidebar';
 import BottomNav from './BottomNav';
-import { Home, Settings, BookOpen, User, CalendarDays, ClipboardList } from 'lucide-react';
+import { Home, Settings, BookOpen, User, CalendarDays, ClipboardList, MessageCircle } from 'lucide-react';
+import { useUnreadMessages } from '@/lib/messages';
 import { Users, Route as RouteIcon } from 'lucide-react';
 import type { ReactNode } from "react";
 import { defaultNavItems } from './sidebar';
@@ -27,11 +28,16 @@ export default function HeaderAndSidebarLayout({
    return () => document.removeEventListener('keydown', handleKeyDown);
  }, [expanded]);
 
- const navItems = (role === 'COACH' || role === 'ADMIN')
+ const isCoach = role === 'COACH' || role === 'ADMIN';
+ const chatRole = isCoach || role === 'PLAYER';
+ const unread = useUnreadMessages();
+ const unreadCount = chatRole ? unread?.total ?? 0 : 0;
+ const navItems = isCoach
    ? [
        { href: '/dashboard', icon: Home, label: 'Home' },
        { href: '/teams', icon: Users, label: 'Teams', mobile: 'more' as const },
        { href: '/calendar', icon: CalendarDays, label: 'Calendar' },
+       { href: '/messages', icon: MessageCircle, label: 'Messages', badge: unreadCount },
        { href: '/coach/lessons', icon: BookOpen, label: 'Lessons' },
        { href: '/coach/journeys', icon: RouteIcon, label: 'Journeys' },
        { href: '/settings', icon: Settings, label: 'Settings', mobile: 'more' as const },
@@ -42,6 +48,7 @@ export default function HeaderAndSidebarLayout({
        { href: '/player', icon: RouteIcon, label: 'Journey' },
        { href: '/player/queue', icon: ClipboardList, label: 'Queue' },
        { href: '/calendar', icon: CalendarDays, label: 'Calendar' },
+       { href: '/messages', icon: MessageCircle, label: 'Messages', badge: unreadCount },
        { href: '/settings/profile', icon: User, label: 'Profile' },
      ]
    : defaultNavItems;

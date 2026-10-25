@@ -13,6 +13,7 @@ import { AssignmentsModule } from './assignments/assignments.module';
 import { JourneysModule } from './journeys/journeys.module';
 import { RosterModule } from './roster/roster.module';
 
+import { MessagesModule } from './messages/messages.module';
 @Module({
   imports: [
     PrismaModule,
@@ -27,6 +28,7 @@ import { RosterModule } from './roster/roster.module';
     AssignmentsModule,
     JourneysModule,
     RosterModule,
+    MessagesModule,
   ],
   controllers: [AppController],
 })

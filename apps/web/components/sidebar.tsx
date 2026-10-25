@@ -10,7 +10,22 @@ export type NavItem = {
   label: string;
   /** Mobile bottom bar: "more" items are tucked into the "More" menu. */
   mobile?: "primary" | "more";
+  /** Count shown on the icon, e.g. unread messages. */
+  badge?: number;
 };
+
+/** Small red count on a navigation icon. */
+export function NavBadge({ count, className = "" }: { count?: number; className?: string }) {
+  if (!count) return null;
+  return (
+    <span
+      className={`absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-semibold leading-none text-white ${className}`}
+      aria-label={`${count} unread`}
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
 
 export const defaultNavItems: NavItem[] = [
   { href: '/', icon: Home, label: 'Dashboard' },
@@ -30,9 +45,17 @@ export default function Sidebar({
   return (
     <aside className={`bg-green-50 overflow-hidden flex-shrink-0 transition-all duration-300 ease-in-out ${expanded ? 'w-52' : 'w-12'}`}>
       <nav className='flex flex-col py-4'>
-        {navItems.map(({ href, icon: Icon, label }) => (
-          <Link key={label} href={href} className={itemClass} title={label}>
-            <Icon size={20} className="text-gray-700 flex-shrink-0" />
+        {navItems.map(({ href, icon: Icon, label, badge }) => (
+          <Link
+            key={label}
+            href={href}
+            className={itemClass}
+            title={badge ? `${label} (${badge} unread)` : label}
+          >
+            <span className="relative flex-shrink-0">
+              <Icon size={20} className="text-gray-700" />
+              <NavBadge count={badge} />
+            </span>
             {expanded && <span>{label}</span>}
           </Link>
         ))}

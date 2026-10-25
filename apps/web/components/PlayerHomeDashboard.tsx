@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import AttendanceButtons from "@/components/AttendanceButtons";
+import CoachMessagesCard from "@/components/messages/CoachMessagesCard";
 import { canAnswer } from "@/lib/attendance";
 import { api } from "@/lib/api";
 import type { CalendarActivity } from "@/types/calendar";
@@ -709,6 +710,9 @@ export default function PlayerHomeDashboard({
             nextLevelXp={gamification.nextLevelXp}
             currentStreak={gamification.currentStreak}
           />
+
+          {/* Questions from coaches and new messages */}
+          {!loading ? <CoachMessagesCard /> : null}
 
           {/* Moved or cancelled team trainings of the next two weeks */}
           {!loading ? (
