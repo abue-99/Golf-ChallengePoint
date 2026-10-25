@@ -8,7 +8,7 @@ import {
 // (pure helpers here are unit-tested without a database).
 import type { AttendanceStatus } from '@challengepoint/db';
 import { PrismaService } from '../prisma/prisma.service';
-import { expandOccurrences } from '../roster/roster.helpers';
+import { findEffectiveOccurrence, loadSlotExceptions } from './occurrences';
 
 const MAX_NOTE_LENGTH = 300;
 const STATUSES = ['GOING', 'MAYBE', 'NOT_GOING'] as const;
@@ -217,14 +217,16 @@ export class AttendanceService {
     }
     await this.assertMember(playerId, slot.teamId);
 
-    // The start must be a real occurrence of this (possibly recurring) window.
-    const match = expandOccurrences(
-      slot,
-      new Date(start.getTime() - 60_000),
-      new Date(start.getTime() + 60_000),
-    ).find((occurrence) => occurrence.start.getTime() === start.getTime());
+    // The start must be a real occurrence of this (possibly recurring)
+    // window – for a moved one its new time.
+    const exceptions =
+      (await loadSlotExceptions(this.prisma, [slot.id])).get(slot.id) ?? [];
+    const match = findEffectiveOccurrence(slot, exceptions, start);
     if (!match) {
       throw new NotFoundException('This training does not take place then');
+    }
+    if (match.status === 'cancelled') {
+      throw new BadRequestException('This training was cancelled');
     }
     return {
       key: slotOccurrenceKey(slot.id, match.start),

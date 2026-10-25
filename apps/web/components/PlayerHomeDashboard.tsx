@@ -386,6 +386,11 @@ function TeamAttendanceCard({
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
             {next.attendance ? "Next team session" : "Are you coming?"}
+            {next.occurrenceStatus === "moved" ? (
+              <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 normal-case tracking-normal text-amber-800">
+                New time
+              </span>
+            ) : null}
           </p>
           <p className="truncate font-semibold text-slate-900">{next.title}</p>
           <p className="text-sm text-slate-500">
@@ -412,6 +417,102 @@ function TeamAttendanceCard({
   );
 }
 
+/**
+ * Team trainings the coach moved or cancelled in the next two weeks, so the
+ * player does not show up at the old time.
+ */
+function TrainingChangesCard({
+  activities,
+  nowIso,
+  timeZone,
+}: {
+  activities: CalendarActivity[];
+  nowIso: string;
+  timeZone: string;
+}) {
+  if (!nowIso) return null;
+  const now = new Date(nowIso).getTime();
+  const horizon = now + 14 * 24 * 60 * 60 * 1000;
+  const changes = activities
+    .filter(
+      (activity) =>
+        activity.type === "team-practice" &&
+        activity.occurrenceStatus &&
+        new Date(activity.end).getTime() >= now &&
+        new Date(activity.start).getTime() <= horizon,
+    )
+    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+    .slice(0, 3);
+  if (changes.length === 0) return null;
+  const when = (value: string) =>
+    formatDateInTimeZone(value, timeZone, {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+  return (
+    <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-sm">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-800">
+        Changed by your coach
+      </p>
+      <ul className="space-y-2">
+        {changes.map((activity) => {
+          const cancelled = activity.occurrenceStatus === "cancelled";
+          return (
+            <li key={activity.id} className="flex items-start gap-3">
+              <span
+                className={cn(
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base",
+                  cancelled ? "bg-rose-100" : "bg-amber-100",
+                )}
+                aria-hidden
+              >
+                {cancelled ? "✕" : "↪"}
+              </span>
+              <div className="min-w-0 flex-1 text-sm">
+                <p className="truncate font-semibold text-slate-900">
+                  {activity.title}
+                  {activity.teamName ? (
+                    <span className="font-normal text-slate-500">
+                      {" "}
+                      · {activity.teamName}
+                    </span>
+                  ) : null}
+                </p>
+                {cancelled ? (
+                  <p className="text-rose-800">
+                    <span className="line-through">{when(activity.start)}</span>{" "}
+                    – cancelled
+                  </p>
+                ) : (
+                  <p className="text-amber-900">
+                    Now {when(activity.start)}
+                    {activity.originalStart ? (
+                      <span className="text-slate-500">
+                        {" "}
+                        (was {when(activity.originalStart)})
+                      </span>
+                    ) : null}
+                  </p>
+                )}
+                {activity.changeReason ? (
+                  <p className="truncate text-xs text-slate-600">
+                    “{activity.changeReason}”
+                  </p>
+                ) : null}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 function CalendarSummaryCard({
   activities,
   nowIso,
@@ -424,7 +525,11 @@ function CalendarSummaryCard({
   const now = nowIso ? new Date(nowIso).getTime() : 0;
   const today = nowIso ? new Date(nowIso) : new Date(0);
   const upcoming = [...activities]
-    .filter((activity) => new Date(activity.end).getTime() >= now)
+    .filter(
+      (activity) =>
+        new Date(activity.end).getTime() >= now &&
+        activity.occurrenceStatus !== "cancelled",
+    )
     .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
   const nextUp = upcoming[0] ?? null;
   const todayItems = upcoming
@@ -604,6 +709,15 @@ export default function PlayerHomeDashboard({
             nextLevelXp={gamification.nextLevelXp}
             currentStreak={gamification.currentStreak}
           />
+
+          {/* Moved or cancelled team trainings of the next two weeks */}
+          {!loading ? (
+            <TrainingChangesCard
+              activities={calendarActivities}
+              nowIso={calendarNowIso}
+              timeZone={resolvedTimeZone}
+            />
+          ) : null}
 
           {/* Team session answer – only when there is one to answer */}
           {!loading ? (

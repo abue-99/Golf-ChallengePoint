@@ -3,7 +3,8 @@ import { randomBytes } from 'crypto';
 import { OwnerType } from '@challengepoint/db';
 import { PrismaService } from '../prisma/prisma.service';
 import { coachTeamsWhere } from '../teams/team-access';
-import { expandOccurrences } from '../roster/roster.helpers';
+import { expandEffective, loadSlotExceptions } from './occurrences';
+import { formatSession } from './reminder-mail';
 import { CalendarService } from './calendar.service';
 import { buildIcs, type IcsEvent } from './ics';
 import {
@@ -39,6 +40,30 @@ function validTimeZone(value: string | null | undefined) {
 function withTeam(title: string, team?: string | null) {
   if (!team || title.toLowerCase().includes(team.toLowerCase())) return title;
   return `${title} (${team})`;
+}
+
+/** "Moved from Tue 27 Oct, 16:00–17:30" / "Cancelled – <reason>". */
+export function changeLine(
+  occurrence: {
+    status: string;
+    originalStart: Date;
+    originalEnd: Date;
+    reason?: string | null;
+  },
+  timeZone: string,
+) {
+  if (occurrence.status === 'cancelled') {
+    return `Cancelled${occurrence.reason ? ` – ${occurrence.reason}` : ''}`;
+  }
+  if (occurrence.status === 'moved') {
+    const was = formatSession(
+      occurrence.originalStart,
+      occurrence.originalEnd,
+      timeZone,
+    );
+    return `Moved from ${was}${occurrence.reason ? ` – ${occurrence.reason}` : ''}`;
+  }
+  return null;
 }
 
 function newToken() {
@@ -110,8 +135,8 @@ export class CalendarFeedService {
     const role = user.role as string;
     const events =
       role === 'PLAYER'
-        ? await this.playerEvents(user.id)
-        : await this.coachEvents(user.id);
+        ? await this.playerEvents(user.id, timeZone)
+        : await this.coachEvents(user.id, timeZone);
 
     return buildIcs({
       name: `ChallengePoint – ${user.firstName ?? 'My calendar'}`,
@@ -129,7 +154,10 @@ export class CalendarFeedService {
   }
 
   /** The player's own calendar, the same data as the in-app calendar. */
-  private async playerEvents(playerId: string): Promise<IcsEvent[]> {
+  private async playerEvents(
+    playerId: string,
+    timeZone: string,
+  ): Promise<IcsEvent[]> {
     const { from, to } = this.range();
     const calendar = await this.calendar.getPlayerCalendar(
       playerId,
@@ -158,6 +186,10 @@ export class CalendarFeedService {
         teamName?: string | null;
         occurrenceKey?: string;
         planName?: string;
+        occurrenceStatus?: 'moved' | 'cancelled';
+        originalStart?: string;
+        originalEnd?: string;
+        changeReason?: string | null;
       };
       // Availability blocks are the player's own entries (school, work …)
       // and lesson due dates are tasks, not appointments.
@@ -171,11 +203,28 @@ export class CalendarFeedService {
       const end = new Date(activity.end);
       if (end < from || start > to) continue;
 
-      const answer = activity.occurrenceKey
-        ? answerByKey.get(activity.occurrenceKey)
-        : undefined;
+      const cancelled = activity.occurrenceStatus === 'cancelled';
+      const answer =
+        activity.occurrenceKey && !cancelled
+          ? answerByKey.get(activity.occurrenceKey)
+          : undefined;
+      const change =
+        activity.occurrenceStatus && activity.originalStart
+          ? changeLine(
+              {
+                status: activity.occurrenceStatus,
+                originalStart: new Date(activity.originalStart),
+                originalEnd: new Date(
+                  activity.originalEnd ?? activity.originalStart,
+                ),
+                reason: activity.changeReason,
+              },
+              timeZone,
+            )
+          : null;
       const details = [
         activity.teamName ? `Team: ${activity.teamName}` : null,
+        change,
         activity.planName ? `Plan: ${activity.planName}` : null,
         answer ? ANSWER_LABEL[answer] : null,
         activity.description ?? null,
@@ -183,14 +232,14 @@ export class CalendarFeedService {
 
       events.push({
         uid: `${activity.id}@${UID_DOMAIN}`,
-        title: withTeam(activity.title, activity.teamName),
+        title: `${cancelled ? 'Cancelled: ' : ''}${withTeam(activity.title, activity.teamName)}`,
         start,
         end,
         allDay: activity.allDay || activity.type === 'milestone',
         description: details.join('\n') || null,
         location: activity.location ?? null,
         status:
-          answer === 'NOT_GOING'
+          cancelled || answer === 'NOT_GOING'
             ? 'CANCELLED'
             : answer === 'MAYBE'
               ? 'TENTATIVE'
@@ -205,7 +254,10 @@ export class CalendarFeedService {
    * current attendance), the coach's scheduled sessions and the tournaments
    * of linked players.
    */
-  private async coachEvents(coachId: string): Promise<IcsEvent[]> {
+  private async coachEvents(
+    coachId: string,
+    timeZone: string,
+  ): Promise<IcsEvent[]> {
     const { from, to } = this.range();
     const [teams, links] = await Promise.all([
       this.prisma.team.findMany({
@@ -261,18 +313,28 @@ export class CalendarFeedService {
         : Promise.resolve([]),
     ]);
 
+    const exceptions = await loadSlotExceptions(
+      this.prisma,
+      slots.map((slot) => slot.id),
+    );
     const occurrences = slots.flatMap((slot) =>
-      expandOccurrences(slot, from, to).map((occurrence) => ({
-        slot,
-        occurrence,
-        key: slotOccurrenceKey(slot.id, occurrence.start),
-      })),
+      expandEffective(slot, exceptions.get(slot.id), from, to).map(
+        (occurrence) => ({
+          slot,
+          occurrence,
+          key: slotOccurrenceKey(slot.id, occurrence.start),
+        }),
+      ),
     );
     // Attendance only for the coming weeks; past answers do not matter here.
     const now = new Date();
     const summaries = await loadAttendanceSummaries(this.prisma, [
       ...occurrences
-        .filter((item) => item.occurrence.end >= now)
+        .filter(
+          (item) =>
+            item.occurrence.end >= now &&
+            item.occurrence.status !== 'cancelled',
+        )
         .map((item) => ({ key: item.key, teamId: item.slot.teamId as string })),
       ...teamEvents
         .filter((event) => event.endTime >= now)
@@ -290,12 +352,19 @@ export class CalendarFeedService {
     const events: IcsEvent[] = [];
     for (const { slot, occurrence, key } of occurrences) {
       const team = slot.teamId ? teamName.get(slot.teamId) : undefined;
+      const cancelled = occurrence.status === 'cancelled';
       events.push({
-        uid: `slot-${slot.id}-${occurrence.start.toISOString()}@${UID_DOMAIN}`,
-        title: withTeam(slot.title, team),
+        // Series time: a moved occurrence updates the same calendar entry.
+        uid: `slot-${slot.id}-${occurrence.originalStart.toISOString()}@${UID_DOMAIN}`,
+        title: `${cancelled ? 'Cancelled: ' : ''}${withTeam(slot.title, team)}`,
         start: occurrence.start,
         end: occurrence.end,
-        description: [team ? `Team: ${team}` : null, attendanceLine(key)]
+        status: cancelled ? 'CANCELLED' : 'CONFIRMED',
+        description: [
+          team ? `Team: ${team}` : null,
+          changeLine(occurrence, timeZone),
+          cancelled ? null : attendanceLine(key),
+        ]
           .filter(Boolean)
           .join('\n'),
       });

@@ -15,6 +15,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
 import { CoachCalendarService } from './coach-calendar.service';
 import { AttendanceReminderService } from './attendance-reminder.service';
+import { OccurrenceChangeService } from './occurrence-change.service';
 
 /** The coach's own calendar: teams, sessions and the players' answers. */
 @Controller('calendar/coach')
@@ -23,6 +24,7 @@ export class CoachCalendarController {
   constructor(
     private readonly coachCalendar: CoachCalendarService,
     private readonly reminders: AttendanceReminderService,
+    private readonly occurrences: OccurrenceChangeService,
   ) {}
 
   /** GET /calendar/coach?from=&to=&teamId= */
@@ -52,6 +54,28 @@ export class CoachCalendarController {
       user.role as string,
       body?.occurrenceKey,
     );
+  }
+
+  /**
+   * PUT /calendar/coach/occurrences – move, cancel or restore one occurrence
+   * of a team training: { occurrenceKey, action: "move" | "cancel" |
+   * "restore", startTime?, endTime?, reason?, notify?, force? }
+   */
+  @Put('occurrences')
+  changeOccurrence(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body()
+    body: {
+      occurrenceKey?: unknown;
+      action?: unknown;
+      startTime?: unknown;
+      endTime?: unknown;
+      reason?: unknown;
+      notify?: unknown;
+      force?: unknown;
+    },
+  ) {
+    return this.occurrences.change(user.id, user.role as string, body ?? {});
   }
 
   /** PUT /calendar/coach/teams/:teamId/auto-remind – { hours: number | null } */

@@ -43,6 +43,10 @@ import type {
   CalendarEventExtendedProps,
 } from "@/types/calendar";
 import AttendanceButtons from "./AttendanceButtons";
+import {
+  OccurrenceChangeBadge,
+  OccurrenceChangeNote,
+} from "./OccurrenceChangeNote";
 import { ATTENDANCE_LABEL, canAnswer } from "@/lib/attendance";
 import PracticeSlotDialog, {
   type PracticeSlotFormData,
@@ -133,6 +137,9 @@ function AttendanceBadge({
   activity: CalendarActivity;
   canRespond: boolean;
 }) {
+  if (activity.occurrenceStatus) {
+    return <OccurrenceChangeBadge activity={activity} />;
+  }
   if (activity.attendance) {
     const tone =
       activity.attendance.status === "GOING"
@@ -215,8 +222,16 @@ function ActivityDialog({
             ) : null}
           </div>
 
+          <OccurrenceChangeNote activity={activity} timeZone={timeZone} />
+
           <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <p className="font-medium text-slate-800">
+            <p
+              className={
+                activity.occurrenceStatus === "cancelled"
+                  ? "font-medium text-slate-500 line-through"
+                  : "font-medium text-slate-800"
+              }
+            >
               {formatRange(activity.start, activity.end, timeZone)}
             </p>
             {activity.location ? (
@@ -818,7 +833,15 @@ export default function PlayerCalendarView({
                           {formatAgendaDate(activity.start, resolvedTimeZone)}
                         </p>
                         <p className="mt-1 flex flex-wrap items-center gap-2 font-semibold text-slate-800">
-                          {activity.title}
+                          <span
+                            className={
+                              activity.occurrenceStatus === "cancelled"
+                                ? "text-slate-500 line-through"
+                                : undefined
+                            }
+                          >
+                            {activity.title}
+                          </span>
                           <AttendanceBadge activity={activity} canRespond={role === "PLAYER"} />
                         </p>
                         <p className="mt-1 text-sm text-slate-600">

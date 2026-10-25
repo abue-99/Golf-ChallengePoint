@@ -161,6 +161,7 @@ model User {
   attendanceReminders  AttendanceReminder[]    @relation("ReminderSender")
   teamStaff            TeamCoach[]             @relation("TeamStaff")
   createdSlots         PracticeSlot[]          @relation("SlotCreator")
+  slotExceptions       PracticeSlotException[] @relation("SlotExceptionChanger")
 
   @@map("users")
 }
@@ -307,10 +308,34 @@ model PracticeSlot {
   createdBy         User?        @relation("SlotCreator", fields: [createdById], references: [id], onDelete: SetNull)
   tasks             CalendarTask[]
   attendances       Attendance[]
+  exceptions        PracticeSlotException[]
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
   @@map("practice_slots")
+}
+
+/// One occurrence of a (recurring) team training that was moved or cancelled;
+/// the rest of the series stays unchanged.
+model PracticeSlotException {
+  id             String       @id @default(cuid())
+  practiceSlotId String
+  practiceSlot   PracticeSlot @relation(fields: [practiceSlotId], references: [id], onDelete: Cascade)
+  /// Start of the occurrence in the series (identifies it).
+  originalStart  DateTime
+  cancelled      Boolean      @default(false)
+  /// New time of a moved occurrence (null when cancelled).
+  newStart       DateTime?
+  newEnd         DateTime?
+  /// Shown to the players, e.g. "Course closed".
+  reason         String?
+  changedById    String?
+  changedBy      User?        @relation("SlotExceptionChanger", fields: [changedById], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([practiceSlotId, originalStart])
+  @@map("practice_slot_exceptions")
 }
 
 model CalendarTask {

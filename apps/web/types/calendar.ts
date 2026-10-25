@@ -54,7 +54,19 @@ export type CalendarActivity = {
   occurrenceKey?: string;
   /** The player's own answer for this occurrence, if any. */
   attendance?: { status: AttendanceStatus; note: string | null } | null;
+  /**
+   * Team trainings: this single date was moved or cancelled (the rest of
+   * the series is unchanged). Lessons inside a cancelled training carry
+   * "cancelled" too.
+   */
+  occurrenceStatus?: OccurrenceStatus;
+  /** Series time of a moved or cancelled date. */
+  originalStart?: string;
+  originalEnd?: string;
+  changeReason?: string | null;
 };
+
+export type OccurrenceStatus = "moved" | "cancelled";
 
 export type AttendanceStatus = "GOING" | "MAYBE" | "NOT_GOING";
 

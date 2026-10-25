@@ -1,4 +1,4 @@
-import type { AttendanceStatus } from "./calendar";
+import type { AttendanceStatus, OccurrenceStatus } from "./calendar";
 
 export type CoachAttendance = {
   going: number;
@@ -45,6 +45,11 @@ export type CoachCalendarActivity = {
   priority?: string;
   createdById?: string | null;
   createdByName?: string | null;
+  /** Team trainings: this single date was moved or cancelled. */
+  occurrenceStatus?: OccurrenceStatus;
+  originalStart?: string;
+  originalEnd?: string;
+  changeReason?: string | null;
   lastReminder?: { sentAt: string; kind: "MANUAL" | "AUTO" | string } | null;
 };
 

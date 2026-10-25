@@ -27,7 +27,10 @@ import {
   BellRing,
   BookOpen,
   CalendarClock,
+  CalendarX2,
+  MoveRight,
   Plus,
+  Undo2,
   Users,
   X,
 } from "lucide-react";
@@ -59,6 +62,10 @@ import LessonLibrary, {
   type PlannableLesson,
 } from "./LessonLibrary";
 import PlanLessonDialog, { type PlanDraft } from "./PlanLessonDialog";
+import OccurrenceDialog, {
+  type OccurrenceAction,
+  type OccurrenceDraft,
+} from "./OccurrenceDialog";
 import { hitTest, pointerOf, sameTarget, type DropTarget } from "./drop-target";
 import {
   ApiError,
@@ -187,8 +194,9 @@ export function isMovable(
     case "team-event":
       return mayChange;
     case "team-practice":
-      // Recurring windows are edited as a series on the Teams page.
-      return activity.recurrence === "NONE" && mayChange;
+      // Recurring windows: dragging moves only this date (the series is
+      // edited on the Teams page). Cancelled dates stay where they are.
+      return activity.occurrenceStatus !== "cancelled" && mayChange;
     case "coach-assignment":
       return Boolean(viewerId) && activity.createdById === viewerId;
     default:
@@ -213,12 +221,24 @@ export function toEventInput(
   };
   switch (activity.type) {
     case "team-practice":
+      if (activity.occurrenceStatus === "cancelled") {
+        return {
+          ...base,
+          backgroundColor: "#f8fafc",
+          borderColor: "#cbd5e1",
+          textColor: "#64748b",
+          classNames: ["coach-cal-cancelled", "!border-dashed"],
+        };
+      }
       return {
         ...base,
         backgroundColor: color.soft,
         borderColor: color.solid,
         textColor: color.text,
-        classNames: ["coach-cal-practice"],
+        classNames: [
+          "coach-cal-practice",
+          ...(activity.occurrenceStatus === "moved" ? ["!border-dashed"] : []),
+        ],
       };
     case "team-event":
       return {
@@ -267,7 +287,10 @@ function EventContent({ arg }: { arg: EventContentArg }) {
           ? "📣 "
           : "";
   const isPast = arg.isPast;
+  const cancelled = activity.occurrenceStatus === "cancelled";
+  const moved = activity.occurrenceStatus === "moved";
   const subtitle = [
+    cancelled ? "Cancelled" : moved ? "Moved" : null,
     !arg.event.allDay && !isMonth ? arg.timeText : null,
     !isMonth ? activity.teamName : null,
   ]
@@ -282,7 +305,9 @@ function EventContent({ arg }: { arg: EventContentArg }) {
           </span>
         ) : null}
         {prefix}
-        {activity.title}
+        <span className={cn(cancelled && "line-through")}>
+          {activity.title}
+        </span>
         {activity.playerName && activity.type !== "team-practice"
           ? ` – ${activity.playerName}`
           : ""}
@@ -380,6 +405,9 @@ export default function CoachCalendarView() {
   );
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
   const [planDraft, setPlanDraft] = useState<PlanDraft | null>(null);
+  const [occurrenceDraft, setOccurrenceDraft] =
+    useState<OccurrenceDraft | null>(null);
+  const [occurrenceKeyCounter, setOccurrenceKeyCounter] = useState(0);
   const [planKey, setPlanKey] = useState(0);
   // The real pointer position while dragging. dnd-kit's delta also contains
   // the auto-scroll offset, which would put the drop point off by that much.
@@ -569,6 +597,10 @@ export default function CoachCalendarView() {
       toast.info("This training is already over.");
       return;
     }
+    if (activity.occurrenceStatus === "cancelled") {
+      toast.info("This date is cancelled – plan the lesson in another one.");
+      return;
+    }
     const place = placeInOccurrence(
       { start: new Date(activity.start), end: new Date(activity.end) },
       wanted,
@@ -714,6 +746,17 @@ export default function CoachCalendarView() {
       },
     });
 
+    // One date of a series: confirm in the dialog (note, e-mail to players).
+    if (
+      activity.type === "team-practice" &&
+      activity.recurrence &&
+      activity.recurrence !== "NONE"
+    ) {
+      arg.revert();
+      openOccurrenceDialog(activity, "move", start, end);
+      return;
+    }
+
     const save = async (force: boolean): Promise<void> => {
       try {
         if (activity.type === "team-event") {
@@ -804,6 +847,29 @@ export default function CoachCalendarView() {
       toast.error(err instanceof Error ? err.message : "Could not remove it.");
     }
   };
+
+  const openOccurrenceDialog = (
+    activity: CoachCalendarActivity,
+    action: OccurrenceAction,
+    start?: Date,
+    end?: Date,
+  ) => {
+    setSelected(null);
+    setOccurrenceKeyCounter((key) => key + 1);
+    setOccurrenceDraft({ activity, action, start, end });
+  };
+
+  /** Head coach or planner, a future training with a date key. */
+  const canChangeDate = (activity: CoachCalendarActivity) =>
+    activity.type === "team-practice" &&
+    Boolean(activity.occurrenceKey) &&
+    (Boolean(activity.teamId && headTeamIds.has(activity.teamId)) ||
+      (Boolean(data?.viewerId) && activity.createdById === data?.viewerId)) &&
+    new Date(
+      activity.occurrenceStatus === "cancelled" && activity.originalEnd
+        ? activity.originalEnd
+        : activity.end,
+    ).getTime() > now;
 
   const handleEventClick = (arg: EventClickArg) => {
     const activity = arg.event.extendedProps.activity as
@@ -1541,7 +1607,8 @@ export default function CoachCalendarView() {
           selected &&
           ((selected.type === "team-event" && canEditEvent(selected)) ||
             canRemind(selected) ||
-            canRemove(selected)) ? (
+            canRemove(selected) ||
+            canChangeDate(selected)) ? (
             <>
               {canRemove(selected) ? (
                 <Button
@@ -1562,6 +1629,37 @@ export default function CoachCalendarView() {
                   Edit event
                 </Button>
               ) : null}
+              {canChangeDate(selected) &&
+              selected.occurrenceStatus !== "cancelled" ? (
+                <>
+                  <Button
+                    variant="outline"
+                    className="text-rose-700"
+                    onClick={() => openOccurrenceDialog(selected, "cancel")}
+                  >
+                    <CalendarX2 className="mr-1 h-4 w-4" />
+                    Cancel date
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => openOccurrenceDialog(selected, "move")}
+                  >
+                    <MoveRight className="mr-1 h-4 w-4" />
+                    Move date
+                  </Button>
+                </>
+              ) : null}
+              {canChangeDate(selected) && selected.occurrenceStatus ? (
+                <Button
+                  variant="outline"
+                  onClick={() => openOccurrenceDialog(selected, "restore")}
+                >
+                  <Undo2 className="mr-1 h-4 w-4" />
+                  {selected.occurrenceStatus === "cancelled"
+                    ? "Restore date"
+                    : "Back to usual time"}
+                </Button>
+              ) : null}
               {canRemind(selected) ? (
                 <Button
                   onClick={() => void remind(selected)}
@@ -1579,6 +1677,35 @@ export default function CoachCalendarView() {
             </>
           ) : null
         }
+      />
+
+      <OccurrenceDialog
+        key={`occ-${occurrenceKeyCounter}`}
+        draft={occurrenceDraft}
+        onClose={() => setOccurrenceDraft(null)}
+        onDone={(result, action) => {
+          const title = occurrenceDraft?.activity.title ?? "Training";
+          setOccurrenceDraft(null);
+          reload();
+          const when = `${formatDay(result.start)} ${formatTime(result.start)}`;
+          const what =
+            result.status === "cancelled"
+              ? `${title} on ${formatDay(result.start)} is cancelled.`
+              : action === "move" && result.status === "moved"
+                ? `${title} moved to ${when}.`
+                : `${title} is back on ${when}.`;
+          const mail =
+            result.recipients > 0
+              ? result.notified === result.recipients
+                ? ` ${result.notified} ${result.notified === 1 ? "player was" : "players were"} notified.`
+                : ` ${result.notified} of ${result.recipients} e-mails could be sent.`
+              : "";
+          if (result.recipients > 0 && result.notified < result.recipients) {
+            toast.warning(`${what}${mail}`);
+          } else {
+            toast.success(`${what}${mail}`);
+          }
+        }}
       />
 
       <TeamEventDialog
@@ -1655,10 +1782,27 @@ function AgendaRow({
               : activity.type === "team-event"
                 ? "📣 "
                 : ""}
-            {activity.title}
+            <span
+              className={cn(
+                activity.occurrenceStatus === "cancelled" &&
+                  "text-slate-500 line-through",
+              )}
+            >
+              {activity.title}
+            </span>
           </span>
           <span className="block truncate text-xs text-slate-500">
-            {[activity.teamName, activity.playerName, activity.location]
+            {[
+              activity.occurrenceStatus === "cancelled"
+                ? "Cancelled"
+                : activity.occurrenceStatus === "moved" &&
+                    activity.originalStart
+                  ? `Moved from ${formatDay(activity.originalStart)} ${formatTime(activity.originalStart)}`
+                  : null,
+              activity.teamName,
+              activity.playerName,
+              activity.location,
+            ]
               .filter(Boolean)
               .join(" · ")}
           </span>

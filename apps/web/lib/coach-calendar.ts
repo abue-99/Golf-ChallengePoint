@@ -246,3 +246,44 @@ export function placeInOccurrence(
     shortened: duration < (durationMinutes || 30),
   };
 }
+
+// ── Single dates of a recurring training ─────────────────────────────────
+
+export type OccurrenceChangeResult = {
+  occurrenceKey: string;
+  previousKey: string;
+  status: "scheduled" | "moved" | "cancelled";
+  start: string;
+  end: string;
+  originalStart: string;
+  originalEnd: string;
+  reason: string | null;
+  answersReset: number;
+  /** E-mails handed to the provider / players who should get one. */
+  notified: number;
+  recipients: number;
+};
+
+/** Move, cancel or restore one date; the rest of the series stays. */
+export function changeOccurrence(input: {
+  occurrenceKey: string;
+  action: "move" | "cancel" | "restore";
+  start?: Date;
+  end?: Date;
+  reason?: string | null;
+  notify?: boolean;
+  force?: boolean;
+}) {
+  return call<OccurrenceChangeResult>("/api/calendar/coach/occurrences", {
+    method: "PUT",
+    body: JSON.stringify({
+      occurrenceKey: input.occurrenceKey,
+      action: input.action,
+      startTime: input.start?.toISOString(),
+      endTime: input.end?.toISOString(),
+      reason: input.reason ?? null,
+      notify: input.notify ?? true,
+      force: input.force ?? false,
+    }),
+  });
+}

@@ -84,6 +84,59 @@ export function buildReminderMail(input: ReminderMailInput) {
   return { subject, html, text };
 }
 
+export type ChangeMailInput = {
+  kind: 'moved' | 'cancelled' | 'restored';
+  firstName: string | null;
+  coachName: string | null;
+  title: string;
+  teamName: string;
+  /** The time that applies now (the series time for a cancelled one). */
+  when: string;
+  /** The time before the change. */
+  was: string | null;
+  reason: string | null;
+  url: string;
+};
+
+/** Subject, HTML and text of "training moved / cancelled / back on". */
+export function buildChangeMail(input: ChangeMailInput) {
+  const subject =
+    input.kind === 'cancelled'
+      ? `Cancelled: ${input.title} – ${input.when}`
+      : input.kind === 'moved'
+        ? `New time: ${input.title} – ${input.when}`
+        : `Back on: ${input.title} – ${input.when}`;
+  const greeting = input.firstName ? `Hi ${input.firstName},` : 'Hi,';
+  const who = input.coachName ?? 'Your coach';
+  const headline =
+    input.kind === 'cancelled'
+      ? `${who} has cancelled ${input.title} (${input.teamName}) on ${input.when}.`
+      : input.kind === 'moved'
+        ? `${who} has moved ${input.title} (${input.teamName}).`
+        : `${input.title} (${input.teamName}) takes place at its usual time after all.`;
+  const lines = [
+    headline,
+    input.kind === 'cancelled' ? null : `New time: ${input.when}`,
+    input.kind !== 'cancelled' && input.was ? `Before: ${input.was}` : null,
+    input.reason ? `Note from your coach: ${input.reason}` : null,
+    input.kind === 'cancelled'
+      ? 'The rest of the series stays as planned.'
+      : 'Please let your coach know again whether you are coming.',
+  ].filter((line): line is string => Boolean(line));
+  const action =
+    input.kind === 'cancelled' ? 'Open your calendar' : 'Answer in the app';
+  const text = [greeting, '', ...lines, '', `${action}: ${input.url}`].join(
+    '\n',
+  );
+  const html = `
+    <p>${escapeHtml(greeting)}</p>
+    ${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join('\n    ')}
+    <p><a href="${escapeHtml(input.url)}">${escapeHtml(action)} in Golf Challenge Point</a></p>
+    <p style="color:#64748b;font-size:12px">You get this e-mail because you are a member of ${escapeHtml(input.teamName)}.</p>
+  `;
+  return { subject, html, text };
+}
+
 /** Thin wrapper so tests can replace e-mail delivery. */
 @Injectable()
 export class ReminderMailer {
@@ -109,13 +162,13 @@ export class ReminderMailer {
       const result = await this.resend.emails.send({ from: FROM, ...mail });
       if (result.error) {
         this.logger.error(
-          `Reminder to ${mail.to} failed: ${result.error.message}`,
+          `E-mail to ${mail.to} failed: ${result.error.message}`,
         );
         return false;
       }
       return true;
     } catch (err) {
-      this.logger.error(`Reminder to ${mail.to} failed: ${String(err)}`);
+      this.logger.error(`E-mail to ${mail.to} failed: ${String(err)}`);
       return false;
     }
   }

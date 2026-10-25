@@ -13,6 +13,47 @@ import type { CoachCalendarActivity } from "@/types/coach-calendar";
 import AttendancePanel from "./AttendancePanel";
 import { formatRange, TYPE_LABEL } from "./shared";
 
+/** "Cancelled" / "Moved from …" with the coach's note. */
+export function OccurrenceNotice({
+  activity,
+}: {
+  activity: Pick<
+    CoachCalendarActivity,
+    | "occurrenceStatus"
+    | "originalStart"
+    | "originalEnd"
+    | "changeReason"
+    | "recurrence"
+  >;
+}) {
+  const cancelled = activity.occurrenceStatus === "cancelled";
+  return (
+    <div
+      className={
+        cancelled
+          ? "rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900"
+          : "rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+      }
+    >
+      <p className="font-semibold">
+        {cancelled
+          ? "This date is cancelled"
+          : activity.originalStart
+            ? `Moved from ${formatRange(activity.originalStart, activity.originalEnd ?? activity.originalStart)}`
+            : "Moved"}
+      </p>
+      {activity.changeReason ? (
+        <p className="mt-0.5 whitespace-pre-wrap">{activity.changeReason}</p>
+      ) : null}
+      {activity.recurrence && activity.recurrence !== "NONE" ? (
+        <p className="mt-0.5 text-xs opacity-80">
+          The rest of the series is unchanged.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 const RECURRENCE_LABEL: Record<string, string> = {
   DAILY: "Every day",
   WEEKLY: "Every week",
@@ -96,9 +137,18 @@ export default function SessionDialog({
                 ) : null}
               </div>
 
-              <p className="font-medium text-slate-800">
+              <p
+                className={
+                  activity.occurrenceStatus === "cancelled"
+                    ? "font-medium text-slate-500 line-through"
+                    : "font-medium text-slate-800"
+                }
+              >
                 {formatRange(activity.start, activity.end)}
               </p>
+              {activity.occurrenceStatus ? (
+                <OccurrenceNotice activity={activity} />
+              ) : null}
               {activity.location ? (
                 <p className="flex items-center gap-1.5">
                   <MapPin className="h-4 w-4 text-slate-400" />

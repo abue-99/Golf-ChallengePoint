@@ -9,7 +9,11 @@ import {
 } from '@nestjs/common';
 import { OwnerType } from '@challengepoint/db';
 import { PrismaService } from '../prisma/prisma.service';
-import { expandOccurrences } from '../roster/roster.helpers';
+import {
+  expandEffective,
+  findEffectiveOccurrence,
+  loadSlotExceptions,
+} from './occurrences';
 import { assertTeamAccess } from '../teams/team-access';
 import { eventOccurrenceKey, slotOccurrenceKey } from './attendance.service';
 import {
@@ -259,9 +263,19 @@ export class AttendanceReminderService
         where: { teamId, startTime: { gt: from, lte: to } },
       }),
     ]);
+    const exceptions = await loadSlotExceptions(
+      this.prisma,
+      slots.map((slot) => slot.id),
+    );
     const result: ResolvedOccurrence[] = [];
     for (const slot of slots) {
-      for (const occurrence of expandOccurrences(slot, from, to)) {
+      for (const occurrence of expandEffective(
+        slot,
+        exceptions.get(slot.id),
+        from,
+        to,
+      )) {
+        if (occurrence.status === 'cancelled') continue;
         if (occurrence.start <= from || occurrence.start > to) continue;
         result.push({
           key: slotOccurrenceKey(slot.id, occurrence.start),
@@ -309,13 +323,14 @@ export class AttendanceReminderService
     if (!slot || slot.ownerType !== OwnerType.TEAM || !slot.teamId) {
       throw new NotFoundException('Team training not found');
     }
-    const match = expandOccurrences(
-      slot,
-      new Date(parsed.start.getTime() - MINUTE_MS),
-      new Date(parsed.start.getTime() + MINUTE_MS),
-    ).find((o) => o.start.getTime() === parsed.start.getTime());
+    const exceptions =
+      (await loadSlotExceptions(this.prisma, [slot.id])).get(slot.id) ?? [];
+    const match = findEffectiveOccurrence(slot, exceptions, parsed.start);
     if (!match) {
       throw new NotFoundException('This training does not take place then');
+    }
+    if (match.status === 'cancelled') {
+      throw new BadRequestException('This training was cancelled');
     }
     return {
       key: slotOccurrenceKey(slot.id, match.start),

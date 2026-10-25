@@ -7,7 +7,11 @@ import { OwnerType } from '@challengepoint/db';
 import { PrismaService } from '../prisma/prisma.service';
 import { coachTeamsWhere } from '../teams/team-access';
 import { AttendanceReminderService } from './attendance-reminder.service';
-import { expandOccurrences } from '../roster/roster.helpers';
+import {
+  expandEffective,
+  loadSlotExceptions,
+  occurrenceChangeFields,
+} from './occurrences';
 import {
   eventOccurrenceKey,
   loadAttendanceSummaries,
@@ -62,6 +66,11 @@ export type CoachCalendarActivity = {
   status?: string;
   playerName?: string | null;
   priority?: string;
+  /** Team trainings: a single occurrence that was moved or cancelled. */
+  occurrenceStatus?: 'moved' | 'cancelled';
+  originalStart?: string;
+  originalEnd?: string;
+  changeReason?: string | null;
   /** Coach who created the entry. */
   createdById?: string | null;
   createdByName?: string | null;
@@ -247,16 +256,26 @@ export class CoachCalendarService {
         : Promise.resolve([]),
     ]);
 
+    const exceptions = await loadSlotExceptions(
+      this.prisma,
+      slots.map((slot) => slot.id),
+    );
     const occurrences = slots.flatMap((slot) =>
-      expandOccurrences(slot, from, to).map((occurrence) => ({
-        slot,
-        occurrence,
-        key: slotOccurrenceKey(slot.id, occurrence.start),
-      })),
+      expandEffective(slot, exceptions.get(slot.id), from, to).map(
+        (occurrence) => ({
+          slot,
+          occurrence,
+          key: slotOccurrenceKey(slot.id, occurrence.start),
+        }),
+      ),
+    );
+    // Cancelled occurrences have no answers and get no reminders.
+    const active = occurrences.filter(
+      (item) => item.occurrence.status !== 'cancelled',
     );
 
     const summaries = await loadAttendanceSummaries(this.prisma, [
-      ...occurrences.map((item) => ({
+      ...active.map((item) => ({
         key: item.key,
         teamId: item.slot.teamId as string,
       })),
@@ -293,7 +312,7 @@ export class CoachCalendarService {
     };
 
     const lastReminders = await this.reminders.lastReminders([
-      ...occurrences.map((item) => item.key),
+      ...active.map((item) => item.key),
       ...events.map((event) => eventOccurrenceKey(event.id)),
     ]);
     const reminderFor = (key: string) => {
@@ -306,8 +325,10 @@ export class CoachCalendarService {
     const activities: CoachCalendarActivity[] = [];
     for (const { slot, occurrence, key } of occurrences) {
       const team = teamById.get(slot.teamId as string);
+      const cancelled = occurrence.status === 'cancelled';
       activities.push({
-        id: `slot-${slot.id}-${occurrence.start.toISOString()}`,
+        // The series time keeps the id stable when an occurrence moves.
+        id: `slot-${slot.id}-${occurrence.originalStart.toISOString()}`,
         sourceId: slot.id,
         type: 'team-practice',
         title: slot.title,
@@ -319,8 +340,11 @@ export class CoachCalendarService {
         recurrence: slot.recurrence,
         occurrenceKey: key,
         createdById: slot.createdById,
-        attendance: attendanceFor(key, slot.teamId as string),
-        lastReminder: reminderFor(key),
+        attendance: cancelled
+          ? null
+          : attendanceFor(key, slot.teamId as string),
+        lastReminder: cancelled ? null : reminderFor(key),
+        ...occurrenceChangeFields(occurrence),
       });
     }
     for (const event of events) {

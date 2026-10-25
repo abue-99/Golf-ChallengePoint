@@ -14,12 +14,11 @@ import {
   slotOccurrenceKey,
   type AttendanceSummary,
 } from '../calendar/attendance.service';
+import { expandEffective, loadSlotExceptions } from '../calendar/occurrences';
 import {
   buildActivityDays,
   buildDayKeys,
   dayKey,
-  expandOccurrences,
-  nextOccurrence,
   resolveTimeZone,
   shiftDayKey,
 } from './roster.helpers';
@@ -424,10 +423,18 @@ export class RosterService {
       }
     }
 
+    const slotExceptions = await loadSlotExceptions(
+      this.prisma,
+      slots.filter((slot) => slot.teamId).map((slot) => slot.id),
+    );
+    const occurrencesOf = (slot: (typeof slots)[number]) =>
+      expandEffective(slot, slotExceptions.get(slot.id), rangeStart, rangeEnd);
+
     for (const slot of slots) {
       const owners = playersForSlot(slot);
       if (owners.length === 0) continue;
-      for (const occurrence of expandOccurrences(slot, rangeStart, rangeEnd)) {
+      for (const occurrence of occurrencesOf(slot)) {
+        if (occurrence.status === 'cancelled') continue;
         if (!inRange(occurrence.start)) continue;
         const key = dayKey(occurrence.start, timeZone);
         owners.forEach((id) => addToSetMap(windowDays, id, key));
@@ -527,8 +534,19 @@ export class RosterService {
       const next =
         teamSlots
           .map((slot) => {
-            const occurrence = nextOccurrence(slot, now);
-            return occurrence ? { title: slot.title, ...occurrence } : null;
+            const occurrence = expandEffective(
+              slot,
+              slotExceptions.get(slot.id),
+              now,
+              new Date(now.getTime() + 120 * DAY_MS),
+            ).find((item) => item.status !== 'cancelled' && item.end >= now);
+            return occurrence
+              ? {
+                  title: slot.title,
+                  start: occurrence.start,
+                  end: occurrence.end,
+                }
+              : null;
           })
           .filter((value): value is NonNullable<typeof value> => value !== null)
           .sort((a, b) => a.start.getTime() - b.start.getTime())[0] ?? null;
@@ -597,6 +615,10 @@ export class RosterService {
       playerId?: string | null;
       occurrenceKey?: string;
       attendance?: AttendanceSummary | null;
+      /** A single occurrence that was moved or cancelled. */
+      occurrenceStatus?: 'moved' | 'cancelled';
+      originalStart?: Date;
+      changeReason?: string | null;
     };
     const agenda: AgendaItem[] = [];
     const upcoming: AgendaItem[] = [];
@@ -605,10 +627,11 @@ export class RosterService {
       const linkedPlayerSlot =
         slot.playerId && playersById.get(slot.playerId)?.linked;
       if (!ownTeamSlot && !linkedPlayerSlot) continue;
-      for (const occurrence of expandOccurrences(slot, rangeStart, rangeEnd)) {
+      for (const occurrence of occurrencesOf(slot)) {
         const onToday = isToday(occurrence.start);
         if (!onToday && !(ownTeamSlot && isUpcoming(occurrence.start)))
           continue;
+        const cancelled = occurrence.status === 'cancelled';
         (onToday ? agenda : upcoming).push({
           kind: 'window',
           title: slot.title,
@@ -616,8 +639,15 @@ export class RosterService {
           end: occurrence.end,
           teamId: ownTeamSlot ? slot.teamId : null,
           playerId: ownTeamSlot ? null : slot.playerId,
-          ...(ownTeamSlot
+          ...(ownTeamSlot && !cancelled
             ? { occurrenceKey: slotOccurrenceKey(slot.id, occurrence.start) }
+            : {}),
+          ...(occurrence.status !== 'scheduled'
+            ? {
+                occurrenceStatus: occurrence.status,
+                originalStart: occurrence.originalStart,
+                changeReason: occurrence.reason,
+              }
             : {}),
         });
       }

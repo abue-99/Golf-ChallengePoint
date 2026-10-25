@@ -83,8 +83,22 @@ function attendanceSuffix(activity: CalendarActivity) {
 }
 
 export function getActivityLabel(activity: CalendarActivity) {
+  if (activity.occurrenceStatus === "cancelled") {
+    return `✕ ${activity.title} · cancelled`;
+  }
+  if (activity.occurrenceStatus === "moved") {
+    return `${getBaseLabel(activity)} · new time${attendanceSuffix(activity)}`;
+  }
   return `${getBaseLabel(activity)}${attendanceSuffix(activity)}`;
 }
+
+/** Cancelled dates (and lessons inside them) are shown greyed out. */
+const CANCELLED_STYLE = {
+  backgroundColor: "#f8fafc",
+  borderColor: "#cbd5e1",
+  textColor: "#64748b",
+  classNames: ["line-through", "opacity-80"],
+};
 
 function getBaseLabel(activity: CalendarActivity) {
   switch (activity.type) {
@@ -128,6 +142,16 @@ export function splitChecklist(value?: string | null) {
 }
 
 export function activityToEventInput(activity: CalendarActivity): EventInput {
+  if (activity.occurrenceStatus === "cancelled") {
+    return {
+      id: activity.id,
+      title: getActivityLabel(activity),
+      start: activity.start,
+      end: activity.end,
+      ...CANCELLED_STYLE,
+      extendedProps: activity,
+    };
+  }
   if (activity.type === "practice-slot") {
     return {
       id: activity.id,
@@ -148,7 +172,7 @@ export function activityToEventInput(activity: CalendarActivity): EventInput {
       start: activity.start,
       end: activity.end,
       backgroundColor: "#d1fae5",
-      borderColor: "#10b981",
+      borderColor: activity.occurrenceStatus === "moved" ? "#d97706" : "#10b981",
       textColor: "#065f46",
       extendedProps: activity,
     };

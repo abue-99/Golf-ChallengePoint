@@ -38,6 +38,7 @@ function upsertCreate(prisma: ReturnType<typeof makePrisma>) {
 function makePrisma(overrides: Record<string, unknown> = {}) {
   return {
     practiceSlot: { findUnique: jest.fn().mockResolvedValue(weekly) },
+    practiceSlotException: { findMany: jest.fn().mockResolvedValue([]) },
     teamEvent: { findUnique: jest.fn() },
     teamMember: {
       findFirst: jest.fn().mockResolvedValue({ id: 'm1' }),
@@ -95,6 +96,56 @@ describe('AttendanceService.respond', () => {
         status: 'GOING',
       }),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('answers a moved occurrence at its new time, not at the old one', async () => {
+    const prisma = makePrisma();
+    prisma.practiceSlotException.findMany.mockResolvedValue([
+      {
+        practiceSlotId: 'slot1',
+        originalStart: new Date('2030-01-14T16:00:00.000Z'),
+        cancelled: false,
+        newStart: new Date('2030-01-16T17:00:00.000Z'),
+        newEnd: new Date('2030-01-16T18:30:00.000Z'),
+        reason: null,
+      },
+    ]);
+    const service = new AttendanceService(prisma as never);
+    const result = await service.respond('p1', 'PLAYER', {
+      practiceSlotId: 'slot1',
+      occurrenceStart: '2030-01-16T17:00:00.000Z',
+      status: 'GOING',
+    });
+    expect(result.occurrenceKey).toBe('slot:slot1:2030-01-16T17:00:00.000Z');
+    await expect(
+      service.respond('p1', 'PLAYER', {
+        practiceSlotId: 'slot1',
+        occurrenceStart: '2030-01-14T16:00:00.000Z',
+        status: 'GOING',
+      }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('rejects answers for a cancelled occurrence', async () => {
+    const prisma = makePrisma();
+    prisma.practiceSlotException.findMany.mockResolvedValue([
+      {
+        practiceSlotId: 'slot1',
+        originalStart: new Date('2030-01-14T16:00:00.000Z'),
+        cancelled: true,
+        newStart: null,
+        newEnd: null,
+        reason: 'Course closed',
+      },
+    ]);
+    const service = new AttendanceService(prisma as never);
+    await expect(
+      service.respond('p1', 'PLAYER', {
+        practiceSlotId: 'slot1',
+        occurrenceStart: '2030-01-14T16:00:00.000Z',
+        status: 'GOING',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('rejects non-members, coaches and bad status', async () => {

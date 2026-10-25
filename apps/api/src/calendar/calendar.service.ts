@@ -13,7 +13,14 @@ import {
   coachTeamsWhere,
 } from '../teams/team-access';
 import { eventOccurrenceKey, slotOccurrenceKey } from './attendance.service';
-import { fitsAnOccurrence } from './slot-window';
+import {
+  applyExceptions,
+  fitsEffectiveOccurrence,
+  insideCancelledOccurrence,
+  loadSlotExceptions,
+  occurrenceChangeFields,
+  type SlotException,
+} from './occurrences';
 import {
   AvailabilityBlockType,
   CalendarTaskStatus,
@@ -247,7 +254,24 @@ export class CalendarService {
     return memberships.map((membership) => membership.userId);
   }
 
-  private expandSlot(slot: RawSlot) {
+  /**
+   * Occurrences with single changes applied (moved/cancelled). A moved one
+   * stays near its series time, so the window only needs a margin.
+   */
+  private effectiveOccurrences(
+    slot: RawSlot | PracticeSlotWithTasks,
+    base: SlotOccurrence[],
+    exceptions: SlotException[] | undefined,
+    limit: Date,
+  ) {
+    const margin = 61 * 24 * 60 * 60 * 1000;
+    return applyExceptions(slot, base, exceptions, {
+      from: new Date(slot.startTime.getTime() - margin),
+      to: limit,
+    });
+  }
+
+  private expandSlot(slot: RawSlot, exceptions?: SlotException[]) {
     const limit = getDefaultExpansionLimit(new Date(slot.startTime));
     return {
       id: slot.id,
@@ -258,12 +282,17 @@ export class CalendarService {
       title: slot.title,
       recurrence: slot.recurrence,
       recurrenceEndDate: slot.recurrenceEndDate,
-      occurrences: expandRecurringOccurrences(slot, limit),
+      occurrences: this.effectiveOccurrences(
+        slot,
+        expandRecurringOccurrences(slot, limit),
+        exceptions,
+        limit,
+      ),
       tasks: slot.tasks,
     };
   }
 
-  private async ensureNoAvailabilityConflicts(
+  async ensureNoAvailabilityConflicts(
     playerIds: string[],
     intervals: SlotOccurrence[],
     ignoreAvailabilityBlockId?: string,
@@ -336,6 +365,37 @@ export class CalendarService {
         `Scheduling conflict with blackout time: ${conflictMessages.join('; ')}`,
       );
     }
+  }
+
+  /**
+   * A lesson must lie inside an occurrence that takes place. `sameTimeOfDay`
+   * is the old UTC time-of-day check; it stays valid for series without
+   * single changes (it also accepts lessons planned before a DST change).
+   */
+  private async assertTaskFits(
+    slot: {
+      id: string;
+      startTime: Date;
+      endTime: Date;
+      recurrence: string;
+      recurrenceEndDate: Date | null;
+    },
+    start: Date,
+    end: Date,
+    sameTimeOfDay: boolean,
+  ) {
+    const exceptions =
+      (await loadSlotExceptions(this.prisma, [slot.id])).get(slot.id) ?? [];
+    if (fitsEffectiveOccurrence(slot, exceptions, start, end)) return;
+    if (insideCancelledOccurrence(slot, exceptions, start, end)) {
+      throw new BadRequestException(
+        'This training was cancelled – plan the lesson in another one',
+      );
+    }
+    if (sameTimeOfDay && exceptions.length === 0) return;
+    throw new BadRequestException(
+      'Task time must be within the practice slot window',
+    );
   }
 
   private async getPlayerIdsForSlot(slotId: string) {
@@ -447,7 +507,11 @@ export class CalendarService {
       },
       orderBy: { startTime: 'asc' },
     });
-    return slots.map((slot) => this.expandSlot(slot));
+    const exceptions = await loadSlotExceptions(
+      this.prisma,
+      slots.map((slot) => slot.id),
+    );
+    return slots.map((slot) => this.expandSlot(slot, exceptions.get(slot.id)));
   }
 
   async createTeamSlot(
@@ -630,6 +694,15 @@ export class CalendarService {
       include: { team: { select: TEAM_SELECT } },
     });
 
+    // Single moved/cancelled occurrences belong to the old series times.
+    let occurrenceChangesReset = 0;
+    if (timeChanged) {
+      const dropped = await this.prisma.practiceSlotException.deleteMany({
+        where: { practiceSlotId: slotId },
+      });
+      occurrenceChangesReset = dropped.count;
+    }
+
     // A one-time session that moved takes its planned lessons along, and
     // the players are asked again (the old answers were for the old time).
     let answersReset = 0;
@@ -647,7 +720,7 @@ export class CalendarService {
       });
       answersReset = reset.count;
     }
-    return { ...updated, answersReset };
+    return { ...updated, answersReset, occurrenceChangesReset };
   }
 
   async deleteSlot(userId: string, role: string, slotId: string) {
@@ -1127,14 +1200,12 @@ export class CalendarService {
       scheduledDate.getUTCHours() * 60 + scheduledDate.getUTCMinutes();
     const taskEndMins = taskStartMins + data.durationMinutes;
 
-    if (
-      (taskStartMins < slotStartMins || taskEndMins > slotEndMins) &&
-      !fitsAnOccurrence(slot, scheduledDate, scheduledEnd)
-    ) {
-      throw new BadRequestException(
-        'Task time must be within the practice slot window',
-      );
-    }
+    await this.assertTaskFits(
+      slot,
+      scheduledDate,
+      scheduledEnd,
+      taskStartMins >= slotStartMins && taskEndMins <= slotEndMins,
+    );
 
     const affectedPlayerIds = await this.getPlayerIdsForSlot(slotId);
 
@@ -1163,9 +1234,15 @@ export class CalendarService {
     const windowEnd = new Date(scheduledDate);
     windowEnd.setDate(windowEnd.getDate() + data.recurrenceWeeks * 7);
 
-    const occurrences = expandRecurringOccurrences(slot, windowEnd).filter(
-      (occ) => occ.start >= scheduledDate,
-    );
+    // Only occurrences at the regular time: moved or cancelled ones are
+    // planned one by one.
+    const slotExceptions =
+      (await loadSlotExceptions(this.prisma, [slotId])).get(slotId) ?? [];
+    const occurrences = applyExceptions(
+      slot,
+      expandRecurringOccurrences(slot, windowEnd),
+      slotExceptions,
+    ).filter((occ) => occ.status === 'scheduled' && occ.start >= scheduledDate);
 
     if (occurrences.length === 0) {
       throw new BadRequestException(
@@ -1289,9 +1366,23 @@ export class CalendarService {
     const taskStartMins =
       scheduledDate.getUTCHours() * 60 + scheduledDate.getUTCMinutes();
     const taskEndMins = taskStartMins + durationMinutes;
-    if (
+    const timeTouched =
+      data.scheduledDate !== undefined || data.durationMinutes !== undefined;
+    if (timeTouched) {
+      await this.assertTaskFits(
+        { id: task.practiceSlotId, ...task.practiceSlot },
+        scheduledDate,
+        scheduledEnd,
+        taskStartMins >= slotStartMins && taskEndMins <= slotEndMins,
+      );
+    } else if (
       (taskStartMins < slotStartMins || taskEndMins > slotEndMins) &&
-      !fitsAnOccurrence(task.practiceSlot, scheduledDate, scheduledEnd)
+      !fitsEffectiveOccurrence(
+        task.practiceSlot,
+        undefined,
+        scheduledDate,
+        scheduledEnd,
+      )
     ) {
       throw new BadRequestException(
         'Task time must be within the practice slot window',
@@ -1425,6 +1516,12 @@ export class CalendarService {
     const limit = new Date();
     limit.setFullYear(limit.getFullYear() + 1);
 
+    const slotExceptions = await loadSlotExceptions(
+      this.prisma,
+      slots
+        .filter((slot) => slot.ownerType === OwnerType.TEAM)
+        .map((slot) => slot.id),
+    );
     const expandedSlots = (slots as PracticeSlotWithTasks[]).map((slot) => ({
       id: slot.id,
       ownerType: slot.ownerType,
@@ -1434,7 +1531,12 @@ export class CalendarService {
       title: slot.title,
       recurrence: slot.recurrence,
       recurrenceEndDate: slot.recurrenceEndDate,
-      occurrences: expandRecurringOccurrences(slot, limit),
+      occurrences: this.effectiveOccurrences(
+        slot,
+        expandRecurringOccurrences(slot, limit),
+        slotExceptions.get(slot.id),
+        limit,
+      ),
       tasks: slot.tasks,
     }));
 
@@ -1458,8 +1560,10 @@ export class CalendarService {
         const occurrenceKey = isTeamSlot
           ? slotOccurrenceKey(slot.id, occurrence.start)
           : undefined;
+        const cancelled = occurrence.status === 'cancelled';
         activities.push({
-          id: `slot-${slot.id}-${occurrence.start.toISOString()}`,
+          // The series time keeps the id stable when an occurrence moves.
+          id: `slot-${slot.id}-${occurrence.originalStart.toISOString()}`,
           sourceId: slot.id,
           type: isTeamSlot ? 'team-practice' : 'practice-slot',
           title: slot.title,
@@ -1470,15 +1574,26 @@ export class CalendarService {
           ...(occurrenceKey
             ? {
                 occurrenceKey,
-                attendance: attendanceByKey.get(occurrenceKey) ?? null,
+                attendance: cancelled
+                  ? null
+                  : (attendanceByKey.get(occurrenceKey) ?? null),
               }
             : {}),
+          ...occurrenceChangeFields(occurrence),
         });
       }
 
+      const cancelledOccurrences = slot.occurrences.filter(
+        (occurrence) => occurrence.status === 'cancelled',
+      );
       for (const task of slot.tasks) {
         const start = new Date(task.scheduledDate);
         const end = new Date(start.getTime() + task.durationMinutes * 60_000);
+        // Lessons inside a cancelled training are kept (restoring brings
+        // them back) but do not take place.
+        const inCancelled = cancelledOccurrences.some(
+          (occurrence) => occurrence.start <= start && end <= occurrence.end,
+        );
         activities.push({
           id: `task-${task.id}`,
           sourceId: task.id,
@@ -1492,6 +1607,7 @@ export class CalendarService {
           completedAt: task.completedAt,
           lesson: task.lesson,
           teamName: slot.team?.shortName ?? null,
+          ...(inCancelled ? { occurrenceStatus: 'cancelled' } : {}),
         });
       }
     }

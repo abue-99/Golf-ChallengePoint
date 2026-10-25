@@ -60,6 +60,10 @@ export type AgendaItem = {
   /** Team sessions only. */
   occurrenceKey?: string;
   attendance?: AttendanceSummary | null;
+  /** A single date of a training that was moved or cancelled. */
+  occurrenceStatus?: "moved" | "cancelled";
+  originalStart?: string;
+  changeReason?: string | null;
 };
 
 export type AttendanceSummary = {

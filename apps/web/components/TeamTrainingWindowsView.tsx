@@ -25,9 +25,32 @@ type TeamSlotData = {
   title: string;
   recurrence: string;
   recurrenceEndDate: string | null;
-  occurrences: { start: string; end: string }[];
+  occurrences: {
+    start: string;
+    end: string;
+    /** Series time (differs when this single date was moved). */
+    originalStart?: string;
+    originalEnd?: string;
+    status?: string;
+  }[];
   tasks: CalendarTask[];
 };
+
+/**
+ * First occurrence of the series at its series time – single dates may have
+ * been moved or cancelled in the coach calendar.
+ */
+function seriesFirst(slot: TeamSlotData) {
+  const first = [...(slot.occurrences ?? [])].sort((a, b) =>
+    (a.originalStart ?? a.start).localeCompare(b.originalStart ?? b.start),
+  )[0];
+  return first
+    ? {
+        start: first.originalStart ?? first.start,
+        end: first.originalEnd ?? first.end,
+      }
+    : undefined;
+}
 
 type Props = {
   teamId: string;
@@ -112,7 +135,7 @@ function WindowCard({
   onDelete: (slot: TeamSlotData) => void;
 }) {
   const icon = slotToIcon(slot.title);
-  const firstOcc = slot.occurrences?.[0];
+  const firstOcc = seriesFirst(slot);
   const totalMin = firstOcc ? getDurationMin(firstOcc) : 0;
   return (
     <div
@@ -283,7 +306,7 @@ export default function TeamTrainingWindowsView({ teamId, teamName }: Props) {
     );
   }
 
-  const firstOccOfSlot = (slot: TeamSlotData) => slot.occurrences?.[0];
+  const firstOccOfSlot = (slot: TeamSlotData) => seriesFirst(slot);
 
   return (
     <>

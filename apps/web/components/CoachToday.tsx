@@ -71,8 +71,22 @@ function AgendaRow({
         />
         <span className="w-11 shrink-0 tabular-nums text-slate-500">{label}</span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium text-slate-800">{item.title}</span>
+          <span
+            className={cn(
+              "block truncate font-medium",
+              item.occurrenceStatus === "cancelled" ? "text-slate-400 line-through" : "text-slate-800",
+            )}
+          >
+            {item.title}
+          </span>
           <span className="flex items-center gap-1 truncate text-xs text-slate-500">
+            {item.occurrenceStatus === "cancelled" ? (
+              <span className="font-medium text-rose-700">Cancelled ·</span>
+            ) : item.occurrenceStatus === "moved" ? (
+              <span className="font-medium text-amber-700" title={item.changeReason ?? undefined}>
+                New time ·
+              </span>
+            ) : null}
             {team?.icon ? <TeamIcon icon={team.icon} size={10} /> : null}
             {team ? team.shortName : player ? nameOf(player) : ""}
             {item.kind === "event" ? " · Team event" : ""}
