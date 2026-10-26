@@ -35,6 +35,8 @@ type FormData = {
   priority: string;
   plannedExercises: string;
   successCriteria: string;
+  targetScore: string;
+  targetAttempts: string;
 };
 
 const EMPTY: FormData = {
@@ -53,6 +55,8 @@ const EMPTY: FormData = {
   priority: "",
   plannedExercises: "",
   successCriteria: "",
+  targetScore: "",
+  targetAttempts: "",
 };
 
 function lessonToForm(lesson: TrainingLesson): FormData {
@@ -72,6 +76,8 @@ function lessonToForm(lesson: TrainingLesson): FormData {
     priority: lesson.priority ?? "",
     plannedExercises: lesson.plannedExercises ?? "",
     successCriteria: lesson.successCriteria ?? "",
+    targetScore: lesson.targetScore ? String(lesson.targetScore) : "",
+    targetAttempts: lesson.targetAttempts ? String(lesson.targetAttempts) : "",
   };
 }
 
@@ -92,6 +98,8 @@ function buildPayload(f: FormData) {
     priority: f.priority || undefined,
     plannedExercises: f.plannedExercises.trim() || undefined,
     successCriteria: f.successCriteria.trim() || undefined,
+    targetScore: f.targetScore ? parseInt(f.targetScore, 10) : null,
+    targetAttempts: f.targetAttempts ? parseInt(f.targetAttempts, 10) : null,
   };
 }
 
@@ -417,13 +425,45 @@ export default function LessonForm({
             />
           </div>
           <div className="sm:col-span-2">
+            <FieldLabel>Measurable goal (mission score)</FieldLabel>
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={1000}
+                className={inputClass(false) + " w-24"}
+                value={form.targetScore}
+                onChange={(e) => set("targetScore", e.target.value)}
+                placeholder="9"
+                aria-label="Target score"
+              />
+              <span>of</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={1000}
+                className={inputClass(false) + " w-24"}
+                value={form.targetAttempts}
+                onChange={(e) => set("targetAttempts", e.target.value)}
+                placeholder="10"
+                aria-label="Attempts"
+              />
+              <span>attempts</span>
+            </div>
+            <p className="mt-1 text-xs text-slate-500">
+              Optional. The player enters the result in the mission; reaching the goal earns 3 stars.
+            </p>
+          </div>
+          <div className="sm:col-span-2">
             <FieldLabel>Planned Exercises</FieldLabel>
             <textarea
               rows={3}
               className={textareaClass(false)}
               value={form.plannedExercises}
               onChange={(e) => set("plannedExercises", e.target.value)}
-              placeholder="List the exercises to be performed"
+              placeholder="One exercise per line – the player ticks them off in the mission"
             />
           </div>
         </CardContent>

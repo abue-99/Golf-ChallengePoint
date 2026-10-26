@@ -19,6 +19,16 @@ const COACH_SELECT = {
   email: true,
 } as const;
 
+/** Measurable mission goal (e.g. 9 of 10): positive whole number or null. */
+function cleanTarget(value: unknown) {
+  if (value === undefined || value === null || value === '') return null;
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0 || number > 1000) {
+    throw new BadRequestException('Target must be a number between 1 and 1000');
+  }
+  return Math.round(number);
+}
+
 @Injectable()
 export class LessonsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -107,6 +117,8 @@ export class LessonsService {
       priority?: string;
       plannedExercises?: string;
       successCriteria?: string;
+      targetScore?: number | null;
+      targetAttempts?: number | null;
       goalAchieved?: string;
       playerSelfAssessment?: number;
       coachRating?: number;
@@ -146,6 +158,8 @@ export class LessonsService {
         priority: data.priority ? (data.priority as any) : null,
         plannedExercises: data.plannedExercises,
         successCriteria: data.successCriteria,
+        targetScore: cleanTarget(data.targetScore),
+        targetAttempts: cleanTarget(data.targetAttempts),
         goalAchieved: data.goalAchieved ? (data.goalAchieved as any) : null,
         playerSelfAssessment: data.playerSelfAssessment ?? null,
         coachRating: data.coachRating ?? null,
@@ -238,6 +252,8 @@ export class LessonsService {
         priority: lesson.priority,
         plannedExercises: lesson.plannedExercises,
         successCriteria: lesson.successCriteria,
+        targetScore: lesson.targetScore,
+        targetAttempts: lesson.targetAttempts,
       },
       include: { coach: { select: COACH_SELECT } },
     });
@@ -267,6 +283,8 @@ export class LessonsService {
       priority?: string | null;
       plannedExercises?: string;
       successCriteria?: string;
+      targetScore?: number | null;
+      targetAttempts?: number | null;
       goalAchieved?: string | null;
       playerSelfAssessment?: number | null;
       coachRating?: number | null;
@@ -336,6 +354,12 @@ export class LessonsService {
           : {}),
         ...(data.successCriteria !== undefined
           ? { successCriteria: data.successCriteria }
+          : {}),
+        ...(data.targetScore !== undefined
+          ? { targetScore: cleanTarget(data.targetScore) }
+          : {}),
+        ...(data.targetAttempts !== undefined
+          ? { targetAttempts: cleanTarget(data.targetAttempts) }
           : {}),
         ...(data.goalAchieved !== undefined
           ? {

@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { PlayerCapabilitiesRadarCard } from "@/components/player-capabilities-widget";
+import CoachPlayerCard from "@/components/coach-game/CoachPlayerCard";
 import {
   LearningProgressSection,
   type LearningProgressSummary,
@@ -206,12 +206,7 @@ export default function PlayerOverviewDialog({
           </div>
 
           <div>
-            <PlayerCapabilitiesRadarCard
-              playerId={player.id}
-              title="Skill Radar"
-              journeyLabel="Goto Journey"
-              journeyHref={`/coach/players/${player.id}`}
-            />
+            <CoachPlayerCard playerId={player.id} journeyHref={`/coach/players/${player.id}`} />
           </div>
         </div>
       </DialogContent>

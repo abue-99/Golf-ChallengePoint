@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { PlayerCapabilitiesRadarCard, PlayerCapabilitiesWidget } from "@/components/player-capabilities-widget";
+import CoachPlayerCard from "@/components/coach-game/CoachPlayerCard";
+import ActivityFeed from "@/components/coach-game/ActivityFeed";
 import { DevelopmentPlanManager } from "@/components/DevelopmentPlanManager";
 
 type LinkedPlayer = {
@@ -58,11 +59,12 @@ export default async function CoachPlayerDashboardPage({
         </div>
       </header>
       <div className="grid gap-4 lg:grid-cols-5">
-        <div className="lg:col-span-2">
-          <PlayerCapabilitiesWidget playerId={playerId} showRadar={false} />
-        </div>
-        <div className="lg:col-span-1">
-          <PlayerCapabilitiesRadarCard playerId={playerId} title="Skill Radar" />
+        <div className="space-y-4 lg:col-span-3">
+          <CoachPlayerCard playerId={playerId} showList />
+          <section className="rounded-xl border border-slate-200 bg-white p-4">
+            <h2 className="mb-2 text-base font-semibold text-[var(--golf-heading)]">Recent activity</h2>
+            <ActivityFeed playerId={playerId} compact limit={10} />
+          </section>
         </div>
         <div className="lg:col-span-2">
           <DevelopmentPlanManager playerId={playerId} />

@@ -73,6 +73,8 @@ export class LessonsController {
       priority?: string;
       plannedExercises?: string;
       successCriteria?: string;
+      targetScore?: number | null;
+      targetAttempts?: number | null;
       goalAchieved?: string;
       playerSelfAssessment?: number;
       coachRating?: number;
@@ -131,6 +133,8 @@ export class LessonsController {
       priority?: string | null;
       plannedExercises?: string;
       successCriteria?: string;
+      targetScore?: number | null;
+      targetAttempts?: number | null;
       goalAchieved?: string | null;
       playerSelfAssessment?: number | null;
       coachRating?: number | null;

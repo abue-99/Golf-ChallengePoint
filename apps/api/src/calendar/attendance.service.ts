@@ -3,7 +3,10 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Inject,
+  Optional,
 } from '@nestjs/common';
+import { GAME_HOOKS, type GameHooks } from '../game/game-hooks';
 // Type-only import keeps this file free of the Prisma client at runtime
 // (pure helpers here are unit-tested without a database).
 import type { AttendanceStatus } from '@challengepoint/db';
@@ -99,7 +102,10 @@ export async function loadAttendanceSummaries(
 /** Players answer "going / maybe / not going" for team trainings and events. */
 @Injectable()
 export class AttendanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() @Inject(GAME_HOOKS) private readonly game?: GameHooks,
+  ) {}
 
   async respond(
     userId: string,
@@ -161,6 +167,7 @@ export class AttendanceService {
         updatedAt: true,
       },
     });
+    this.game?.syncQuietly(userId);
     return saved;
   }
 

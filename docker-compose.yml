@@ -23,6 +23,10 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       # Public app URL embedded in invite email login links
       APP_URL: ${NEXT_PUBLIC_APP_URL:-http://178.104.48.239}
+      # Web push (player app): generate once with `node scripts/generate-vapid-keys.mjs`
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:info@golf-challengepoint.com}
     restart: unless-stopped
 
   web:

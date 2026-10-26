@@ -44,12 +44,12 @@ export class MessagesController {
     });
   }
 
-  /** POST /messages/with/:userId – { body, isQuestion? } */
+  /** POST /messages/with/:userId – { body, isQuestion?, ref?: { type, id } }; userId may be "team:<id>". */
   @Post('with/:userId')
   send(
     @CurrentUser() user: AuthenticatedUser,
     @Param('userId') userId: string,
-    @Body() body: { body?: unknown; isQuestion?: unknown },
+    @Body() body: { body?: unknown; isQuestion?: unknown; ref?: unknown },
   ) {
     return this.messages.send(user.id, user.role as string, userId, body ?? {});
   }

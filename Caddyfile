@@ -68,6 +68,20 @@ golf-challengepoint.com, www.golf-challengepoint.com {
                 reverse_proxy web:3000
         }
 
+        # Player game (XP, missions, team) and the old XP endpoints.
+        handle /api/game* {
+                reverse_proxy web:3000
+        }
+
+        handle /api/gamification* {
+                reverse_proxy web:3000
+        }
+
+        # Web push settings and subscriptions.
+        handle /api/push* {
+                reverse_proxy web:3000
+        }
+
         # Remaining API routes go directly to the NestJS backend.
         handle /api/* {
                 uri strip_prefix /api

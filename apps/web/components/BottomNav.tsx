@@ -9,17 +9,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { NavBadge, type NavItem } from "./sidebar";
+import { itemMatches, NavBadge, type NavItem } from "./sidebar";
 
 interface BottomNavProps {
   navItems: NavItem[];
 }
 
-function isActive(pathname: string, href: string) {
-  // Exact match for root; prefix match for all other routes
-  return href === "/"
-    ? pathname === "/"
-    : pathname === href || pathname.startsWith(href + "/");
+/** Active item: the matching item with the longest href. */
+function activeHref(pathname: string, items: NavItem[]) {
+  return items
+    .filter((item) => itemMatches(pathname, item))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 }
 
 const itemClass = (active: boolean) =>
@@ -33,7 +33,8 @@ export default function BottomNav({ navItems }: BottomNavProps) {
   const pathname = usePathname();
   const primary = navItems.filter((item) => item.mobile !== "more");
   const more = navItems.filter((item) => item.mobile === "more");
-  const moreActive = more.some((item) => isActive(pathname, item.href));
+  const current = activeHref(pathname, navItems);
+  const moreActive = more.some((item) => item.href === current);
 
   return (
     <nav
@@ -41,7 +42,7 @@ export default function BottomNav({ navItems }: BottomNavProps) {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       {primary.map(({ href, icon: Icon, label, badge }) => {
-        const active = isActive(pathname, href);
+        const active = href === current;
         return (
           <Link key={label} href={href} className={itemClass(active)}>
             <span className="relative">
@@ -73,7 +74,7 @@ export default function BottomNav({ navItems }: BottomNavProps) {
               <DropdownMenuItem key={label} asChild>
                 <Link
                   href={href}
-                  className={isActive(pathname, href) ? "font-semibold text-[var(--golf-primary)]" : ""}
+                  className={href === current ? "font-semibold text-[var(--golf-primary)]" : ""}
                 >
                   <Icon size={16} />
                   {label}

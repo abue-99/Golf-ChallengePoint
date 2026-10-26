@@ -8,9 +8,16 @@ import {
   HelpCircle,
   Loader2,
   MessageCircle,
+  Paperclip,
   Search,
   Send,
+  X,
 } from "lucide-react";
+import TeamIcon from "@/components/TeamIcon";
+import { openMission } from "@/components/game/MissionPlayer";
+import { Sheet } from "@/components/game/bits";
+import { loadPlayerWork } from "@/components/coach-game/AssignedWork";
+import { focusMeta, gameApi } from "@/lib/game";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -24,6 +31,7 @@ import {
   shortTime,
   type ChatMessage,
   type Counterpart,
+  type MessageRef,
   type MessagesOverview,
   type Thread,
 } from "@/lib/messages";
@@ -32,6 +40,17 @@ const THREAD_POLL_MS = 8_000;
 const LIST_POLL_MS = 30_000;
 
 function Avatar({ person, size = 40 }: { person: Counterpart; size?: number }) {
+  if (person.isTeam) {
+    return (
+      <span
+        className="flex shrink-0 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-800"
+        style={{ width: size, height: size }}
+        aria-hidden
+      >
+        {person.icon ? <TeamIcon icon={person.icon} size={size * 0.5} /> : <span style={{ fontSize: size * 0.45 }}>👥</span>}
+      </span>
+    );
+  }
   return person.profileImage ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -140,7 +159,7 @@ export default function MessagesView() {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search people"
+              placeholder="Search people and teams"
               className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 text-sm outline-none focus:border-emerald-400 focus:bg-white"
             />
           </label>
@@ -325,7 +344,10 @@ function ChatThread({
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [asQuestion, setAsQuestion] = useState(false);
+  const [attached, setAttached] = useState<MessageRef | null>(null);
+  const [picking, setPicking] = useState(false);
   const [sending, setSending] = useState(false);
+  const isTeam = userId.startsWith("team:");
   const [loadingOlder, setLoadingOlder] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -432,7 +454,12 @@ function ChatThread({
     if (!body || sending) return;
     setSending(true);
     try {
-      const message = await sendMessage(userId, body, isCoach && asQuestion);
+      const message = await sendMessage(
+        userId,
+        body,
+        isCoach && asQuestion && !isTeam,
+        attached,
+      );
       stickToBottom.current = true;
       setThread((current) =>
         current
@@ -445,6 +472,7 @@ function ChatThread({
       );
       setDraft("");
       setAsQuestion(false);
+      setAttached(null);
       onChanged();
       inputRef.current?.focus();
     } catch (err) {
@@ -467,6 +495,7 @@ function ChatThread({
   }, [isCoach, messages]);
   const lastMine = [...messages].reverse().find((message) => message.mine);
   const seen = Boolean(
+    !isTeam &&
     lastMine &&
     thread?.otherReadAt &&
     new Date(thread.otherReadAt) >= new Date(lastMine.createdAt),
@@ -549,6 +578,11 @@ function ChatThread({
                 message={message}
                 open={message.id === openQuestionId}
                 isCoach={isCoach}
+                showSender={
+                  isTeam &&
+                  !message.mine &&
+                  (!previous || previous.senderId !== message.senderId || newDay)
+                }
               />
             </div>
           );
@@ -579,8 +613,34 @@ function ChatThread({
               answered.
             </p>
           ) : null}
+          {attached ? (
+            <div className="mb-1.5 flex items-center gap-2 px-1">
+              <span className="inline-flex min-w-0 items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800">
+                🎯 <span className="truncate">{attached.title}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setAttached(null)}
+                aria-label="Remove link"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : null}
           <div className="flex items-end gap-2">
-            {isCoach ? (
+            {!isTeam ? (
+              <button
+                type="button"
+                onClick={() => setPicking(true)}
+                aria-label="Link a mission"
+                title="Link a mission"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
+              >
+                <Paperclip className="h-4 w-4" />
+              </button>
+            ) : null}
+            {isCoach && !isTeam ? (
               <button
                 type="button"
                 onClick={() => setAsQuestion((value) => !value)}
@@ -642,7 +702,100 @@ function ChatThread({
           You no longer work together – the conversation is read-only.
         </p>
       )}
+      {picking ? (
+        <MissionPicker
+          isCoach={isCoach}
+          playerId={userId}
+          onClose={() => setPicking(false)}
+          onPick={(ref) => {
+            setAttached(ref);
+            setPicking(false);
+            inputRef.current?.focus();
+          }}
+        />
+      ) : null}
     </>
+  );
+}
+
+type PickItem = { id: string; title: string; focusArea: string; detail: string };
+
+/** Choose a mission to link: the coach picks from the player's missions, the player from their own. */
+function MissionPicker({
+  isCoach,
+  playerId,
+  onClose,
+  onPick,
+}: {
+  isCoach: boolean;
+  playerId: string;
+  onClose: () => void;
+  onPick: (ref: MessageRef) => void;
+}) {
+  const [items, setItems] = useState<PickItem[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const load = isCoach
+      ? loadPlayerWork(playerId).then((work) =>
+          work.map((item) => ({
+            id: item.id,
+            title: item.name,
+            focusArea: item.focusArea,
+            detail: `${item.status === "COMPLETED" ? "Done" : "Open"}${item.journey ? ` · ${item.journey}` : ""}`,
+          })),
+        )
+      : gameApi.path().then((path) => {
+          const all = [
+            ...path.upNext,
+            ...path.journeys.flatMap((journey) => journey.blocks.flatMap((block) => block.missions)),
+            ...path.side,
+            ...path.inbox.missions,
+          ];
+          const seen = new Set<string>();
+          return all
+            .filter((mission) => (seen.has(mission.id) ? false : (seen.add(mission.id), true)))
+            .map((mission) => ({
+              id: mission.id,
+              title: mission.lesson.name,
+              focusArea: mission.lesson.focusArea,
+              detail: mission.status === "COMPLETED" ? "Done" : mission.locked ? "Locked" : "Open",
+            }));
+        });
+    load
+      .then((list) => !cancelled && setItems(list))
+      .catch(() => !cancelled && setItems([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [isCoach, playerId]);
+  return (
+    <Sheet title="Link a mission" onClose={onClose}>
+      {!items ? (
+        <p className="flex items-center gap-2 text-sm text-slate-500">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+        </p>
+      ) : items.length === 0 ? (
+        <p className="text-sm text-slate-500">No missions to link.</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {items.map((item) => (
+            <li key={item.id}>
+              <button
+                type="button"
+                onClick={() => onPick({ type: "assignment", id: item.id, title: item.title })}
+                className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left hover:bg-slate-50"
+              >
+                <span className="text-lg">{focusMeta(item.focusArea).emoji}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-slate-800">{item.title}</span>
+                  <span className="block text-xs text-slate-500">{item.detail}</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Sheet>
   );
 }
 
@@ -650,10 +803,12 @@ function Bubble({
   message,
   open,
   isCoach,
+  showSender = false,
 }: {
   message: ChatMessage;
   open: boolean;
   isCoach: boolean;
+  showSender?: boolean;
 }) {
   const time = new Date(message.createdAt).toLocaleTimeString([], {
     hour: "2-digit",
@@ -689,7 +844,27 @@ function Bubble({
               : "Question"}
           </p>
         ) : null}
+        {showSender && message.senderName ? (
+          <p className={cn("mb-0.5 text-[11px] font-semibold", message.senderIsCoach ? "text-indigo-600" : "text-emerald-700")}>
+            {message.senderName}
+            {message.senderIsCoach ? " · Coach" : ""}
+          </p>
+        ) : null}
         <p className="whitespace-pre-wrap break-words">{message.body}</p>
+        {message.refType === "assignment" && message.refId ? (
+          <button
+            type="button"
+            onClick={() => (!isCoach && message.refId ? openMission(message.refId) : undefined)}
+            disabled={isCoach}
+            className={cn(
+              "mt-1.5 flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-xs font-semibold",
+              message.mine ? "bg-white/15 text-white" : "bg-emerald-50 text-emerald-900",
+            )}
+          >
+            🎯 <span className="min-w-0 flex-1 truncate">{message.refTitle ?? "Mission"}</span>
+            {!isCoach ? <span className="shrink-0 uppercase">Play ›</span> : null}
+          </button>
+        ) : null}
         <p
           className={cn(
             "mt-0.5 text-right text-[10px]",

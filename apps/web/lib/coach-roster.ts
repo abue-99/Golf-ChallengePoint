@@ -92,6 +92,9 @@ export type FeedbackItem = {
   completedAt: string | null;
   selfAssessment: number | null;
   playerNotes: string | null;
+  stars?: number | null;
+  resultScore?: number | null;
+  practiceMinutes?: number | null;
   player: {
     id: string;
     firstName?: string | null;
@@ -99,7 +102,14 @@ export type FeedbackItem = {
     email?: string;
     profileImage?: string | null;
   } | null;
-  lesson: { id: string; name: string; focusArea?: string | null };
+  lesson: {
+    id: string;
+    name: string;
+    focusArea?: string | null;
+    durationMinutes?: number;
+    targetScore?: number | null;
+    targetAttempts?: number | null;
+  };
   plan: { id: string; name: string } | null;
 };
 
@@ -112,6 +122,11 @@ export type CoachNote = {
   updatedAt: string;
   /** PRIVATE: only the author. SHARED: every coach of this player. */
   visibility: NoteVisibility;
+  /** Handover note for a stand-in coach (shared, pinned on top). */
+  isHandover?: boolean;
+  /** The viewer is mentioned with @Name. */
+  mentionsMe?: boolean;
+  mentionIds?: string[];
   /** Written by the viewer (only the author edits or deletes). */
   mine: boolean;
   author: { id: string; firstName: string | null; lastName: string | null };
@@ -266,3 +281,12 @@ export function greetingFor(hour: number) {
   if (hour < 18) return "Good afternoon";
   return "Good evening";
 }
+
+export type PlayerCoach = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  profileImage: string | null;
+  roles: string[];
+  isMe: boolean;
+};

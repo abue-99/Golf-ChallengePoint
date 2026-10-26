@@ -22,7 +22,9 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { LearningProgressSection } from "@/components/LearningProgress";
-import { PlayerCapabilitiesRadarCard } from "@/components/player-capabilities-widget";
+import CoachPlayerCard from "@/components/coach-game/CoachPlayerCard";
+import ActivityFeed from "@/components/coach-game/ActivityFeed";
+import AssignedWork from "@/components/coach-game/AssignedWork";
 import ActivityStrip, { ActivityLegend } from "@/components/ActivityStrip";
 import TeamIcon from "@/components/TeamIcon";
 import CoachNotes from "@/components/CoachNotes";
@@ -320,6 +322,14 @@ export function PlayerDetails({
             <CoachNotes playerId={player.id} timeZone={timeZone} onChanged={onChanged} />
           </Section>
 
+          <Section title="Missions · all coaches">
+            <AssignedWork playerId={player.id} />
+          </Section>
+
+          <Section title="Recent activity">
+            <ActivityFeed playerId={player.id} compact limit={6} />
+          </Section>
+
           <LearningProgressSection progress={player.learningProgress} />
 
           <Section title="Details">
@@ -390,12 +400,7 @@ export function PlayerDetails({
           </Section>
 
           {player.linked ? (
-            <PlayerCapabilitiesRadarCard
-              playerId={player.id}
-              title="Skill Radar"
-              journeyLabel="Go to journey"
-              journeyHref={`/coach/players/${player.id}`}
-            />
+            <CoachPlayerCard playerId={player.id} journeyHref={`/coach/players/${player.id}`} />
           ) : null}
           {onRemove ? (
             <button

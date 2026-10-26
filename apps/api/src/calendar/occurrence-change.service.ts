@@ -4,7 +4,10 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Inject,
+  Optional,
 } from '@nestjs/common';
+import { PUSH_HOOKS, type PushHooks } from '../game/game-hooks';
 import { OwnerType } from '@challengepoint/db';
 import { PrismaService } from '../prisma/prisma.service';
 import { assertTeamAccess } from '../teams/team-access';
@@ -79,6 +82,7 @@ export class OccurrenceChangeService {
     private readonly prisma: PrismaService,
     private readonly calendar: CalendarService,
     private readonly mailer: ReminderMailer,
+    @Optional() @Inject(PUSH_HOOKS) private readonly push?: PushHooks,
   ) {}
 
   async change(userId: string, role: string, body: Body) {
@@ -440,6 +444,7 @@ export class OccurrenceChangeService {
           select: {
             user: {
               select: {
+                id: true,
                 email: true,
                 firstName: true,
                 timezone: true,
@@ -459,6 +464,21 @@ export class OccurrenceChangeService {
       const players = members
         .map((member) => member.user)
         .filter((user) => user.role === 'PLAYER' && Boolean(user.email));
+      this.push?.notify(
+        players.map((user) => user.id),
+        'schedule',
+        {
+          title:
+            input.kind === 'cancelled'
+              ? `✕ Cancelled: ${input.title}`
+              : input.kind === 'moved'
+                ? `↪ New time: ${input.title}`
+                : `✓ Back on: ${input.title}`,
+          body: `${input.teamName} · ${formatSession(input.after.start, input.after.end, process.env.TZ || 'Europe/Berlin')}${input.reason ? ` · “${input.reason}”` : ''}`,
+          url: input.kind === 'cancelled' ? '/calendar' : '/dashboard',
+          tag: `change-${input.teamId}-${input.before.start.toISOString()}`,
+        },
+      );
       // Cancelled: the calendar; otherwise the home page asks again.
       const url = `${appUrl()}${input.kind === 'cancelled' ? '/calendar' : '/dashboard'}`;
       const results = await Promise.all(

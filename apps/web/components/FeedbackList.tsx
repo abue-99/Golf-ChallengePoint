@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Check, CheckCheck, ExternalLink, Loader2, MessageSquareQuote } from "lucide-react";
+import { Check, CheckCheck, ExternalLink, Loader2, MessageSquareQuote, Star } from "lucide-react";
+import { ReviewDialog, type ReviewTarget } from "@/components/coach-game/ReviewDialog";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ export function FeedbackList({
   const [items, setItems] = useState<FeedbackItem[] | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const [reviewing, setReviewing] = useState<ReviewTarget | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -174,6 +176,27 @@ export function FeedbackList({
                 </Button>
               ) : null}
               <Button
+                size="sm"
+                onClick={() =>
+                  setReviewing({
+                    assignmentId: item.id,
+                    lessonName: item.lesson.name,
+                    playerName: item.player ? nameOf(item.player) : "Player",
+                    selfAssessment: item.selfAssessment,
+                    notes: item.playerNotes,
+                    stars: item.stars,
+                    resultScore: item.resultScore,
+                    targetScore: item.lesson.targetScore,
+                    targetAttempts: item.lesson.targetAttempts,
+                    practiceMinutes: item.practiceMinutes,
+                  })
+                }
+                disabled={busyId !== null}
+                className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 pointer-coarse:min-h-11"
+              >
+                <Star className="h-4 w-4" /> Review
+              </Button>
+              <Button
                 variant="outline"
                 size="sm"
                 onClick={() => void markSeen(item.id)}
@@ -191,6 +214,16 @@ export function FeedbackList({
           </li>
         ))}
       </ul>
+      {reviewing ? (
+        <ReviewDialog
+          target={reviewing}
+          onClose={() => setReviewing(null)}
+          onSaved={() => {
+            setItems((prev) => (prev ?? []).filter((entry) => entry.id !== reviewing.assignmentId));
+            onChanged?.();
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -213,8 +246,8 @@ export default function FeedbackSheet({
         <SheetHeader className="border-b border-slate-100 p-5 pr-12">
           <SheetTitle>Awaiting your feedback</SheetTitle>
           <SheetDescription>
-            Lessons your players completed since you last looked. Mark them as seen once
-            you have reviewed them.
+            Lessons your players completed since you last looked. Give stars and a comment –
+            the player sees your review right away – or just mark them as seen.
           </SheetDescription>
         </SheetHeader>
         <div className="p-5">

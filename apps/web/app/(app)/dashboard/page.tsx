@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import PlayerHomeDashboard from "@/components/PlayerHomeDashboard";
-import NewAssignmentsSection from "@/components/NewAssignmentsSection";
+import { Suspense, useEffect, useState } from "react";
+import PlayerHome from "@/components/game/PlayerHome";
 import CoachRoster from "@/components/CoachRoster";
 import { resolveCalendarTimeZone } from "@/lib/timezone";
 
@@ -33,14 +32,9 @@ export default function Dashboard() {
 
       {/* Player dashboard */}
       {role === "PLAYER" && (
-        <section className="space-y-6">
-          <NewAssignmentsSection />
-          <PlayerHomeDashboard
-            firstName={playerFirstName}
-            playerId={playerId}
-            timeZone={viewerTimeZone}
-          />
-        </section>
+        <Suspense fallback={null}>
+          <PlayerHome playerId={playerId} timeZone={viewerTimeZone} />
+        </Suspense>
       )}
 
       {/* SysAdmin dashboard */}

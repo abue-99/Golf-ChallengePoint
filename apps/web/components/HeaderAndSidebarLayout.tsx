@@ -1,10 +1,11 @@
 
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Header from './header';
 import Sidebar from './sidebar';
 import BottomNav from './BottomNav';
-import { Home, Settings, BookOpen, User, CalendarDays, ClipboardList, MessageCircle } from 'lucide-react';
+import { Home, Settings, BookOpen, User, CalendarDays, MessageCircle } from 'lucide-react';
+import { MissionHost } from './game/MissionPlayer';
 import { useUnreadMessages } from '@/lib/messages';
 import { Users, Route as RouteIcon } from 'lucide-react';
 import type { ReactNode } from "react";
@@ -44,12 +45,11 @@ export default function HeaderAndSidebarLayout({
      ]
    : role === 'PLAYER'
    ? [
-       { href: '/', icon: Home, label: 'Home' },
-       { href: '/player', icon: RouteIcon, label: 'Journey' },
-       { href: '/player/queue', icon: ClipboardList, label: 'Queue' },
+       { href: '/dashboard', icon: Home, label: 'Home', alsoActive: ['/player/team'] },
+       { href: '/player', icon: RouteIcon, label: 'Path', exclude: ['/player/team'] },
        { href: '/calendar', icon: CalendarDays, label: 'Calendar' },
-       { href: '/messages', icon: MessageCircle, label: 'Messages', badge: unreadCount },
-       { href: '/settings/profile', icon: User, label: 'Profile' },
+       { href: '/messages', icon: MessageCircle, label: 'Chat', badge: unreadCount },
+       { href: '/me', icon: User, label: 'Me', alsoActive: ['/settings'] },
      ]
    : defaultNavItems;
 
@@ -85,6 +85,11 @@ export default function HeaderAndSidebarLayout({
 
     {/* Mobile bottom tab bar */}
     <BottomNav navItems={navItems} />
+    {role === 'PLAYER' ? (
+      <Suspense fallback={null}>
+        <MissionHost />
+      </Suspense>
+    ) : null}
   </div>
  );
 }

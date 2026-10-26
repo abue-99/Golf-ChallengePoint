@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Lock, Pencil, Trash2, Users } from "lucide-react";
+import { AtSign, Handshake, Loader2, Lock, Pencil, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { formatDateTime, type CoachNote, type NoteVisibility } from "@/lib/coach-roster";
+import { formatDateTime, type CoachNote, type NoteVisibility, type PlayerCoach } from "@/lib/coach-roster";
 
 function authorName(note: CoachNote) {
   return [note.author.firstName, note.author.lastName].filter(Boolean).join(" ") || "Another coach";
@@ -68,6 +68,8 @@ export default function CoachNotes({
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [handover, setHandover] = useState(false);
+  const [coaches, setCoaches] = useState<PlayerCoach[]>([]);
 
   const base = `/api/coach/roster/players/${encodeURIComponent(playerId)}/notes`;
 
@@ -87,6 +89,19 @@ export default function CoachNotes({
     void load();
   }, [load]);
 
+  // Other coaches of the player for @mentions.
+  useEffect(() => {
+    fetch(`/api/coach/roster/players/${encodeURIComponent(playerId)}/coaches`, { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: PlayerCoach[]) => setCoaches(Array.isArray(data) ? data.filter((coach) => !coach.isMe) : []))
+      .catch(() => setCoaches([]));
+  }, [playerId]);
+
+  function mention(coach: PlayerCoach) {
+    const token = `@${coach.firstName ?? ""}`;
+    setDraft((current) => (current.includes(token) ? current : `${current}${current && !current.endsWith(" ") ? " " : ""}${token} `));
+  }
+
   async function addNote() {
     const body = draft.trim();
     if (!body) return;
@@ -94,7 +109,7 @@ export default function CoachNotes({
     const res = await fetch(base, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body, visibility: draftVisibility }),
+      body: JSON.stringify({ body, visibility: draftVisibility, isHandover: handover }),
     });
     setSaving(false);
     if (!res.ok) {
@@ -102,9 +117,12 @@ export default function CoachNotes({
       return;
     }
     const note: CoachNote = await res.json();
-    setNotes((prev) => [note, ...(prev ?? [])]);
-    if (draftVisibility === "SHARED") toast.success("Shared with the coaching team.");
+    setNotes((prev) => (note.isHandover ? [note, ...(prev ?? [])] : [...(prev ?? []).filter((n) => n.isHandover), note, ...(prev ?? []).filter((n) => !n.isHandover)]));
+    if (note.isHandover) toast.success("Handover note sent to the coaching team.");
+    else if (note.mentionIds?.length) toast.success(`Shared – ${note.mentionIds.length} coach${note.mentionIds.length === 1 ? "" : "es"} notified.`);
+    else if (note.visibility === "SHARED") toast.success("Shared with the coaching team.");
     setDraft("");
+    setHandover(false);
     onChanged?.();
   }
 
@@ -147,7 +165,8 @@ export default function CoachNotes({
   return (
     <div className="space-y-3">
       <p className="flex items-center gap-1.5 text-xs text-slate-500">
-        <Lock className="h-3 w-3" /> Private notes only you see. Shared notes are visible to every coach of this player.
+        <Lock className="h-3 w-3" /> Private notes only you see. Shared notes are visible to every coach of this player; @mention a
+        coach to notify them.
       </p>
       <div className="space-y-2">
         <Textarea
@@ -164,8 +183,41 @@ export default function CoachNotes({
           maxLength={5000}
           aria-label="New note"
         />
+        {coaches.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-slate-500">Mention:</span>
+            {coaches.map((coach) => (
+              <button
+                key={coach.id}
+                type="button"
+                onClick={() => mention(coach)}
+                title={coach.roles.join(", ")}
+                className="inline-flex min-h-8 items-center gap-1 rounded-full bg-slate-100 px-2.5 text-xs font-medium text-slate-700 hover:bg-slate-200 pointer-coarse:min-h-10"
+              >
+                <AtSign className="h-3 w-3" />
+                {coach.firstName}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setHandover((value) => !value)}
+              aria-pressed={handover}
+              className={cn(
+                "inline-flex min-h-8 items-center gap-1 rounded-full px-2.5 text-xs font-medium pointer-coarse:min-h-10",
+                handover ? "bg-violet-600 text-white" : "bg-violet-50 text-violet-700 hover:bg-violet-100",
+              )}
+            >
+              <Handshake className="h-3 w-3" /> Handover
+            </button>
+          </div>
+        ) : null}
+        {handover ? (
+          <p className="text-xs text-violet-700">
+            Handover note: shared, pinned on top and sent to every coach of this player – e.g. when someone stands in for you.
+          </p>
+        ) : null}
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <VisibilityToggle value={draftVisibility} onChange={setDraftVisibility} disabled={saving} />
+          <VisibilityToggle value={handover || /@\S/.test(draft) ? "SHARED" : draftVisibility} onChange={setDraftVisibility} disabled={saving || handover} />
           <Button size="sm" onClick={() => void addNote()} disabled={saving || !draft.trim()}>
             {saving && !editingId ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
             Add note
@@ -184,11 +236,29 @@ export default function CoachNotes({
               key={note.id}
               className={cn(
                 "rounded-xl border p-3",
-                note.visibility === "SHARED"
-                  ? "border-sky-200 bg-sky-50/50"
-                  : "border-slate-200 bg-amber-50/40",
+                note.isHandover
+                  ? "border-violet-300 bg-violet-50"
+                  : note.mentionsMe
+                    ? "border-amber-300 bg-amber-50"
+                    : note.visibility === "SHARED"
+                      ? "border-sky-200 bg-sky-50/50"
+                      : "border-slate-200 bg-amber-50/40",
               )}
             >
+              {note.isHandover || note.mentionsMe ? (
+                <p className="mb-1 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-violet-700">
+                  {note.isHandover ? (
+                    <>
+                      <Handshake className="h-3 w-3" /> Handover
+                    </>
+                  ) : null}
+                  {note.mentionsMe ? (
+                    <span className="inline-flex items-center gap-1 text-amber-700">
+                      <AtSign className="h-3 w-3" /> Mentions you
+                    </span>
+                  ) : null}
+                </p>
+              ) : null}
               <div className="mb-1 flex items-center justify-between gap-2">
                 <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 text-xs text-slate-500">
                   {note.visibility === "SHARED" ? (

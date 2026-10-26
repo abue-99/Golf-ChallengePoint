@@ -136,7 +136,8 @@ export class RosterController {
   createNote(
     @CurrentUser() user: AuthenticatedUser,
     @Param('playerId') playerId: string,
-    @Body() body: { body?: unknown; visibility?: unknown },
+    @Body()
+    body: { body?: unknown; visibility?: unknown; isHandover?: unknown },
   ) {
     requireCoach(user);
     return this.coachWork.createNote(
@@ -144,14 +145,26 @@ export class RosterController {
       playerId,
       body?.body,
       body?.visibility,
+      body?.isHandover,
     );
+  }
+
+  /** Coaches who work with the player (for @mentions and "assigned by"). */
+  @Get('players/:playerId/coaches')
+  playerCoaches(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('playerId') playerId: string,
+  ) {
+    requireCoach(user);
+    return this.coachWork.playerCoaches(user.id, playerId);
   }
 
   @Patch('notes/:noteId')
   updateNote(
     @CurrentUser() user: AuthenticatedUser,
     @Param('noteId') noteId: string,
-    @Body() body: { body?: unknown; visibility?: unknown },
+    @Body()
+    body: { body?: unknown; visibility?: unknown; isHandover?: unknown },
   ) {
     requireCoach(user);
     return this.coachWork.updateNote(
@@ -159,6 +172,7 @@ export class RosterController {
       noteId,
       body?.body,
       body?.visibility,
+      body?.isHandover,
     );
   }
 

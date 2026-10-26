@@ -13,7 +13,10 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Inject,
+  Optional,
 } from '@nestjs/common';
+import { GAME_HOOKS, type GameHooks } from '../game/game-hooks';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   clubIdsOf,
@@ -47,7 +50,10 @@ type UpsertJourneyTemplateInput = {
 
 @Injectable()
 export class JourneysService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() @Inject(GAME_HOOKS) private readonly game?: GameHooks,
+  ) {}
 
   private requireCoachOrAdmin(role: string) {
     if (role !== 'COACH' && role !== 'ADMIN') {
@@ -460,13 +466,15 @@ export class JourneysService {
       throw new ForbiddenException('Not your journey template');
     }
 
-    return this.prisma.$transaction((tx) =>
+    const result = await this.prisma.$transaction((tx) =>
       this.createPlayerJourneyFromTemplate(tx, {
         template,
         coachId,
         playerId,
       }),
     );
+    this.game?.notifyNewWork(coachId, { playerIds: [playerId] }, { journeyId });
+    return result;
   }
 
   async assignTemplateToTeam(
@@ -515,7 +523,7 @@ export class JourneysService {
       };
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const teamResult = await this.prisma.$transaction(async (tx) => {
       const created = await Promise.all(
         uniquePlayerIds.map((memberPlayerId) =>
           this.createPlayerJourneyFromTemplate(tx, {
@@ -540,6 +548,12 @@ export class JourneysService {
         })),
       };
     });
+    this.game?.notifyNewWork(
+      coachId,
+      { playerIds: uniquePlayerIds },
+      { journeyId },
+    );
+    return teamResult;
   }
 
   async updateJourneyAssignment(
@@ -605,6 +619,7 @@ export class JourneysService {
         await syncJourneyAssignmentLifecycleForPlanIds(this.prisma, [
           assignment.playerPlanId,
         ]);
+        this.game?.syncQuietly(assignment.playerId);
         return this.prisma.journeyTemplateAssignment.findUnique({
           where: { id: updated.id },
           include: {

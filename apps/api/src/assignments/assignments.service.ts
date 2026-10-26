@@ -3,7 +3,10 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Inject,
+  Optional,
 } from '@nestjs/common';
+import { GAME_HOOKS, type GameHooks } from '../game/game-hooks';
 import {
   AssignmentStatus,
   AssignmentSourceType,
@@ -78,7 +81,10 @@ type JourneyAssignmentListItem = Prisma.JourneyTemplateAssignmentGetPayload<{
 
 @Injectable()
 export class AssignmentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() @Inject(GAME_HOOKS) private readonly game?: GameHooks,
+  ) {}
 
   private requireCoachOrAdmin(role: string) {
     if (role !== 'COACH' && role !== 'ADMIN') {
@@ -197,6 +203,20 @@ export class AssignmentsService {
   }
 
   async createAssignment(
+    coachId: string,
+    role: string,
+    data: CreateAssignmentInput,
+  ) {
+    const result = await this.createAssignmentRows(coachId, role, data);
+    if (data.targetType === AssignmentTargetType.TEAM && data.teamId) {
+      this.game?.notifyNewWork(coachId, { teamId: data.teamId }, { lessonId: data.lessonId });
+    } else if (data.playerId) {
+      this.game?.notifyNewWork(coachId, { playerIds: [data.playerId] }, { lessonId: data.lessonId });
+    }
+    return result;
+  }
+
+  private async createAssignmentRows(
     coachId: string,
     role: string,
     data: CreateAssignmentInput,
@@ -1010,6 +1030,9 @@ export class AssignmentsService {
             updated.block.planId,
           ]);
         }
+        this.game?.syncQuietly(
+          updated.playerId ?? (isCoachOrAdmin ? null : userId),
+        );
         return updated;
       });
   }

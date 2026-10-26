@@ -2,7 +2,10 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  Inject,
+  Optional,
 } from '@nestjs/common';
+import { GAME_HOOKS, type GameHooks } from '../game/game-hooks';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   assertCoachLinkedToPlayer,
@@ -23,7 +26,10 @@ import {
 
 @Injectable()
 export class DevelopmentPlansService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() @Inject(GAME_HOOKS) private readonly game?: GameHooks,
+  ) {}
 
   private requireCoachOrAdmin(role: string) {
     if (role !== 'COACH' && role !== 'ADMIN') {
@@ -602,6 +608,9 @@ export class DevelopmentPlansService {
         if (planId) {
           await syncJourneyAssignmentLifecycleForPlanIds(this.prisma, [planId]);
         }
+        this.game?.syncQuietly(
+          assignment.playerId ?? (isCoachOrAdmin ? null : userId),
+        );
         return updated;
       });
   }

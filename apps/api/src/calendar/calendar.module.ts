@@ -1,3 +1,5 @@
+import { GameModule } from '../game/game.module';
+import { PushModule } from '../push/push.module';
 import { Module } from '@nestjs/common';
 import { CalendarController } from './calendar.controller';
 import { CalendarService } from './calendar.service';
@@ -14,7 +16,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule],
+  imports: [PrismaModule, AuthModule, GameModule, PushModule],
   controllers: [
     CalendarFeedController,
     CoachCalendarController,

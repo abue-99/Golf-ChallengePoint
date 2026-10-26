@@ -3,9 +3,21 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Inject,
+  Optional,
 } from '@nestjs/common';
+import { GAME_HOOKS, type GameHooks } from '../game/game-hooks';
 import { PrismaService } from '../prisma/prisma.service';
 import { coachCanSeePlayer, coachTeamsWhere } from '../teams/team-access';
+import {
+  isTeamChatId,
+  resolveRef,
+  sendTeamMessage,
+  teamChatRows,
+  teamIdOf,
+  teamThread,
+  teamUnread,
+} from './team-chat';
 
 export const MAX_MESSAGE_LENGTH = 2000;
 const PAGE_SIZE = 50;
@@ -82,7 +94,10 @@ export function openQuestionOf(
  */
 @Injectable()
 export class MessagesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() @Inject(GAME_HOOKS) private readonly game?: GameHooks,
+  ) {}
 
   /** Coach and player of a pair, or 403. */
   private async pair(userId: string, role: string, otherId: string) {
@@ -290,9 +305,12 @@ export class MessagesService {
         }),
     );
     const withConversation = new Set(rows.map((row) => row.counterpart.id));
+    const teamRows = await teamChatRows(this.prisma, userId, role);
+    const time = (row: { lastMessage: { createdAt: Date } | null }) =>
+      row.lastMessage ? new Date(row.lastMessage.createdAt).getTime() : 0;
     return {
       me: { id: userId, isCoach: coach },
-      conversations: rows,
+      conversations: [...rows, ...teamRows].sort((a, b) => time(b) - time(a)),
       contacts: contacts
         .filter((contact) => !withConversation.has(contact.person.id))
         .map((contact) => ({
@@ -348,7 +366,8 @@ export class MessagesService {
         }
       }),
     );
-    return { total, byUser };
+    const team = await teamUnread(this.prisma, userId, role);
+    return { total: total + team.total, byUser: { ...byUser, ...team.byUser } };
   }
 
   /** Messages with one person (newest page, or newer than `after`). */
@@ -358,6 +377,9 @@ export class MessagesService {
     otherId: string,
     query: { after?: string; before?: string },
   ) {
+    if (isTeamChatId(otherId)) {
+      return teamThread(this.prisma, userId, role, teamIdOf(otherId), query);
+    }
     const { coachId, playerId, coach, player } = await this.pair(
       userId,
       role,
@@ -410,6 +432,9 @@ export class MessagesService {
         senderId: true,
         body: true,
         isQuestion: true,
+        refType: true,
+        refId: true,
+        refTitle: true,
         createdAt: true,
       },
     });
@@ -466,10 +491,32 @@ export class MessagesService {
     userId: string,
     role: string,
     otherId: string,
-    input: { body?: unknown; isQuestion?: unknown },
+    input: { body?: unknown; isQuestion?: unknown; ref?: unknown },
   ) {
     const body = cleanBody(input.body);
+    if (isTeamChatId(otherId)) {
+      const teamId = teamIdOf(otherId);
+      const ref = await resolveRef(this.prisma, input.ref, { teamId });
+      const sent = await sendTeamMessage(
+        this.prisma,
+        userId,
+        role,
+        teamId,
+        body,
+        ref,
+      );
+      this.game?.notify(sent.recipients, 'messages', {
+        title: `💬 ${sent.team.shortName}`,
+        body: `${sent.senderFirstName ?? ''}: ${body}`.slice(0, 200),
+        url: `/messages?with=${encodeURIComponent(otherId)}`,
+        tag: `team-chat-${teamId}`,
+      });
+      return sent.message;
+    }
     const { coachId, playerId } = await this.pair(userId, role, otherId);
+    const ref = input.ref
+      ? await resolveRef(this.prisma, input.ref, { playerId })
+      : null;
     // Only coaches ask questions that wait for an answer.
     const isQuestion = isCoachRole(role) && input.isQuestion === true;
     const now = new Date();
@@ -493,6 +540,7 @@ export class MessagesService {
         senderId: userId,
         body,
         isQuestion,
+        ...(ref ?? {}),
         createdAt: now,
       },
       select: {
@@ -500,9 +548,41 @@ export class MessagesService {
         senderId: true,
         body: true,
         isQuestion: true,
+        refType: true,
+        refId: true,
+        refTitle: true,
         createdAt: true,
       },
     });
+    if (isCoachRole(role)) {
+      void this.prisma.user
+        .findUnique({ where: { id: userId }, select: { firstName: true } })
+        .then((sender) =>
+          this.game?.notify([playerId], 'messages', {
+            title: isQuestion
+              ? `❓ ${sender?.firstName ?? 'Your coach'} asked you something`
+              : `💬 ${sender?.firstName ?? 'Your coach'}`,
+            body: body.slice(0, 200),
+            url: isQuestion ? '/dashboard' : `/messages?with=${userId}`,
+            tag: `chat-${userId}`,
+          }),
+        )
+        .catch(() => null);
+    } else {
+      // An answer to a coach question counts for the game.
+      this.game?.syncQuietly(playerId);
+      void this.prisma.user
+        .findUnique({ where: { id: userId }, select: { firstName: true } })
+        .then((sender) =>
+          this.game?.notify([coachId], 'messages', {
+            title: `💬 ${sender?.firstName ?? 'Your player'}`,
+            body: body.slice(0, 200),
+            url: `/messages?with=${userId}`,
+            tag: `chat-${userId}`,
+          }),
+        )
+        .catch(() => null);
+    }
     return { ...message, mine: true, conversationId: conversation.id };
   }
 }

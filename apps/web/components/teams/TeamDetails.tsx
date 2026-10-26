@@ -20,6 +20,7 @@ import {
 } from "@/lib/coach-roster";
 import { initials, playerDisplayName, type Team } from "./shared";
 import { StaffDialog, StaffList } from "./TeamStaff";
+import TeamGamePanel from "@/components/coach-game/TeamGamePanel";
 
 function ActionButton({
   icon: Icon,
@@ -132,6 +133,8 @@ export default function TeamDetails({
         onClose={() => setStaffOpen(false)}
         onChanged={() => onStaffChanged?.()}
       />
+
+      <TeamGamePanel teamId={team.id} />
 
       {next || plans.length > 0 ? (
         <section className="space-y-2 rounded-xl border border-slate-200 p-3 text-sm">

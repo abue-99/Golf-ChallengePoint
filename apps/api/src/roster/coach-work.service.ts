@@ -1,15 +1,24 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
+import { PUSH_HOOKS, type PushHooks } from '../game/game-hooks';
 import { AssignmentStatus, NoteVisibility } from '@challengepoint/db';
 import { PrismaService } from '../prisma/prisma.service';
 import { coachTeamsWhere } from '../teams/team-access';
 import { feedbackWhere } from './roster.service';
 
 const MAX_NOTE_LENGTH = 5000;
+const ROLE_NAMES: Record<string, string> = {
+  HEAD_COACH: 'Head coach',
+  ASSISTANT: 'Assistant coach',
+  FITNESS: 'Fitness coach',
+  MENTAL: 'Mental coach',
+};
 /** Assignments can only be undone shortly after they were created. */
 export const UNDO_WINDOW_MS = 15 * 60 * 1000;
 const MAX_UNDO_IDS = 500;
@@ -50,6 +59,8 @@ const NOTE_SELECT = {
   id: true,
   body: true,
   visibility: true,
+  mentionIds: true,
+  isHandover: true,
   createdAt: true,
   updatedAt: true,
   coachId: true,
@@ -60,6 +71,8 @@ type NoteRow = {
   id: string;
   body: string;
   visibility: NoteVisibility;
+  mentionIds: string[];
+  isHandover: boolean;
   createdAt: Date;
   updatedAt: Date;
   coachId: string;
@@ -71,6 +84,9 @@ function toNote(row: NoteRow, viewerId: string) {
     id: row.id,
     body: row.body,
     visibility: row.visibility,
+    isHandover: row.isHandover,
+    mentionIds: row.mentionIds,
+    mentionsMe: row.mentionIds.includes(viewerId),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     mine: row.coachId === viewerId,
@@ -85,7 +101,159 @@ function toNote(row: NoteRow, viewerId: string) {
 /** Feedback inbox and coach notes (private or shared) for the coach home page. */
 @Injectable()
 export class CoachWorkService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() @Inject(PUSH_HOOKS) private readonly push?: PushHooks,
+  ) {}
+
+  /**
+   * Coaches who work with a player: linked coaches (with their role) and the
+   * head coach and staff of the player's teams.
+   */
+  async playerCoaches(viewerId: string, playerId: string) {
+    await this.assertCoachCanSeePlayer(viewerId, playerId);
+    const [links, memberships] = await Promise.all([
+      this.prisma.coachPlayerLink.findMany({
+        where: { playerId },
+        select: {
+          role: true,
+          coach: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              profileImage: true,
+            },
+          },
+        },
+      }),
+      this.prisma.teamMember.findMany({
+        where: { userId: playerId },
+        select: {
+          team: {
+            select: {
+              shortName: true,
+              coach: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  profileImage: true,
+                },
+              },
+              staff: {
+                select: {
+                  role: true,
+                  coach: {
+                    select: {
+                      id: true,
+                      firstName: true,
+                      lastName: true,
+                      profileImage: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+    const map = new Map<
+      string,
+      {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+        profileImage: string | null;
+        roles: string[];
+      }
+    >();
+    const add = (
+      coach: {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+        profileImage: string | null;
+      },
+      role: string,
+    ) => {
+      const entry = map.get(coach.id) ?? { ...coach, roles: [] };
+      if (role && !entry.roles.includes(role)) entry.roles.push(role);
+      map.set(coach.id, entry);
+    };
+    for (const link of links)
+      add(link.coach, ROLE_NAMES[link.role ?? ''] ?? '');
+    for (const { team } of memberships) {
+      add(team.coach, `Head coach · ${team.shortName}`);
+      for (const member of team.staff) {
+        add(
+          member.coach,
+          `${ROLE_NAMES[member.role] ?? 'Coach'} · ${team.shortName}`,
+        );
+      }
+    }
+    return [...map.values()].map((coach) => ({
+      ...coach,
+      isMe: coach.id === viewerId,
+    }));
+  }
+
+  /** Ids of coaches of the player mentioned as @Firstname (or @First Last). */
+  private async mentionedCoaches(
+    authorId: string,
+    playerId: string,
+    body: string,
+  ) {
+    if (!body.includes('@')) return [];
+    const coaches = await this.playerCoaches(authorId, playerId);
+    const lower = body.toLowerCase();
+    return coaches
+      .filter((coach) => coach.id !== authorId && coach.firstName)
+      .filter((coach) => {
+        const full =
+          `@${[coach.firstName, coach.lastName].filter(Boolean).join(' ')}`.toLowerCase();
+        const first = `@${coach.firstName}`.toLowerCase();
+        return [full, first].some((token) => {
+          const index = lower.indexOf(token);
+          if (index < 0) return false;
+          const next = lower.charAt(index + token.length);
+          return !next || !/[a-zäöüß0-9]/i.test(next);
+        });
+      })
+      .map((coach) => coach.id);
+  }
+
+  private async notifyNote(
+    authorId: string,
+    playerId: string,
+    noteBody: string,
+    recipients: string[],
+    handover: boolean,
+  ) {
+    if (!this.push || recipients.length === 0) return;
+    const [author, player] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: authorId },
+        select: { firstName: true },
+      }),
+      this.prisma.user.findUnique({
+        where: { id: playerId },
+        select: { firstName: true, lastName: true },
+      }),
+    ]);
+    const playerName = [player?.firstName, player?.lastName]
+      .filter(Boolean)
+      .join(' ');
+    this.push.notify(recipients, 'mentions', {
+      title: handover
+        ? `🤝 Handover from ${author?.firstName ?? 'a coach'}: ${playerName}`
+        : `@ ${author?.firstName ?? 'A coach'} mentioned you · ${playerName}`,
+      body: noteBody.slice(0, 200),
+      url: '/dashboard',
+      tag: `note-${playerId}`,
+    });
+  }
 
   /** A coach may work with linked players and members of their own teams. */
   private async assertCoachCanSeePlayer(coachId: string, playerId: string) {
@@ -116,6 +284,9 @@ export class CoachWorkService {
         completedAt: true,
         selfAssessment: true,
         playerNotes: true,
+        stars: true,
+        resultScore: true,
+        practiceMinutes: true,
         player: {
           select: {
             id: true,
@@ -125,7 +296,16 @@ export class CoachWorkService {
             profileImage: true,
           },
         },
-        lesson: { select: { id: true, name: true, focusArea: true } },
+        lesson: {
+          select: {
+            id: true,
+            name: true,
+            focusArea: true,
+            durationMinutes: true,
+            targetScore: true,
+            targetAttempts: true,
+          },
+        },
         block: { select: { plan: { select: { id: true, name: true } } } },
       },
     });
@@ -235,7 +415,7 @@ export class CoachWorkService {
         playerId,
         OR: [{ coachId }, { visibility: NoteVisibility.SHARED }],
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ isHandover: 'desc' }, { createdAt: 'desc' }],
       select: NOTE_SELECT,
     });
     return rows.map((row) => toNote(row as NoteRow, coachId));
@@ -246,17 +426,35 @@ export class CoachWorkService {
     playerId: string,
     body: unknown,
     visibility?: unknown,
+    isHandover?: unknown,
   ) {
     await this.assertCoachCanSeePlayer(coachId, playerId);
+    const text = cleanBody(body);
+    const mentionIds = await this.mentionedCoaches(coachId, playerId, text);
+    const handover = isHandover === true;
+    // Mentions and handovers only make sense for the coaching team.
+    const shared = mentionIds.length > 0 || handover;
     const row = await this.prisma.coachPlayerNote.create({
       data: {
         coachId,
         playerId,
-        body: cleanBody(body),
-        visibility: cleanVisibility(visibility) ?? NoteVisibility.PRIVATE,
+        body: text,
+        visibility: shared
+          ? NoteVisibility.SHARED
+          : (cleanVisibility(visibility) ?? NoteVisibility.PRIVATE),
+        mentionIds,
+        isHandover: handover,
       },
       select: NOTE_SELECT,
     });
+    const recipients = handover
+      ? (await this.playerCoaches(coachId, playerId))
+          .filter((c) => !c.isMe)
+          .map((c) => c.id)
+      : mentionIds;
+    void this.notifyNote(coachId, playerId, text, recipients, handover).catch(
+      () => null,
+    );
     return toNote(row as NoteRow, coachId);
   }
 
@@ -278,17 +476,54 @@ export class CoachWorkService {
     noteId: string,
     body: unknown,
     visibility?: unknown,
+    isHandover?: unknown,
   ) {
     await this.ownNote(coachId, noteId);
-    const nextVisibility = cleanVisibility(visibility);
+    const current = await this.prisma.coachPlayerNote.findUnique({
+      where: { id: noteId },
+      select: {
+        playerId: true,
+        body: true,
+        mentionIds: true,
+        isHandover: true,
+      },
+    });
+    if (!current) throw new NotFoundException('Note not found');
+    const text = body !== undefined ? cleanBody(body) : current.body;
+    const mentionIds = await this.mentionedCoaches(
+      coachId,
+      current.playerId,
+      text,
+    );
+    const handover =
+      isHandover === undefined ? current.isHandover : isHandover === true;
+    let nextVisibility = cleanVisibility(visibility);
+    if (mentionIds.length > 0 || handover)
+      nextVisibility = NoteVisibility.SHARED;
     const row = await this.prisma.coachPlayerNote.update({
       where: { id: noteId },
       data: {
-        ...(body !== undefined ? { body: cleanBody(body) } : {}),
+        body: text,
+        mentionIds,
+        isHandover: handover,
         ...(nextVisibility ? { visibility: nextVisibility } : {}),
       },
       select: NOTE_SELECT,
     });
+    const fresh = mentionIds.filter((id) => !current.mentionIds.includes(id));
+    const recipients =
+      handover && !current.isHandover
+        ? (await this.playerCoaches(coachId, current.playerId))
+            .filter((c) => !c.isMe)
+            .map((c) => c.id)
+        : fresh;
+    void this.notifyNote(
+      coachId,
+      current.playerId,
+      text,
+      recipients,
+      handover && !current.isHandover,
+    ).catch(() => null);
     return toNote(row as NoteRow, coachId);
   }
 

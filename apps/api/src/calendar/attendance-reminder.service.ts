@@ -6,7 +6,10 @@ import {
   NotFoundException,
   OnModuleDestroy,
   OnModuleInit,
+  Inject,
+  Optional,
 } from '@nestjs/common';
+import { PUSH_HOOKS, type PushHooks } from '../game/game-hooks';
 import { OwnerType } from '@challengepoint/db';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -93,6 +96,7 @@ export class AttendanceReminderService
   constructor(
     private readonly prisma: PrismaService,
     private readonly mailer: ReminderMailer,
+    @Optional() @Inject(PUSH_HOOKS) private readonly push?: PushHooks,
   ) {}
 
   onModuleInit() {
@@ -382,6 +386,16 @@ export class AttendanceReminderService
       .map((member) => member.user)
       .filter((user) => user.role === 'PLAYER' && !answered.has(user.id));
 
+    this.push?.notify(
+      open.map((user) => user.id),
+      'schedule',
+      {
+        title: `👥 Are you coming? ${occurrence.title}`,
+        body: `${team.shortName} · ${formatSession(occurrence.start, occurrence.end, process.env.TZ || 'Europe/Berlin')}`,
+        url: '/dashboard',
+        tag: `rsvp-${occurrence.key}`,
+      },
+    );
     // Player home shows "Are you coming?" with the answer buttons.
     const url = `${appUrl()}/dashboard`;
     const results = await Promise.all(

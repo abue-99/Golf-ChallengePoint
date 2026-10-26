@@ -12,7 +12,22 @@ export type NavItem = {
   mobile?: "primary" | "more";
   /** Count shown on the icon, e.g. unread messages. */
   badge?: number;
+  /** Further path prefixes that highlight this item. */
+  alsoActive?: string[];
+  /** Path prefixes under `href` that belong to another item. */
+  exclude?: string[];
 };
+
+function under(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(href + '/');
+}
+
+/** Whether the item is the current page (longest match wins in a list). */
+export function itemMatches(pathname: string, item: NavItem) {
+  if (item.exclude?.some((prefix) => under(pathname, prefix))) return false;
+  if (item.href === '/') return pathname === '/';
+  return under(pathname, item.href) || Boolean(item.alsoActive?.some((prefix) => under(pathname, prefix)));
+}
 
 /** Small red count on a navigation icon. */
 export function NavBadge({ count, className = "" }: { count?: number; className?: string }) {

@@ -6,9 +6,10 @@ import { RosterService } from './roster.service';
 import { CoachWorkService } from './coach-work.service';
 import { PlayerLoadService } from './player-load.service';
 import { TeamsModule } from '../teams/teams.module';
+import { PushModule } from '../push/push.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, TeamsModule],
+  imports: [PrismaModule, AuthModule, TeamsModule, PushModule],
   controllers: [RosterController],
   providers: [RosterService, CoachWorkService, PlayerLoadService],
 })

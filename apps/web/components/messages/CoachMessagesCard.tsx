@@ -11,6 +11,7 @@ import {
   shortTime,
   type ConversationSummary,
 } from "@/lib/messages";
+import { emitGameChanged } from "@/lib/game";
 
 /**
  * Player home: questions from coaches waiting for an answer (answer right
@@ -92,9 +93,11 @@ function QuestionReply({
     setSending(true);
     try {
       await sendMessage(row.counterpart.id, answer.trim());
-      toast.success(`Answer sent to ${row.counterpart.name}.`);
+      toast.success(`Answer sent to ${row.counterpart.name}. +10 XP`);
       setAnswer("");
       onAnswered();
+      // The answer counts for the game; give the API a moment to sync.
+      window.setTimeout(emitGameChanged, 800);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Not sent");
     } finally {

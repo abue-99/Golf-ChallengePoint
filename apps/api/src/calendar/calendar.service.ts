@@ -4,7 +4,10 @@ import {
   ForbiddenException,
   BadRequestException,
   ConflictException,
+  Inject,
+  Optional,
 } from '@nestjs/common';
+import { GAME_HOOKS, type GameHooks } from '../game/game-hooks';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   assertCoachCanSeePlayer,
@@ -161,7 +164,10 @@ function startOfWeek(date: Date) {
 
 @Injectable()
 export class CalendarService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() @Inject(GAME_HOOKS) private readonly game?: GameHooks,
+  ) {}
 
   private validateDateRange(
     start: Date,
@@ -1395,7 +1401,7 @@ export class CalendarService {
       ]);
     }
 
-    return this.prisma.calendarTask.update({
+    const updatedTask = await this.prisma.calendarTask.update({
       where: { id: taskId },
       data: {
         ...(data.title !== undefined ? { title: data.title } : {}),
@@ -1418,6 +1424,10 @@ export class CalendarService {
         },
       },
     });
+    if (data.status !== undefined) {
+      for (const playerId of playerIds) this.game?.syncQuietly(playerId);
+    }
+    return updatedTask;
   }
 
   async deleteTask(userId: string, role: string, taskId: string) {

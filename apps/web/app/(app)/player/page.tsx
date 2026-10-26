@@ -1,7 +1,7 @@
 "use client";
 
-import PlayerJourney from "@/components/PlayerJourney";
+import PathView from "@/components/game/PathView";
 
-export default function PlayerJourneyPage() {
-  return <PlayerJourney />;
+export default function PlayerPathPage() {
+  return <PathView />;
 }

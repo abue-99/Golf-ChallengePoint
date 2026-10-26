@@ -215,6 +215,8 @@ export interface TrainingLesson {
   priority?: LessonPriority | null;
   plannedExercises?: string | null;
   successCriteria?: string | null;
+  targetScore?: number | null;
+  targetAttempts?: number | null;
   goalAchieved?: GoalAchieved | null;
   playerSelfAssessment?: number | null;
   coachRating?: number | null;

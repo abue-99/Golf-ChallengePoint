@@ -9,7 +9,13 @@ export type Counterpart = {
   name: string;
   profileImage: string | null;
   label?: string | null;
+  /** Team chat ("team:<teamId>"). */
+  isTeam?: boolean;
+  icon?: string | null;
 };
+
+/** A linked item in a message, e.g. a mission. */
+export type MessageRef = { type: "assignment" | "challenge"; id: string; title?: string };
 
 export type ConversationSummary = {
   counterpart: Counterpart;
@@ -32,6 +38,12 @@ export type ChatMessage = {
   isQuestion: boolean;
   createdAt: string;
   mine: boolean;
+  refType?: string | null;
+  refId?: string | null;
+  refTitle?: string | null;
+  /** Team chat: who wrote it. */
+  senderName?: string;
+  senderIsCoach?: boolean;
 };
 
 export type Thread = {
@@ -78,10 +90,22 @@ export function loadThread(
   );
 }
 
-export function sendMessage(userId: string, body: string, isQuestion = false) {
+export function sendMessage(
+  userId: string,
+  body: string,
+  isQuestion = false,
+  ref?: MessageRef | null,
+) {
   return call<ChatMessage & { conversationId: string }>(
     `/api/messages/with/${encodeURIComponent(userId)}`,
-    { method: "POST", body: JSON.stringify({ body, isQuestion }) },
+    {
+      method: "POST",
+      body: JSON.stringify({
+        body,
+        isQuestion,
+        ...(ref ? { ref: { type: ref.type, id: ref.id } } : {}),
+      }),
+    },
   );
 }
 

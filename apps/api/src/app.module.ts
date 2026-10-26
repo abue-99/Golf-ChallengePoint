@@ -14,6 +14,8 @@ import { JourneysModule } from './journeys/journeys.module';
 import { RosterModule } from './roster/roster.module';
 
 import { MessagesModule } from './messages/messages.module';
+import { GameModule } from './game/game.module';
+import { PushModule } from './push/push.module';
 @Module({
   imports: [
     PrismaModule,
@@ -29,6 +31,8 @@ import { MessagesModule } from './messages/messages.module';
     JourneysModule,
     RosterModule,
     MessagesModule,
+    GameModule,
+    PushModule,
   ],
   controllers: [AppController],
 })

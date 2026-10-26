@@ -49,6 +49,7 @@ import {
   type PlayerLoad,
 } from "@/lib/player-load";
 import FeedbackSheet from "@/components/FeedbackList";
+import { ActivityFeedCard } from "@/components/coach-game/ActivityFeed";
 import CoachToday, { GettingStarted } from "@/components/CoachToday";
 import { QuickAssignSheet, type AssignTarget } from "@/components/QuickAssign";
 import TeamIcon from "@/components/TeamIcon";
@@ -845,6 +846,10 @@ export default function CoachRoster({ firstName }: { firstName?: string }) {
           onOpenFeedback={() => setFeedbackOpen(true)}
           onOpenPlayer={(playerId) => openPlayer(playerId)}
         />
+      ) : null}
+
+      {data && data.players.length > 0 ? (
+        <ActivityFeedCard onOpenPlayer={(playerId) => openPlayer(playerId)} />
       ) : null}
 
       <div className="flex items-baseline justify-between pt-1">
